@@ -1,962 +1,696 @@
 "use client";
 
-import { useEffect, useState } from "react";
-
-/* =========================================================
-   TYPES
-   ========================================================= */
+import {
+  useEffect,
+  useRef,
+  useState,
+  type PointerEvent,
+} from "react";
 
 type Product = {
+  id: number;
   name: string;
   category: string;
+  pack: string;
   price: number;
-  oldPrice: number;
-  discount: string;
-  quantity: string;
-  badge: string;
-  purchases: number;
+  mrp: number;
+  image: string;
+  emoji: string;
+  purchased: number;
 };
 
+type Cart = Record<number, number>;
+
+const categories = [
+  "Sparklers",
+  "Flower Pots",
+  "Chakkars",
+  "Rockets",
+  "Ground Spinners",
+  "Bombs",
+  "Gift Boxes",
+  "Fancy Crackers",
+  "Bhijili",
+];
+
+const products: Product[] = [
+  {
+    id: 1,
+    name: "Green Sparklers",
+    category: "Sparklers",
+    pack: "10 sticks",
+    price: 45,
+    mrp: 60,
+    image: "",
+    emoji: "✨",
+    purchased: 980,
+  },
+  {
+    id: 2,
+    name: "Aerial Sparklers",
+    category: "Sparklers",
+    pack: "10 sticks",
+    price: 65,
+    mrp: 80,
+    image: "",
+    emoji: "✨",
+    purchased: 850,
+  },
+  {
+    id: 3,
+    name: "Electric Sparklers",
+    category: "Sparklers",
+    pack: "10 sticks",
+    price: 80,
+    mrp: 100,
+    image: "",
+    emoji: "⚡",
+    purchased: 760,
+  },
+  {
+    id: 4,
+    name: "Golden Flower Pot",
+    category: "Flower Pots",
+    pack: "5 pieces",
+    price: 120,
+    mrp: 150,
+    image: "",
+    emoji: "🌸",
+    purchased: 920,
+  },
+  {
+    id: 5,
+    name: "Flower Pots Small",
+    category: "Flower Pots",
+    pack: "10 pieces",
+    price: 190,
+    mrp: 220,
+    image: "",
+    emoji: "🌺",
+    purchased: 650,
+  },
+  {
+    id: 6,
+    name: "Flower Pots Big",
+    category: "Flower Pots",
+    pack: "10 pieces",
+    price: 262,
+    mrp: 320,
+    image: "",
+    emoji: "🌸",
+    purchased: 590,
+  },
+  {
+    id: 7,
+    name: "Flower Pots Special",
+    category: "Flower Pots",
+    pack: "10 pieces",
+    price: 127,
+    mrp: 145,
+    image: "",
+    emoji: "🌼",
+    purchased: 520,
+  },
+  {
+    id: 8,
+    name: "Colour Koti",
+    category: "Flower Pots",
+    pack: "10 pieces",
+    price: 145,
+    mrp: 165,
+    image: "",
+    emoji: "🎆",
+    purchased: 490,
+  },
+  {
+    id: 9,
+    name: "Colour Koti Deluxe",
+    category: "Flower Pots",
+    pack: "10 pieces",
+    price: 260,
+    mrp: 340,
+    image: "",
+    emoji: "🎇",
+    purchased: 440,
+  },
+  {
+    id: 10,
+    name: "Chakkaram Big",
+    category: "Chakkars",
+    pack: "10 pieces",
+    price: 140,
+    mrp: 180,
+    image: "",
+    emoji: "🌀",
+    purchased: 830,
+  },
+  {
+    id: 11,
+    name: "Chakkaram Special",
+    category: "Chakkars",
+    pack: "10 pieces",
+    price: 305,
+    mrp: 375,
+    image: "",
+    emoji: "🌀",
+    purchased: 700,
+  },
+  {
+    id: 12,
+    name: "Chakkar Supreme",
+    category: "Chakkars",
+    pack: "6 pieces",
+    price: 80,
+    mrp: 100,
+    image: "",
+    emoji: "💫",
+    purchased: 610,
+  },
+  {
+    id: 13,
+    name: "Rocket Bomb",
+    category: "Rockets",
+    pack: "10 pieces",
+    price: 180,
+    mrp: 220,
+    image: "",
+    emoji: "🚀",
+    purchased: 780,
+  },
+  {
+    id: 14,
+    name: "Whistling Rocket",
+    category: "Rockets",
+    pack: "5 pieces",
+    price: 150,
+    mrp: 190,
+    image: "",
+    emoji: "🚀",
+    purchased: 520,
+  },
+  {
+    id: 15,
+    name: "Ground Spinner",
+    category: "Ground Spinners",
+    pack: "10 pieces",
+    price: 110,
+    mrp: 140,
+    image: "",
+    emoji: "🌪️",
+    purchased: 690,
+  },
+  {
+    id: 16,
+    name: "Fancy Ground Spinner",
+    category: "Ground Spinners",
+    pack: "5 pieces",
+    price: 160,
+    mrp: 200,
+    image: "",
+    emoji: "🌀",
+    purchased: 540,
+  },
+  {
+    id: 17,
+    name: "Color Bomb Pack",
+    category: "Bombs",
+    pack: "10 pieces",
+    price: 150,
+    mrp: 180,
+    image: "",
+    emoji: "💥",
+    purchased: 880,
+  },
+  {
+    id: 18,
+    name: "Atom Bomb",
+    category: "Bombs",
+    pack: "10 pieces",
+    price: 210,
+    mrp: 260,
+    image: "",
+    emoji: "💥",
+    purchased: 630,
+  },
+  {
+    id: 19,
+    name: "Diwali Gift Box",
+    category: "Gift Boxes",
+    pack: "1 box",
+    price: 599,
+    mrp: 799,
+    image: "",
+    emoji: "🎁",
+    purchased: 740,
+  },
+  {
+    id: 20,
+    name: "Premium Gift Box",
+    category: "Gift Boxes",
+    pack: "1 box",
+    price: 999,
+    mrp: 1299,
+    image: "",
+    emoji: "🎁",
+    purchased: 460,
+  },
+  {
+    id: 21,
+    name: "Fancy Crackers Combo",
+    category: "Fancy Crackers",
+    pack: "1 combo",
+    price: 450,
+    mrp: 600,
+    image: "",
+    emoji: "🎆",
+    purchased: 720,
+  },
+  {
+    id: 22,
+    name: "Deluxe Fancy Combo",
+    category: "Fancy Crackers",
+    pack: "1 combo",
+    price: 750,
+    mrp: 950,
+    image: "",
+    emoji: "🎇",
+    purchased: 580,
+  },
+  {
+    id: 23,
+    name: "Bhijili Crackers",
+    category: "Bhijili",
+    pack: "10 pieces",
+    price: 95,
+    mrp: 120,
+    image: "",
+    emoji: "💥",
+    purchased: 960,
+  },
+  {
+    id: 24,
+    name: "Bhijili Special",
+    category: "Bhijili",
+    pack: "10 pieces",
+    price: 145,
+    mrp: 180,
+    image: "",
+    emoji: "🔥",
+    purchased: 890,
+  },
+];
+
+const bestSellers = [...products]
+  .sort((a, b) => b.purchased - a.purchased)
+  .slice(0, 5);
+
+function discount(price: number, mrp: number) {
+  return Math.round(((mrp - price) / mrp) * 100);
+}
 
 /* =========================================================
-   CLICK / TAP FIREWORK EFFECT
-   ========================================================= */
-function FireworkTouchEffect() {
-  useEffect(() => {
-    const createFirework = (x: number, y: number) => {
-      const container = document.createElement("div");
+   FIREWORK TAP EFFECT
+========================================================= */
 
-      container.style.position = "fixed";
-      container.style.left = `${x}px`;
-      container.style.top = `${y}px`;
-      container.style.width = "1px";
-      container.style.height = "1px";
-      container.style.pointerEvents = "none";
-      container.style.zIndex = "999999";
-      container.style.transform = "translate(-50%, -50%)";
+function useFireworkTap() {
+  const createFirework = (x: number, y: number) => {
+    const container = document.createElement("div");
 
-      document.body.appendChild(container);
+    container.style.position = "fixed";
+    container.style.left = `${x}px`;
+    container.style.top = `${y}px`;
+    container.style.width = "1px";
+    container.style.height = "1px";
+    container.style.pointerEvents = "none";
+    container.style.zIndex = "999999";
+    container.style.transform = "translate(-50%, -50%)";
 
-      // Bright center flash
-      const center = document.createElement("div");
+    document.body.appendChild(container);
 
-      center.style.position = "absolute";
-      center.style.left = "0";
-      center.style.top = "0";
-      center.style.width = "10px";
-      center.style.height = "10px";
-      center.style.borderRadius = "50%";
-      center.style.background = "#fff";
-      center.style.boxShadow =
-        "0 0 8px #fff, 0 0 18px #ffd700, 0 0 35px #ff8c00";
+    const center = document.createElement("div");
 
-      center.animate(
+    center.style.position = "absolute";
+    center.style.left = "0";
+    center.style.top = "0";
+    center.style.width = "10px";
+    center.style.height = "10px";
+    center.style.borderRadius = "50%";
+    center.style.background = "#fff";
+    center.style.boxShadow =
+      "0 0 8px #fff, 0 0 18px #ffd700, 0 0 35px #ff8c00";
+
+    center.animate(
+      [
+        {
+          transform: "translate(-50%, -50%) scale(0.2)",
+          opacity: 1,
+        },
+        {
+          transform: "translate(-50%, -50%) scale(2.5)",
+          opacity: 0,
+        },
+      ],
+      {
+        duration: 450,
+        easing: "ease-out",
+        fill: "forwards",
+      },
+    );
+
+    container.appendChild(center);
+
+    const sparkCount = 36;
+
+    for (let i = 0; i < sparkCount; i++) {
+      const spark = document.createElement("span");
+
+      const angle =
+        (Math.PI * 2 * i) / sparkCount +
+        (Math.random() - 0.5) * 0.12;
+
+      const distance = 35 + Math.random() * 65;
+
+      const dx = Math.cos(angle) * distance;
+      const dy = Math.sin(angle) * distance;
+
+      const size = 2 + Math.random() * 3;
+
+      const colors = [
+        "#ffffff",
+        "#ffd700",
+        "#ffb300",
+        "#ff8c00",
+      ];
+
+      const color =
+        colors[Math.floor(Math.random() * colors.length)];
+
+      spark.style.position = "absolute";
+      spark.style.left = "0";
+      spark.style.top = "0";
+      spark.style.width = `${size}px`;
+      spark.style.height = `${size}px`;
+      spark.style.borderRadius = "50%";
+      spark.style.background = color;
+      spark.style.boxShadow =
+        `0 0 6px ${color}, 0 0 12px ${color}`;
+
+      spark.animate(
         [
           {
-            transform: "translate(-50%, -50%) scale(0.2)",
+            transform: "translate(0, 0) scale(1)",
             opacity: 1,
           },
           {
-            transform: "translate(-50%, -50%) scale(2.5)",
+            transform:
+              `translate(${dx}px, ${dy}px) scale(0.1)`,
             opacity: 0,
           },
         ],
         {
-          duration: 450,
-          easing: "ease-out",
+          duration: 650 + Math.random() * 450,
+          easing: "cubic-bezier(0.1, 0.7, 0.3, 1)",
           fill: "forwards",
-        }
+        },
       );
 
-      container.appendChild(center);
-
-      // Main explosion
-      const sparkCount = 36;
-
-      for (let i = 0; i < sparkCount; i++) {
-        const spark = document.createElement("span");
-
-        const angle =
-          (Math.PI * 2 * i) / sparkCount +
-          (Math.random() - 0.5) * 0.12;
-
-        const distance = 35 + Math.random() * 65;
-
-        const dx = Math.cos(angle) * distance;
-        const dy = Math.sin(angle) * distance;
-
-        const size = 2 + Math.random() * 3;
-
-        const colors = [
-          "#ffffff",
-          "#ffd700",
-          "#ffb300",
-          "#ff8c00",
-        ];
-
-        const color =
-          colors[Math.floor(Math.random() * colors.length)];
-
-        spark.style.position = "absolute";
-        spark.style.left = "0";
-        spark.style.top = "0";
-        spark.style.width = `${size}px`;
-        spark.style.height = `${size}px`;
-        spark.style.borderRadius = "50%";
-        spark.style.background = color;
-        spark.style.boxShadow = `0 0 6px ${color}, 0 0 12px ${color}`;
-
-        spark.animate(
-          [
-            {
-              transform: "translate(0, 0) scale(1)",
-              opacity: 1,
-            },
-            {
-              transform: `translate(${dx}px, ${dy}px) scale(0.1)`,
-              opacity: 0,
-            },
-          ],
-          {
-            duration: 650 + Math.random() * 450,
-            easing: "cubic-bezier(0.1, 0.7, 0.3, 1)",
-            fill: "forwards",
-          }
-        );
-
-        container.appendChild(spark);
-      }
-
-      // Small secondary sparks
-      setTimeout(() => {
-        for (let i = 0; i < 18; i++) {
-          const spark = document.createElement("span");
-
-          const angle = Math.random() * Math.PI * 2;
-          const distance = 25 + Math.random() * 85;
-
-          const dx = Math.cos(angle) * distance;
-          const dy = Math.sin(angle) * distance;
-
-          spark.style.position = "absolute";
-          spark.style.left = "0";
-          spark.style.top = "0";
-          spark.style.width = "2px";
-          spark.style.height = "2px";
-          spark.style.borderRadius = "50%";
-          spark.style.background = "#fff";
-          spark.style.boxShadow =
-            "0 0 5px #fff, 0 0 10px #ffd700";
-
-          spark.animate(
-            [
-              {
-                transform: "translate(0, 0) scale(1)",
-                opacity: 1,
-              },
-              {
-                transform: `translate(${dx}px, ${dy}px) scale(0)`,
-                opacity: 0,
-              },
-            ],
-            {
-              duration: 500 + Math.random() * 400,
-              easing: "ease-out",
-              fill: "forwards",
-            }
-          );
-
-          container.appendChild(spark);
-        }
-      }, 80);
-
-      // Remove after animation
-      setTimeout(() => {
-        container.remove();
-      }, 1300);
-    };
-
-    // ==========================================
-    // DESKTOP + MOBILE POINTER
-    // ==========================================
-
-    const handlePointerDown = (event: PointerEvent) => {
-      const target = event.target as HTMLElement | null;
-
-      if (
-        target?.closest("input") ||
-        target?.closest("textarea") ||
-        target?.closest("select")
-      ) {
-        return;
-      }
-
-      createFirework(
-        event.clientX,
-        event.clientY
-      );
-    };
-
-    // ==========================================
-    // DIRECT MOBILE TOUCH SUPPORT
-    // ==========================================
-
-    const handleTouchStart = (event: TouchEvent) => {
-      const target = event.target as HTMLElement | null;
-
-      if (
-        target?.closest("input") ||
-        target?.closest("textarea") ||
-        target?.closest("select")
-      ) {
-        return;
-      }
-
-      const touch = event.touches[0];
-
-      if (!touch) {
-        return;
-      }
-
-      createFirework(
-        touch.clientX,
-        touch.clientY
-      );
-    };
-
-    // Desktop / modern browsers
-    document.addEventListener(
-      "pointerdown",
-      handlePointerDown,
-      {
-        passive: true,
-      }
-    );
-
-    // Direct mobile touch
-    document.addEventListener(
-      "touchstart",
-      handleTouchStart,
-      {
-        passive: true,
-      }
-    );
-
-    // ==========================================
-    // CLEANUP
-    // ==========================================
-
-    return () => {
-      document.removeEventListener(
-        "pointerdown",
-        handlePointerDown
-      );
-
-      document.removeEventListener(
-        "touchstart",
-        handleTouchStart
-      );
-    };
-  }, []);
-
-  return null;
-}
-/* =========================================================
-   HOME PAGE
-   ========================================================= */
-
-export default function Home() {
-
-  /* =======================================================
-     CART
-     ======================================================= */
-
-  const [cartCount, setCartCount] = useState(0);
-
-  const [addedProduct, setAddedProduct] = useState<string | null>(null);
-
-
-  const addToCart = (product: Product) => {
-    setCartCount((current) => current + 1);
-
-    setAddedProduct(product.name);
+      container.appendChild(spark);
+    }
 
     setTimeout(() => {
-      setAddedProduct(null);
-    }, 1200);
+      container.remove();
+    }, 1300);
   };
 
+  const shouldIgnore = (
+    target: EventTarget | null,
+  ) => {
+    const el = target as HTMLElement | null;
 
-  /* =======================================================
-     CATEGORIES
-     ======================================================= */
+    return Boolean(
+      el?.closest("input") ||
+        el?.closest("textarea") ||
+        el?.closest("select") ||
+        el?.closest("button") ||
+        el?.closest("a"),
+    );
+  };
 
-  const categories = [
-    {
-      name: "Bijili",
-      icon: "🧨",
-      id: "bijili",
-    },
-    {
-      name: "Sparklers",
-      icon: "✨",
-      id: "sparklers",
-    },
-    {
-      name: "Flower Pots",
-      icon: "🌸",
-      id: "flower-pots",
-    },
-    {
-      name: "Chakkars",
-      icon: "🌀",
-      id: "chakkars",
-    },
-    {
-      name: "Rockets",
-      icon: "🚀",
-      id: "rockets",
-    },
-    {
-      name: "Ground Spinners",
-      icon: "☄️",
-      id: "ground-spinners",
-    },
-    {
-      name: "Bombs",
-      icon: "💥",
-      id: "bombs",
-    },
-    {
-      name: "Gift Boxes",
-      icon: "🎁",
-      id: "gift-boxes",
-    },
-    {
-      name: "Fancy Crackers",
-      icon: "🎆",
-      id: "fancy-crackers",
-    },
-  ];
+  return (event: PointerEvent) => {
+    if (shouldIgnore(event.target)) return;
 
+    createFirework(
+      event.clientX,
+      event.clientY,
+    );
+  };
+}
 
-  /* =======================================================
-     PRODUCTS
-     ======================================================= */
+/* =========================================================
+   MAIN
+========================================================= */
 
-  const products: Product[] = [
-     /* BIJILI */
+export default function Home() {
+  const [cart, setCart] = useState<Cart>({});
+  const [showTop, setShowTop] = useState(false);
 
-    {
-      name: "Bijili Crackers",
-      category: "Bijili",
-      price: 80,
-      oldPrice: 100,
-      discount: "20%",
-      quantity: "100 pieces",
-      badge: "Fan Favourite",
-      purchases: 680,
-    },
+  /* BEST SELLER CAROUSEL */
 
-    {
-      name: "Special Bijili",
-      category: "Bijili",
-      price: 110,
-      oldPrice: 140,
-      discount: "21%",
-      quantity: "100 pieces",
-      badge: "Popular",
-      purchases: 520,
-    },
+  const [bestSellerIndex, setBestSellerIndex] =
+    useState(0);
 
-    {
-      name: "Deluxe Bijili",
-      category: "Bijili",
-      price: 150,
-      oldPrice: 190,
-      discount: "21%",
-      quantity: "100 pieces",
-      badge: "Premium",
-      purchases: 390,
-    },
+  const [showProductPopup, setShowProductPopup] =
+    useState(false);
 
+  const [selectedProduct, setSelectedProduct] =
+    useState<Product | null>(null);
 
-    /* SPARKLERS */
+  const [isDragging, setIsDragging] =
+    useState(false);
 
-    {
-      name: "Green Sparklers",
-      category: "Sparklers",
-      price: 45,
-      oldPrice: 60,
-      discount: "25%",
-      quantity: "10 sticks",
-      badge: "Best Seller",
-      purchases: 580,
-    },
+  const touchStartX = useRef<number | null>(null);
+  const touchStartY = useRef<number | null>(null);
 
-    {
-      name: "Golden Sparklers",
-      category: "Sparklers",
-      price: 55,
-      oldPrice: 70,
-      discount: "21%",
-      quantity: "10 sticks",
-      badge: "Popular",
-      purchases: 430,
-    },
+  const handleFireworkTap = useFireworkTap();
 
-    {
-      name: "Electric Sparklers",
-      category: "Sparklers",
-      price: 75,
-      oldPrice: 95,
-      discount: "21%",
-      quantity: "10 sticks",
-      badge: "",
-      purchases: 290,
-    },
+  const cartCount = Object.values(cart).reduce(
+    (total, quantity) => total + quantity,
+    0,
+  );
 
-    {
-      name: "Aerial Sparklers",
-      category: "Sparklers",
-      price: 65,
-      oldPrice: 80,
-      discount: "19%",
-      quantity: "10 sticks",
-      badge: "",
-      purchases: 350,
-    },
+  /* =====================================================
+     AUTO BEST SELLER ROTATION
+  ===================================================== */
 
+  useEffect(() => {
+    if (showProductPopup || isDragging) return;
 
-    /* FLOWER POTS */
+    const timer = window.setInterval(() => {
+      setBestSellerIndex((previous) =>
+        (previous + 1) % bestSellers.length,
+      );
+    }, 2400);
 
-    {
-      name: "Golden Flower Pot",
-      category: "Flower Pots",
-      price: 120,
-      oldPrice: 150,
-      discount: "20%",
-      quantity: "5 pieces",
-      badge: "Fan Favourite",
-      purchases: 510,
-    },
+    return () => window.clearInterval(timer);
+  }, [showProductPopup, isDragging]);
 
-    {
-      name: "Color Flower Pot",
-      category: "Flower Pots",
-      price: 140,
-      oldPrice: 175,
-      discount: "20%",
-      quantity: "5 pieces",
-      badge: "",
-      purchases: 390,
-    },
+  /* =====================================================
+     PAGE SCROLL
+  ===================================================== */
 
-    {
-      name: "Big Fountain",
-      category: "Flower Pots",
-      price: 180,
-      oldPrice: 220,
-      discount: "18%",
-      quantity: "3 pieces",
-      badge: "Popular",
-      purchases: 270,
-    },
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowTop(window.scrollY > 500);
+    };
 
+    window.addEventListener(
+      "scroll",
+      handleScroll,
+    );
 
-    /* CHAKKARS */
+    return () =>
+      window.removeEventListener(
+        "scroll",
+        handleScroll,
+      );
+  }, []);
 
-    {
-      name: "Chakkar Supreme",
-      category: "Chakkars",
-      price: 80,
-      oldPrice: 100,
-      discount: "20%",
-      quantity: "6 pieces",
-      badge: "Best Seller",
-      purchases: 470,
-    },
+  /* =====================================================
+     CART
+  ===================================================== */
 
-    {
-      name: "Deluxe Chakkar",
-      category: "Chakkars",
-      price: 110,
-      oldPrice: 140,
-      discount: "21%",
-      quantity: "6 pieces",
-      badge: "",
-      purchases: 250,
-    },
+  const updateQuantity = (
+    id: number,
+    change: number,
+  ) => {
+    setCart((previous) => {
+      const current = previous[id] || 0;
+      const next = Math.max(
+        0,
+        current + change,
+      );
 
-    {
-      name: "Color Chakkar",
-      category: "Chakkars",
-      price: 95,
-      oldPrice: 120,
-      discount: "21%",
-      quantity: "6 pieces",
-      badge: "",
-      purchases: 210,
-    },
+      const updated = {
+        ...previous,
+      };
 
+      if (next === 0) {
+        delete updated[id];
+      } else {
+        updated[id] = next;
+      }
 
-    /* ROCKETS */
+      return updated;
+    });
+  };
 
-    {
-      name: "Sky Rocket",
-      category: "Rockets",
-      price: 150,
-      oldPrice: 190,
-      discount: "21%",
-      quantity: "5 rockets",
-      badge: "Popular",
-      purchases: 440,
-    },
+  const addToCart = (id: number) => {
+    setCart((previous) => ({
+      ...previous,
+      [id]: (previous[id] || 0) + 1,
+    }));
+  };
 
-    {
-      name: "Multi Colour Rocket",
-      category: "Rockets",
-      price: 200,
-      oldPrice: 250,
-      discount: "20%",
-      quantity: "5 rockets",
-      badge: "",
-      purchases: 320,
-    },
+  /* =====================================================
+     NAVIGATION
+  ===================================================== */
 
-    {
-      name: "Whistling Rocket",
-      category: "Rockets",
-      price: 175,
-      oldPrice: 220,
-      discount: "20%",
-      quantity: "5 rockets",
-      badge: "",
-      purchases: 180,
-    },
-
-
-    /* GROUND SPINNERS */
-
-    {
-      name: "Ground Spinner",
-      category: "Ground Spinners",
-      price: 60,
-      oldPrice: 80,
-      discount: "25%",
-      quantity: "5 pieces",
-      badge: "Popular",
-      purchases: 360,
-    },
-
-    {
-      name: "Color Spinner",
-      category: "Ground Spinners",
-      price: 90,
-      oldPrice: 110,
-      discount: "18%",
-      quantity: "5 pieces",
-      badge: "",
-      purchases: 240,
-    },
-
-    {
-      name: "Turbo Spinner",
-      category: "Ground Spinners",
-      price: 110,
-      oldPrice: 140,
-      discount: "21%",
-      quantity: "5 pieces",
-      badge: "",
-      purchases: 190,
-    },
-
-
-    /* BOMBS */
-
-    {
-      name: "Color Bomb Pack",
-      category: "Bombs",
-      price: 150,
-      oldPrice: 180,
-      discount: "17%",
-      quantity: "10 pieces",
-      badge: "Best Seller",
-      purchases: 620,
-    },
-
-    {
-      name: "Atom Bomb",
-      category: "Bombs",
-      price: 180,
-      oldPrice: 220,
-      discount: "18%",
-      quantity: "10 pieces",
-      badge: "",
-      purchases: 330,
-    },
-
-    {
-      name: "Thunder Bomb",
-      category: "Bombs",
-      price: 200,
-      oldPrice: 250,
-      discount: "20%",
-      quantity: "10 pieces",
-      badge: "",
-      purchases: 280,
-    },
-
-
-    /* GIFT BOXES */
-
-    {
-      name: "Family Gift Box",
-      category: "Gift Boxes",
-      price: 999,
-      oldPrice: 1300,
-      discount: "23%",
-      quantity: "Combo Pack",
-      badge: "Best Seller",
-      purchases: 740,
-    },
-
-    {
-      name: "Premium Gift Box",
-      category: "Gift Boxes",
-      price: 1499,
-      oldPrice: 1900,
-      discount: "21%",
-      quantity: "Combo Pack",
-      badge: "Premium",
-      purchases: 540,
-    },
-
-    {
-      name: "Kids Gift Box",
-      category: "Gift Boxes",
-      price: 699,
-      oldPrice: 900,
-      discount: "22%",
-      quantity: "Combo Pack",
-      badge: "",
-      purchases: 420,
-    },
-
-
-    /* FANCY CRACKERS */
-
-    {
-      name: "Fancy Aerial Show",
-      category: "Fancy Crackers",
-      price: 350,
-      oldPrice: 450,
-      discount: "22%",
-      quantity: "3 pieces",
-      badge: "Popular",
-      purchases: 490,
-    },
-
-    {
-      name: "Multi Colour Show",
-      category: "Fancy Crackers",
-      price: 450,
-      oldPrice: 600,
-      discount: "25%",
-      quantity: "3 pieces",
-      badge: "",
-      purchases: 410,
-    },
-
-    {
-      name: "Grand Sky Show",
-      category: "Fancy Crackers",
-      price: 650,
-      oldPrice: 800,
-      discount: "19%",
-      quantity: "2 pieces",
-      badge: "Premium",
-      purchases: 350,
-    },
-  ];
-
-
-  /* =======================================================
-     BEST SELLERS
-     ======================================================= */
-
-  const bestSellers = [...products]
-    .sort((a, b) => b.purchases - a.purchases)
-    .slice(0, 5);
-
-
-  /* =======================================================
-     SCROLL FUNCTION
-     ======================================================= */
-
-  const scrollToSection = (id: string) => {
-
-    const element = document.getElementById(id);
+  const scrollToSection = (
+    id: string,
+    offset = 0,
+  ) => {
+    const element =
+      document.getElementById(id);
 
     if (!element) return;
 
-    const headerOffset = 105;
-
-    const elementPosition =
-      element.getBoundingClientRect().top;
-
-    const offsetPosition =
-      elementPosition +
+    const top =
+      element.getBoundingClientRect().top +
       window.scrollY -
-      headerOffset;
+      offset;
 
     window.scrollTo({
-      top: offsetPosition,
+      top,
       behavior: "smooth",
     });
   };
 
+  const goHome = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+  };
 
-  /* =======================================================
-     PRODUCT CARD
-     ======================================================= */
+  /* =====================================================
+     BEST SELLER SWIPE
+  ===================================================== */
 
-  const ProductCard = ({
-    product,
-  }: {
-    product: Product;
-  }) => {
-
-    const isAdded = addedProduct === product.name;
-
-    return (
-      <article className="group overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
-
-
-        {/* PRODUCT IMAGE */}
-
-        <div className="relative flex h-40 items-center justify-center overflow-hidden bg-gradient-to-br from-zinc-950 via-zinc-800 to-orange-950 sm:h-48">
-
-          <div className="absolute text-7xl opacity-80 transition duration-500 group-hover:scale-125">
-            🎆
-          </div>
-
-
-          {/* BADGE */}
-
-          {product.badge && (
-            <span className="absolute left-2 top-2 rounded-full bg-red-600 px-2 py-1 text-[9px] font-bold text-white">
-              {product.badge}
-            </span>
-          )}
-
-
-          {/* DISCOUNT */}
-
-          <span className="absolute right-2 top-2 rounded-full bg-orange-400 px-2 py-1 text-[9px] font-bold text-white">
-            -{product.discount}
-          </span>
-
-        </div>
-
-
-        {/* INFORMATION */}
-
-        <div className="p-3">
-
-          <p className="text-[10px] font-medium text-orange-600">
-            {product.category}
-          </p>
-
-          <h3 className="mt-1 line-clamp-1 text-sm font-bold text-zinc-900">
-            {product.name}
-          </h3>
-
-          <p className="mt-1 text-[10px] text-zinc-400">
-            {product.quantity}
-          </p>
-
-
-          {/* PRICE */}
-
-          <div className="mt-3 flex items-center gap-2">
-
-            <span className="text-base font-bold text-red-600">
-              ₹{product.price}
-            </span>
-
-            <span className="text-xs text-zinc-400 line-through">
-              ₹{product.oldPrice}
-            </span>
-
-          </div>
-
-
-          {/* STOCK */}
-
-          <div className="mt-2 flex items-center gap-1 text-[10px] font-medium text-green-600">
-
-            <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
-
-            In Stock
-
-          </div>
-
-
-          {/* CART BUTTON */}
-
-          <button
-            type="button"
-            onClick={() => addToCart(product)}
-            className={`mt-3 w-full rounded-lg py-2 text-xs font-bold text-white transition ${
-              isAdded
-                ? "bg-green-600"
-                : "bg-red-600 hover:bg-red-700"
-            }`}
-          >
-            {isAdded ? "✓ Added to Cart" : "Add to Cart"}
-          </button>
-
-        </div>
-
-      </article>
+  const goNextBestSeller = () => {
+    setBestSellerIndex(
+      (previous) =>
+        (previous + 1) % bestSellers.length,
     );
   };
 
-
-  /* =======================================================
-     CATEGORY SECTION
-     ======================================================= */
-
-  const CategorySection = ({
-    category,
-    icon,
-    id,
-  }: {
-    category: string;
-    icon: string;
-    id: string;
-  }) => {
-
-    const categoryProducts = products.filter(
-      (product) => product.category === category
-    );
-
-    return (
-      <section
-        id={id}
-        className="scroll-mt-[105px] bg-white py-14 sm:py-16"
-      >
-
-        <div className="mx-auto max-w-7xl px-5 sm:px-8 lg:px-8">
-
-
-          {/* CATEGORY TITLE */}
-
-          <div className="mb-8 flex items-end justify-between">
-
-            <div>
-
-              <div className="flex items-center gap-3">
-
-                <span className="text-3xl">
-                  {icon}
-                </span>
-
-                <h2 className="font-serif text-3xl font-bold text-zinc-900 sm:text-4xl">
-                  {category}
-                </h2>
-
-              </div>
-
-              <p className="mt-2 text-sm text-zinc-500">
-                Explore our {category.toLowerCase()} collection
-              </p>
-
-            </div>
-
-
-            {/* BACK TO TOP */}
-
-            <button
-              type="button"
-              onClick={() => scrollToSection("home")}
-              className="hidden text-sm font-semibold text-red-600 transition hover:text-red-800 sm:block"
-            >
-              Back to top ↑
-            </button>
-
-          </div>
-
-
-          {/* PRODUCTS */}
-
-          {categoryProducts.length > 0 ? (
-
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-
-              {categoryProducts.map((product) => (
-
-                <ProductCard
-                  key={product.name}
-                  product={product}
-                />
-
-              ))}
-
-            </div>
-
-          ) : (
-
-            <div className="rounded-xl border border-dashed border-zinc-300 py-12 text-center text-sm text-zinc-500">
-              Products coming soon.
-            </div>
-
-          )}
-
-        </div>
-
-      </section>
+  const goPreviousBestSeller = () => {
+    setBestSellerIndex(
+      (previous) =>
+        (previous - 1 + bestSellers.length) %
+        bestSellers.length,
     );
   };
 
+  const handleBannerPointerDown = (
+    event: PointerEvent,
+  ) => {
+    touchStartX.current =
+      event.clientX;
 
-  /* =======================================================
-     PAGE
-     ======================================================= */
+    touchStartY.current =
+      event.clientY;
+
+    setIsDragging(false);
+  };
+
+  const handleBannerPointerUp = (
+    event: PointerEvent,
+  ) => {
+    if (
+      touchStartX.current === null ||
+      touchStartY.current === null
+    ) {
+      return;
+    }
+
+    const deltaX =
+      event.clientX - touchStartX.current;
+
+    const deltaY =
+      event.clientY - touchStartY.current;
+
+    touchStartX.current = null;
+    touchStartY.current = null;
+
+    if (
+      Math.abs(deltaX) < 40 ||
+      Math.abs(deltaX) < Math.abs(deltaY)
+    ) {
+      return;
+    }
+
+    setIsDragging(true);
+
+    if (deltaX < 0) {
+      goNextBestSeller();
+    } else {
+      goPreviousBestSeller();
+    }
+
+    window.setTimeout(() => {
+      setIsDragging(false);
+    }, 100);
+  };
+
+  const openProductPopup = (
+    product: Product,
+  ) => {
+    if (isDragging) return;
+
+    setSelectedProduct(product);
+    setShowProductPopup(true);
+  };
+
+  const currentBestSeller =
+    bestSellers[bestSellerIndex];
 
   return (
     <main
-      id="home"
       className="min-h-screen bg-white text-zinc-900"
+      onPointerDown={handleFireworkTap}
+      style={{
+        touchAction: "manipulation",
+      }}
     >
-
-      <FireworkTouchEffect />
-
-
-      {/* =====================================================
+      {/* =================================================
           HEADER
-          ===================================================== */}
+      ================================================= */}
 
-      <header className="sticky top-0 z-50 border-b border-zinc-200 bg-white/95 backdrop-blur-md">
-
-        <div className="mx-auto flex h-[70px] max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-
+      <header className="sticky top-0 z-40 border-b border-zinc-200 bg-white/95 backdrop-blur-md">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3 sm:px-8">
 
           {/* LOGO */}
 
           <button
             type="button"
-            onClick={() => scrollToSection("home")}
+            onClick={goHome}
             className="flex shrink-0 items-center gap-3"
           >
-
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-red-700 text-lg shadow-sm">
               🎆
             </div>
 
             <div className="leading-tight">
-
               <div className="font-serif text-base font-bold text-red-700 sm:text-lg">
                 Sivakasi Crackers
               </div>
@@ -964,152 +698,121 @@ export default function Home() {
               <div className="text-[9px] font-semibold tracking-wide text-orange-500 sm:text-[10px]">
                 PREMIUM FIREWORKS
               </div>
-
             </div>
-
           </button>
 
-
-          {/* DESKTOP NAV */}
-
-          <nav className="hidden items-center gap-5 lg:flex">
-
-            <button
-              type="button"
-              onClick={() => scrollToSection("products")}
-              className="text-sm font-medium text-zinc-700 transition hover:text-red-600"
-            >
-              Best Sellers
-            </button>
-
-            {categories.slice(0, 4).map((category) => (
-
-              <button
-                type="button"
-                key={category.id}
-                onClick={() => scrollToSection(category.id)}
-                className="text-sm font-medium text-zinc-700 transition hover:text-red-600"
-              >
-                {category.name}
-              </button>
-
-            ))}
-
-          </nav>
-
-
-          {/* ACTIONS */}
+          {/* RIGHT */}
 
           <div className="flex items-center gap-1 sm:gap-3">
 
-
             {/* LOCATION */}
 
-            <button
-              type="button"
-              aria-label="Delivery location"
-              className="hidden items-center gap-2 rounded-lg px-2 py-1.5 text-left transition hover:bg-red-50 sm:flex"
+            <a
+              href="https://goo.gl/maps/4dTnVHoPRWjL1h487"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Open our shop location in Google Maps"
+              className="hidden items-center gap-2 rounded-xl px-2 py-1.5 text-left transition hover:bg-red-50 sm:flex"
             >
+              {/* ANIMATED PIN */}
 
-              <span className="text-xl">
-                📍
-              </span>
+              <div className="relative flex h-11 w-10 items-center justify-center">
+                {/* Floating shadow */}
 
-              <span className="leading-tight">
+                <div className="absolute bottom-0 h-2 w-8 rounded-full bg-red-500/20 blur-[2px] animate-[pinShadow_2s_ease-in-out_infinite]" />
 
-                <span className="block text-[10px] text-zinc-400">
-                  Here Our
-                </span>
+                {/* Pin */}
+
+                <div className="animate-[pinFloat_2s_ease-in-out_infinite]">
+                  <div className="animate-[pinRotate_2s_ease-in-out_infinite] text-3xl">
+                    📍
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <div className="text-[10px] font-medium text-zinc-500">
+                  Our Shop
+                </div>
 
                 <span className="block text-xs font-semibold text-zinc-800">
-                  Shop Address
+                  Sivakasi, Tamil Nadu
                 </span>
-
-              </span>
-
-            </button>
-
+              </div>
+            </a>
 
             <div className="hidden h-7 w-px bg-zinc-200 sm:block" />
 
-
             {/* SEARCH */}
 
-            <button
-              type="button"
-              aria-label="Search"
-              className="flex h-9 w-9 items-center justify-center rounded-full text-lg text-zinc-700 transition hover:bg-red-50 hover:text-red-600"
-            >
-              🔍
-            </button>
+            <div className="flex h-9 items-center rounded-full border border-zinc-200 bg-white px-3 transition focus-within:border-red-400 focus-within:ring-2 focus-within:ring-red-100">
+              <span className="mr-2 text-base text-zinc-500">
+                🔍
+              </span>
 
+              <input
+                type="text"
+                placeholder="Search crackers"
+                className="w-24 bg-transparent text-xs text-zinc-700 outline-none placeholder:text-zinc-400 sm:w-36"
+              />
+            </div>
 
             {/* CART */}
 
             <button
               type="button"
-              aria-label="Shopping cart"
-              className="relative flex h-9 w-9 items-center justify-center rounded-full text-lg text-zinc-700 transition hover:bg-red-50 hover:text-red-600"
+              className="relative flex h-9 w-9 items-center justify-center rounded-full text-xl text-zinc-700 transition hover:bg-red-50 hover:text-red-600"
+              aria-label="Cart"
+              onClick={() =>
+                scrollToSection(
+                  "cart-summary",
+                  80,
+                )
+              }
             >
-
               🛒
 
               {cartCount > 0 && (
-                <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-[9px] font-bold text-white shadow">
+                <span className="absolute -right-2 -top-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-bold text-white">
                   {cartCount}
                 </span>
               )}
-
             </button>
-
           </div>
-
         </div>
-
-
-        {/* SALE BAR */}
-
-        <div className="bg-red-700 px-4 py-2 text-center text-xs font-semibold text-white sm:text-sm">
-
-          🎉 Diwali Season Sale — Up to 30% OFF on Gift Boxes & Combo Packs!
-
-          <button
-            type="button"
-            onClick={() => scrollToSection("products")}
-            className="ml-1 underline underline-offset-2"
-          >
-            Shop Now →
-          </button>
-
-        </div>
-
       </header>
 
+      {/* SALE BAR */}
 
-      {/* =====================================================
+      <div className="bg-red-700 px-4 py-2.5 text-center text-xs font-semibold text-white sm:text-sm">
+        🎉 Diwali Season Sale — Up to 30% OFF
+      </div>
+
+      {/* =================================================
           HERO
-          ===================================================== */}
+      ================================================= */}
 
-      <section className="relative min-h-[560px] overflow-hidden bg-zinc-950">
-
+      <section
+        id="home"
+        className="relative min-h-[570px] overflow-hidden bg-black"
+      >
         <div
           className="absolute inset-0 bg-cover bg-center"
           style={{
-            backgroundImage: "url('/hero-bg.png')",
+            backgroundImage:
+              "url('/hero-bg.png')",
           }}
         />
 
-        <div className="absolute inset-0 bg-black/35" />
+        <div className="absolute inset-0 bg-black/40" />
 
         <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/60 to-black/10" />
 
-        <div className="absolute inset-0 bg-gradient-to-b from-black/55 via-transparent to-black/75" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/80" />
 
         <div className="absolute inset-0 shadow-[inset_0_0_160px_55px_rgba(0,0,0,0.65)]" />
 
-
-        <div className="relative z-10 mx-auto flex min-h-[560px] max-w-7xl items-center px-5 py-20 sm:px-8 lg:px-8">
-
+        <div className="relative z-10 mx-auto flex min-h-[570px] max-w-7xl items-center px-5 py-20 sm:px-8">
           <div className="max-w-2xl">
 
             <div className="mb-6 inline-flex rounded-full border border-orange-400/50 bg-black/40 px-4 py-2 text-xs font-bold tracking-wider text-orange-400 backdrop-blur-sm">
@@ -1117,643 +820,892 @@ export default function Home() {
             </div>
 
             <h1 className="font-serif text-5xl font-bold leading-[1.05] text-white sm:text-6xl lg:text-7xl">
-
               Light Up the{" "}
-
               <span className="text-orange-400">
                 Night Sky
               </span>
-
             </h1>
 
             <p className="mt-6 max-w-xl text-base leading-7 text-zinc-200 sm:text-lg">
-              Premium quality crackers straight from Sivakasi.
-              Trusted by families across India for years.
-              Safe, spectacular, and delivered to your door.
+              Premium quality crackers straight
+              from Sivakasi. Trusted by families
+              across India for years. Safe,
+              spectacular, and delivered to your door.
             </p>
 
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-
               <button
                 type="button"
-                onClick={() => scrollToSection("products")}
-                className="rounded-lg bg-red-600 px-7 py-3 text-center font-bold text-white shadow-lg transition hover:bg-red-700"
+                onClick={() =>
+                  scrollToSection(
+                    "products",
+                    70,
+                  )
+                }
+                className="rounded-lg bg-red-600 px-7 py-3 font-bold text-white shadow-lg transition hover:bg-red-700"
               >
                 Shop Now →
               </button>
 
               <button
                 type="button"
-                onClick={() => scrollToSection("categories")}
-                className="rounded-lg border border-white/30 bg-white/10 px-7 py-3 text-center font-bold text-white backdrop-blur-md transition hover:bg-white/20"
+                onClick={() =>
+                  scrollToSection(
+                    "categories",
+                    70,
+                  )
+                }
+                className="rounded-lg border border-white/30 bg-white/10 px-7 py-3 font-bold text-white backdrop-blur-md transition hover:bg-white/20"
               >
                 View Categories
               </button>
-
             </div>
 
             <div className="mt-8 flex flex-wrap gap-x-6 gap-y-3 text-sm text-zinc-200">
-
-              <span>
-                🚚 Free shipping ₹500+
-              </span>
-
-              <span>
-                ✅ Quality assured
-              </span>
-
-              <span>
-                🔒 Secure payment
-              </span>
-
+              <span>🚚 Free shipping ₹500+</span>
+              <span>✅ Quality assured</span>
+              <span>🔒 Secure payment</span>
             </div>
 
           </div>
-
         </div>
-
       </section>
 
-
-      {/* =====================================================
-          SHOP BY CATEGORY
-          ===================================================== */}
+      {/* =================================================
+          CATEGORIES
+      ================================================= */}
 
       <section
         id="categories"
-        className="bg-white py-14 sm:py-16"
+        className="mx-auto max-w-7xl px-5 py-12 sm:px-8"
       >
+        <div className="mb-6">
+          <h2 className="font-serif text-3xl font-bold">
+            Shop by Category
+          </h2>
 
-        <div className="mx-auto max-w-7xl px-5 sm:px-8 lg:px-8">
-
-          <div className="mb-8">
-
-            <h2 className="font-serif text-3xl font-bold text-zinc-900 sm:text-4xl">
-              Shop by Category
-            </h2>
-
-            <p className="mt-1 text-sm text-zinc-500">
-              Choose a category to explore our collection
-            </p>
-
-          </div>
-
-
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-9">
-
-            {categories.map((category) => (
-
-              <button
-                type="button"
-                key={category.id}
-                onClick={() => scrollToSection(category.id)}
-                className="group flex min-h-[105px] flex-col items-center justify-center rounded-xl border border-zinc-200 bg-white px-2 transition hover:-translate-y-1 hover:border-red-200 hover:bg-red-50 hover:shadow-md"
-              >
-
-                <span className="text-3xl transition group-hover:scale-110">
-                  {category.icon}
-                </span>
-
-                <span className="mt-2 text-center text-xs font-semibold text-zinc-800">
-                  {category.name}
-                </span>
-
-              </button>
-
-            ))}
-
-          </div>
-
+          <p className="mt-1 text-sm text-zinc-500">
+            Find exactly what you're looking for
+          </p>
         </div>
 
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-9">
+          {categories.map((category) => (
+            <button
+              key={category}
+              type="button"
+              onClick={() =>
+                scrollToSection(
+                  category
+                    .toLowerCase()
+                    .replaceAll(
+                      " ",
+                      "-",
+                    ),
+                  75,
+                )
+              }
+              className="group rounded-xl border border-zinc-200 bg-white p-4 text-center shadow-sm transition hover:-translate-y-1 hover:border-red-300 hover:shadow-md"
+            >
+              <div className="mb-2 text-3xl">
+                {category === "Sparklers" && "✨"}
+                {category === "Flower Pots" && "🌸"}
+                {category === "Chakkars" && "🌀"}
+                {category === "Rockets" && "🚀"}
+                {category === "Ground Spinners" && "🌪️"}
+                {category === "Bombs" && "💥"}
+                {category === "Gift Boxes" && "🎁"}
+                {category === "Fancy Crackers" && "🎆"}
+                {category === "Bhijili" && "🔥"}
+              </div>
+
+              <div className="text-xs font-bold group-hover:text-red-600">
+                {category}
+              </div>
+            </button>
+          ))}
+        </div>
       </section>
 
-
-      {/* =====================================================
-          BEST SELLERS
-          ===================================================== */}
+      {/* =================================================
+          BEST SELLER BANNER
+      ================================================= */}
 
       <section
         id="products"
-        className="scroll-mt-[105px] bg-zinc-50 py-14 sm:py-16"
+        className="bg-zinc-50 px-4 py-10 sm:px-8"
       >
+        <div className="mx-auto max-w-7xl">
 
-        <div className="mx-auto max-w-7xl px-5 sm:px-8 lg:px-8">
-
-
-          <div className="mb-8">
-
-            <div className="flex items-center gap-3">
-
-              <span className="text-3xl">
-                🔥
-              </span>
-
-              <h2 className="font-serif text-3xl font-bold text-zinc-900 sm:text-4xl">
+          <div className="mb-5 flex items-end justify-between">
+            <div>
+              <h2 className="font-serif text-3xl font-bold">
                 Best Sellers
               </h2>
 
+              <p className="mt-1 text-sm text-zinc-500">
+                Most loved by our customers this season
+              </p>
             </div>
 
-            <p className="mt-2 text-sm text-zinc-500">
-              Our most purchased products, loved by customers
-            </p>
-
+            <span className="hidden text-sm font-semibold text-red-600 sm:block">
+              Swipe to explore →
+            </span>
           </div>
 
+          {/* BANNER */}
 
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+          <div
+            className="relative select-none overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-md"
+            onPointerDown={handleBannerPointerDown}
+            onPointerUp={handleBannerPointerUp}
+            onPointerCancel={() => {
+              touchStartX.current = null;
+              touchStartY.current = null;
+            }}
+            style={{
+              touchAction: "pan-y",
+            }}
+          >
 
-            {bestSellers.map((product) => (
+            {/* PRODUCT */}
 
-              <ProductCard
-                key={product.name}
-                product={product}
+            <button
+              type="button"
+              onClick={() =>
+                openProductPopup(
+                  currentBestSeller,
+                )
+              }
+              className="relative block w-full text-left"
+            >
+              <div className="grid min-h-[235px] grid-cols-[115px_1fr] items-center gap-5 p-5 sm:grid-cols-[230px_1fr] sm:p-8">
+
+                {/* IMAGE */}
+
+                <div className="flex h-36 w-full items-center justify-center rounded-xl bg-zinc-950 text-7xl sm:h-48 sm:text-8xl">
+                  {currentBestSeller.emoji}
+                </div>
+
+                {/* DETAILS */}
+
+                <div className="min-w-0">
+
+                  <div className="flex items-center gap-2">
+                    <span className="rounded-full bg-orange-100 px-3 py-1 text-[10px] font-bold uppercase text-orange-700">
+                      Best Seller
+                    </span>
+
+                    <span className="text-xs font-semibold text-green-600">
+                      {currentBestSeller.purchased}+ sold
+                    </span>
+                  </div>
+
+                  <div className="mt-2 text-xs font-semibold text-orange-600">
+                    {currentBestSeller.category}
+                  </div>
+
+                  <h3 className="mt-1 text-xl font-bold text-zinc-900 sm:text-3xl">
+                    {currentBestSeller.name}
+                  </h3>
+
+                  <p className="mt-1 text-sm text-zinc-500">
+                    {currentBestSeller.pack}
+                  </p>
+
+                  <div className="mt-4 flex items-center gap-3">
+                    <span className="text-2xl font-bold text-red-600">
+                      ₹{currentBestSeller.price}
+                    </span>
+
+                    <del className="text-sm text-zinc-400">
+                      ₹{currentBestSeller.mrp}
+                    </del>
+
+                    <span className="rounded-full bg-green-100 px-2 py-1 text-xs font-bold text-green-700">
+                      {discount(
+                        currentBestSeller.price,
+                        currentBestSeller.mrp,
+                      )}
+                      % OFF
+                    </span>
+                  </div>
+
+                  <p className="mt-3 text-xs font-semibold text-zinc-500">
+                    👆 Tap to view product
+                  </p>
+                </div>
+              </div>
+            </button>
+
+            {/* PREVIOUS */}
+
+            <button
+              type="button"
+              aria-label="Previous best seller"
+              onClick={goPreviousBestSeller}
+              className="absolute left-2 top-1/2 z-10 hidden h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-xl shadow-md hover:bg-white sm:flex"
+            >
+              ‹
+            </button>
+
+            {/* NEXT */}
+
+            <button
+              type="button"
+              aria-label="Next best seller"
+              onClick={goNextBestSeller}
+              className="absolute right-2 top-1/2 z-10 hidden h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-xl shadow-md hover:bg-white sm:flex"
+            >
+              ›
+            </button>
+
+            {/* DOTS */}
+
+            <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 gap-2">
+              {bestSellers.map(
+                (product, index) => (
+                  <button
+                    key={product.id}
+                    type="button"
+                    aria-label={`Show ${product.name}`}
+                    onClick={() =>
+                      setBestSellerIndex(index)
+                    }
+                    className={`h-1.5 rounded-full transition-all duration-300 ${
+                      index === bestSellerIndex
+                        ? "w-7 bg-red-600"
+                        : "w-1.5 bg-zinc-300"
+                    }`}
+                  />
+                ),
+              )}
+            </div>
+
+            {/* TINY AUTO-PROGRESS BAR */}
+
+            <div className="absolute bottom-0 left-0 h-0.5 w-full bg-zinc-100">
+              <div
+                key={bestSellerIndex}
+                className="h-full bg-red-600"
+                style={{
+                  animation:
+                    "bestSellerProgress 2400ms linear",
+                }}
               />
-
-            ))}
-
+            </div>
           </div>
-
         </div>
-
       </section>
 
+      {/* =================================================
+          CATEGORY PRODUCTS
+      ================================================= */}
 
-      {/* =====================================================
-          CATEGORY SECTIONS
-          ===================================================== */}
+      <section
+        id="category-products"
+        className="bg-white"
+      >
+        {categories.map((category) => {
+          const categoryProducts =
+            products.filter(
+              (product) =>
+                product.category ===
+                category,
+            );
 
-      {categories.map((category) => (
+          if (
+            categoryProducts.length === 0
+          ) {
+            return null;
+          }
 
-        <CategorySection
-          key={category.id}
-          category={category.name}
-          icon={category.icon}
-          id={category.id}
-        />
+          const sectionId = category
+            .toLowerCase()
+            .replaceAll(" ", "-");
 
-      ))}
+          return (
+            <div
+              key={category}
+              id={sectionId}
+              className="scroll-mt-20 border-b border-zinc-200"
+            >
+              <div className="bg-gradient-to-r from-orange-500 to-red-600 px-5 py-2.5 sm:px-8">
+                <div className="mx-auto flex max-w-7xl items-center justify-between">
+                  <h2 className="font-serif text-lg font-bold uppercase tracking-wide text-white">
+                    {category}
+                  </h2>
 
+                  <span className="text-xs font-semibold text-white/90">
+                    {categoryProducts.length} Products
+                  </span>
+                </div>
+              </div>
 
-      {/* =====================================================
-          FESTIVAL OFFERS
-          ===================================================== */}
+              <div className="mx-auto max-w-7xl px-3 sm:px-8">
+                {categoryProducts.map(
+                  (product) => (
+                    <div
+                      key={product.id}
+                      className="grid grid-cols-[72px_1fr_auto] items-center gap-3 border-b border-zinc-100 py-3 sm:grid-cols-[90px_1.7fr_130px_120px_150px]"
+                    >
+                      <div className="flex h-16 w-[72px] items-center justify-center overflow-hidden rounded-lg border border-zinc-200 bg-zinc-100 text-3xl sm:h-20 sm:w-[90px]">
+                        {product.emoji}
+                      </div>
 
-      <section className="bg-white py-14 sm:py-16">
+                      <div className="min-w-0">
+                        <h3 className="truncate text-sm font-bold text-zinc-900 sm:text-base">
+                          {product.name}
+                        </h3>
 
-        <div className="mx-auto max-w-7xl px-5 sm:px-8 lg:px-8">
+                        <p className="mt-1 text-xs text-zinc-500">
+                          {product.pack}
+                        </p>
 
-          <h2 className="mb-7 font-serif text-3xl font-bold text-zinc-900 sm:text-4xl">
-            Festival Offers
+                        <div className="mt-1 text-xs font-semibold text-green-600">
+                          In Stock
+                        </div>
+                      </div>
+
+                      <div className="hidden sm:block">
+                        <div className="text-sm text-zinc-400">
+                          MRP{" "}
+                          <del>
+                            ₹{product.mrp}
+                          </del>
+                        </div>
+
+                        <div className="font-bold text-red-600">
+                          ₹{product.price}
+                        </div>
+                      </div>
+
+                      <div className="hidden text-center sm:block">
+                        <span className="rounded-full bg-orange-100 px-3 py-1 text-xs font-bold text-orange-700">
+                          {discount(
+                            product.price,
+                            product.mrp,
+                          )}
+                          % OFF
+                        </span>
+                      </div>
+
+                      <div className="flex flex-col items-end gap-2 sm:flex-row sm:items-center">
+                        <div className="flex h-9 items-center rounded-lg border border-zinc-300 bg-white">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              updateQuantity(
+                                product.id,
+                                -1,
+                              )
+                            }
+                            className="flex h-full w-8 items-center justify-center text-lg font-bold hover:bg-zinc-100"
+                          >
+                            −
+                          </button>
+
+                          <span className="w-7 text-center text-sm font-semibold">
+                            {cart[
+                              product.id
+                            ] || 0}
+                          </span>
+
+                          <button
+                            type="button"
+                            onClick={() =>
+                              updateQuantity(
+                                product.id,
+                                1,
+                              )
+                            }
+                            className="flex h-full w-8 items-center justify-center text-lg font-bold hover:bg-zinc-100"
+                          >
+                            +
+                          </button>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() =>
+                            addToCart(
+                              product.id,
+                            )
+                          }
+                          className="rounded-lg bg-red-600 px-3 py-2 text-[11px] font-bold text-white transition hover:bg-red-700 sm:px-4 sm:text-xs"
+                        >
+                          Add to Cart
+                        </button>
+                      </div>
+
+                      <div className="col-span-2 flex items-center gap-2 sm:hidden">
+                        <span className="font-bold text-red-600">
+                          ₹{product.price}
+                        </span>
+
+                        <del className="text-xs text-zinc-400">
+                          ₹{product.mrp}
+                        </del>
+
+                        <span className="text-xs font-bold text-orange-600">
+                          {discount(
+                            product.price,
+                            product.mrp,
+                          )}
+                          % OFF
+                        </span>
+                      </div>
+                    </div>
+                  ),
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </section>
+
+      {/* =================================================
+          CART
+      ================================================= */}
+
+      <section
+        id="cart-summary"
+        className="mx-auto max-w-7xl px-5 py-12 sm:px-8"
+      >
+        <div className="rounded-2xl bg-zinc-950 p-6 text-white sm:p-8">
+          <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-center">
+            <div>
+              <p className="text-sm text-zinc-400">
+                Your Cart
+              </p>
+
+              <h2 className="mt-1 font-serif text-2xl font-bold">
+                {cartCount === 0
+                  ? "Your cart is empty"
+                  : `${cartCount} item${
+                      cartCount > 1
+                        ? "s"
+                        : ""
+                    } in your cart`}
+              </h2>
+            </div>
+
+            {cartCount > 0 && (
+              <button
+                type="button"
+                className="rounded-lg bg-red-600 px-6 py-3 font-bold transition hover:bg-red-700"
+                onClick={() =>
+                  alert(
+                    "Checkout will be connected next.",
+                  )
+                }
+              >
+                View Cart →
+              </button>
+            )}
+          </div>
+        </div>
+      </section>
+
+      {/* =================================================
+          WHY CHOOSE US
+      ================================================= */}
+
+      <section className="bg-zinc-950 px-5 py-16 text-white sm:px-8">
+        <div className="mx-auto max-w-7xl">
+          <h2 className="text-center font-serif text-3xl font-bold">
+            Why Choose{" "}
+            <span className="text-orange-400">
+              Sivakasi Crackers?
+            </span>
           </h2>
 
+          <div className="mt-12 grid gap-10 sm:grid-cols-2 lg:grid-cols-5">
+            {[
+              [
+                "🏅",
+                "Quality Assured",
+                "Premium quality products",
+              ],
+              [
+                "🛒",
+                "Easy Ordering",
+                "No account required",
+              ],
+              [
+                "🔒",
+                "Secure Payment",
+                "Safe checkout",
+              ],
+              [
+                "⚡",
+                "Fast Processing",
+                "Quick order confirmation",
+              ],
+              [
+                "🤝",
+                "Customer Support",
+                "WhatsApp & phone support",
+              ],
+            ].map(
+              ([icon, title, description]) => (
+                <div
+                  key={title}
+                  className="text-center"
+                >
+                  <div className="text-4xl">
+                    {icon}
+                  </div>
 
-          <div className="grid gap-4 md:grid-cols-3">
+                  <h3 className="mt-3 font-bold">
+                    {title}
+                  </h3>
 
-
-            <div className="relative overflow-hidden rounded-2xl bg-red-800 p-6 text-white">
-
-              <div className="absolute right-3 top-2 text-6xl opacity-10">
-                🎆
-              </div>
-
-              <span className="rounded-full bg-orange-400 px-3 py-1 text-[10px] font-bold">
-                UP TO 29% OFF
-              </span>
-
-              <h3 className="mt-5 font-serif text-2xl font-bold">
-                Diwali Combo Packs
-              </h3>
-
-              <p className="mt-2 text-sm text-red-100">
-                Everything you need for the perfect Diwali night.
-              </p>
-
-              <button
-                type="button"
-                onClick={() => scrollToSection("gift-boxes")}
-                className="mt-5 rounded-lg bg-white px-5 py-2 text-sm font-bold text-red-700"
-              >
-                Shop Now
-              </button>
-
-            </div>
-
-
-            <div className="relative overflow-hidden rounded-2xl bg-orange-800 p-6 text-white">
-
-              <div className="absolute right-3 top-2 text-6xl opacity-10">
-                🚀
-              </div>
-
-              <span className="rounded-full bg-white px-3 py-1 text-[10px] font-bold text-orange-700">
-                PREMIUM
-              </span>
-
-              <h3 className="mt-5 font-serif text-2xl font-bold">
-                Fancy Aerial Crackers
-              </h3>
-
-              <p className="mt-2 text-sm text-orange-100">
-                Sky shots, multi-burst shells, and more.
-              </p>
-
-              <button
-                type="button"
-                onClick={() => scrollToSection("fancy-crackers")}
-                className="mt-5 rounded-lg bg-white px-5 py-2 text-sm font-bold text-orange-700"
-              >
-                Explore
-              </button>
-
-            </div>
-
-
-            <div className="relative overflow-hidden rounded-2xl bg-zinc-900 p-6 text-white">
-
-              <div className="absolute right-3 top-2 text-6xl opacity-10">
-                ✨
-              </div>
-
-              <span className="rounded-full bg-green-500 px-3 py-1 text-[10px] font-bold">
-                25% OFF
-              </span>
-
-              <h3 className="mt-5 font-serif text-2xl font-bold">
-                All Sparklers
-              </h3>
-
-              <p className="mt-2 text-sm text-zinc-300">
-                Gold, green and multi-colour sparkler packs.
-              </p>
-
-              <button
-                type="button"
-                onClick={() => scrollToSection("sparklers")}
-                className="mt-5 rounded-lg bg-orange-400 px-5 py-2 text-sm font-bold text-zinc-900"
-              >
-                Buy Now
-              </button>
-
-            </div>
-
+                  <p className="mt-2 text-sm text-zinc-400">
+                    {description}
+                  </p>
+                </div>
+              ),
+            )}
           </div>
-
         </div>
-
       </section>
 
-
-      {/* =====================================================
-          WHY CHOOSE US
-          ===================================================== */}
-
-      <section className="bg-zinc-950 py-16 text-white">
-
-        <div className="mx-auto max-w-7xl px-5 sm:px-8 lg:px-8">
-
-          <div className="mb-12 text-center">
-
-            <h2 className="font-serif text-3xl font-bold sm:text-4xl">
-
-              Why Choose{" "}
-
-              <span className="text-orange-400">
-                Sivakasi Crackers?
-              </span>
-
-            </h2>
-
-          </div>
-
-
-          <div className="grid grid-cols-2 gap-10 md:grid-cols-5">
-
-
-            <div className="text-center">
-
-              <div className="text-4xl">
-                🏅
-              </div>
-
-              <h3 className="mt-3 text-sm font-bold">
-                Quality Assured
-              </h3>
-
-              <p className="mt-2 text-xs leading-5 text-zinc-400">
-                Premium quality products from trusted manufacturers.
-              </p>
-
-            </div>
-
-
-            <div className="text-center">
-
-              <div className="text-4xl">
-                🛒
-              </div>
-
-              <h3 className="mt-3 text-sm font-bold">
-                Easy Ordering
-              </h3>
-
-              <p className="mt-2 text-xs leading-5 text-zinc-400">
-                No account required. Add products and checkout easily.
-              </p>
-
-            </div>
-
-
-            <div className="text-center">
-
-              <div className="text-4xl">
-                🔒
-              </div>
-
-              <h3 className="mt-3 text-sm font-bold">
-                Secure Payment
-              </h3>
-
-              <p className="mt-2 text-xs leading-5 text-zinc-400">
-                Payments securely processed through Razorpay.
-              </p>
-
-            </div>
-
-
-            <div className="text-center">
-
-              <div className="text-4xl">
-                ⚡
-              </div>
-
-              <h3 className="mt-3 text-sm font-bold">
-                Fast Processing
-              </h3>
-
-              <p className="mt-2 text-xs leading-5 text-zinc-400">
-                Orders are confirmed and processed quickly.
-              </p>
-
-            </div>
-
-
-            <div className="col-span-2 text-center md:col-span-1">
-
-              <div className="text-4xl">
-                🤝
-              </div>
-
-              <h3 className="mt-3 text-sm font-bold">
-                Customer Support
-              </h3>
-
-              <p className="mt-2 text-xs leading-5 text-zinc-400">
-                WhatsApp and phone support for your convenience.
-              </p>
-
-            </div>
-
-          </div>
-
-        </div>
-
-      </section>
-
-
-      {/* =====================================================
-          FINAL CTA
-          ===================================================== */}
+      {/* =================================================
+          CTA
+      ================================================= */}
 
       <section className="relative overflow-hidden bg-red-700 px-5 py-16 text-center text-white">
-
         <div className="absolute inset-0 opacity-10">
-
-          <div className="absolute left-10 top-5 text-6xl">
-            ✨
-          </div>
-
-          <div className="absolute right-20 top-20 text-6xl">
-            ✨
-          </div>
-
-          <div className="absolute bottom-5 left-1/3 text-5xl">
-            ✨
-          </div>
-
-          <div className="absolute bottom-10 right-1/4 text-5xl">
-            ✨
-          </div>
-
+          ✨　🎆　✨　🎇　✨　🎆　✨
         </div>
 
-
-        <div className="relative z-10 mx-auto max-w-2xl">
-
-          <h2 className="font-serif text-4xl font-bold sm:text-5xl">
+        <div className="relative">
+          <h2 className="font-serif text-4xl font-bold">
             Ready to Celebrate?
           </h2>
 
-          <p className="mx-auto mt-4 max-w-xl text-sm leading-6 text-red-100 sm:text-base">
-            Shop our full range of premium crackers and make this Diwali
-            the most spectacular one yet.
+          <p className="mx-auto mt-4 max-w-xl text-white/90">
+            Shop our full range of premium
+            crackers and make this Diwali the
+            most spectacular one yet.
           </p>
 
           <button
             type="button"
-            onClick={() => scrollToSection("products")}
-            className="mt-7 rounded-xl bg-white px-8 py-3 font-bold text-red-700 shadow-lg transition hover:scale-105"
+            onClick={() =>
+              scrollToSection(
+                "products",
+                70,
+              )
+            }
+            className="mt-7 rounded-xl bg-white px-7 py-4 font-bold text-red-700 shadow-lg transition hover:scale-105"
           >
-            Browse Best Sellers →
+            Browse All Products →
           </button>
-
         </div>
-
       </section>
 
-
-      {/* =====================================================
+      {/* =================================================
           FOOTER
-          ===================================================== */}
+      ================================================= */}
 
-      <footer className="bg-zinc-900 text-zinc-300">
-
-        <div className="mx-auto grid max-w-7xl gap-10 px-5 py-12 sm:px-8 md:grid-cols-4 lg:px-8">
-
-
-          {/* BRAND */}
+      <footer className="bg-zinc-900 px-5 py-12 text-zinc-300 sm:px-8">
+        <div className="mx-auto grid max-w-7xl gap-10 md:grid-cols-4">
 
           <div>
-
-            <div className="flex items-center gap-3">
-
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-red-700">
-                🎆
-              </div>
-
-              <div>
-
-                <div className="font-serif font-bold text-white">
-                  Sivakasi Crackers
-                </div>
-
-                <div className="text-[9px] font-semibold text-orange-400">
-                  PREMIUM FIREWORKS
-                </div>
-
-              </div>
-
+            <div className="font-serif text-xl font-bold text-white">
+              Sivakasi Crackers
             </div>
 
-            <p className="mt-5 text-sm leading-6 text-zinc-400">
-              Your trusted source for premium-quality crackers.
-              Celebrating every festival with safe, brilliant,
-              and affordable fireworks.
+            <p className="mt-3 text-sm leading-6 text-zinc-400">
+              India's trusted source for
+              premium-quality crackers.
+              Celebrating every festival with
+              safe, brilliant and affordable
+              fireworks.
             </p>
-
           </div>
 
-
-          {/* CATEGORIES */}
-
           <div>
-
-            <h3 className="mb-4 font-bold text-white">
+            <h3 className="font-bold text-white">
               Categories
             </h3>
 
-            <ul className="space-y-3 text-sm">
-
-              {categories.slice(0, 5).map((category) => (
-
-                <li key={category.id}>
-
+            <div className="mt-3 space-y-2 text-sm">
+              {categories
+                .slice(0, 6)
+                .map((category) => (
                   <button
+                    key={category}
                     type="button"
-                    onClick={() => scrollToSection(category.id)}
-                    className="transition hover:text-orange-400"
+                    onClick={() =>
+                      scrollToSection(
+                        category
+                          .toLowerCase()
+                          .replaceAll(
+                            " ",
+                            "-",
+                          ),
+                        70,
+                      )
+                    }
+                    className="block transition hover:text-orange-400"
                   >
-                    {category.name}
+                    {category}
                   </button>
-
-                </li>
-
-              ))}
-
-            </ul>
-
+                ))}
+            </div>
           </div>
 
-
-          {/* QUICK LINKS */}
-
           <div>
-
-            <h3 className="mb-4 font-bold text-white">
+            <h3 className="font-bold text-white">
               Quick Links
             </h3>
 
-            <ul className="space-y-3 text-sm">
+            <div className="mt-3 space-y-2 text-sm">
+              <button
+                type="button"
+                onClick={goHome}
+                className="block hover:text-orange-400"
+              >
+                Home
+              </button>
 
-              <li>
-                <button
-                  type="button"
-                  onClick={() => scrollToSection("products")}
-                  className="transition hover:text-orange-400"
-                >
-                  Best Sellers
-                </button>
-              </li>
+              <button
+                type="button"
+                onClick={() =>
+                  scrollToSection(
+                    "products",
+                    70,
+                  )
+                }
+                className="block hover:text-orange-400"
+              >
+                All Products
+              </button>
 
-              <li>
-                <button
-                  type="button"
-                  onClick={() => scrollToSection("categories")}
-                  className="transition hover:text-orange-400"
-                >
-                  Shop Categories
-                </button>
-              </li>
+              <button
+                type="button"
+                onClick={() =>
+                  scrollToSection(
+                    "cart-summary",
+                    70,
+                  )
+                }
+                className="block hover:text-orange-400"
+              >
+                Cart
+              </button>
 
-              <li>
-                <button
-                  type="button"
-                  onClick={() => scrollToSection("gift-boxes")}
-                  className="transition hover:text-orange-400"
-                >
-                  Gift Boxes
-                </button>
-              </li>
+              <span className="block">
+                Terms & Conditions
+              </span>
 
-              <li>
-                <button
-                  type="button"
-                  onClick={() => scrollToSection("fancy-crackers")}
-                  className="transition hover:text-orange-400"
-                >
-                  Fancy Crackers
-                </button>
-              </li>
-
-            </ul>
-
+              <span className="block">
+                Privacy Policy
+              </span>
+            </div>
           </div>
 
-
-          {/* CONTACT */}
-
           <div>
-
-            <h3 className="mb-4 font-bold text-white">
+            <h3 className="font-bold text-white">
               Contact Us
             </h3>
 
-            <div className="space-y-3 text-sm text-zinc-400">
-
+            <div className="mt-3 space-y-3 text-sm text-zinc-400">
               <p>
-                📍 Sivakasi, Tamil Nadu
+                📍 Fireworks Market, Sivakasi
               </p>
 
               <p>
-                📞 +91 XXXXX XXXXX
+                📞 +91 45622 34567
               </p>
 
               <p>
-                💬 WhatsApp Support
+                💬 WhatsApp: 98765 43210
               </p>
 
               <p>
                 ✉️ hello@sivakasicrackers.in
               </p>
-
             </div>
-
           </div>
 
         </div>
 
-
-        {/* COPYRIGHT */}
-
-        <div className="border-t border-zinc-800">
-
-          <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 px-5 py-5 text-xs text-zinc-500 sm:px-8 md:flex-row lg:px-8">
-
-            <p>
-              © 2026 Sivakasi Crackers. All rights reserved.
-            </p>
-
-            <p>
-              🔒 Secure Checkout • Razorpay
-            </p>
-
-          </div>
-
+        <div className="mx-auto mt-10 max-w-7xl border-t border-zinc-800 pt-6 text-xs text-zinc-500">
+          © 2026 Sivakasi Crackers. All rights reserved.
         </div>
-
       </footer>
 
+      {/* =================================================
+          BACK TO TOP
+      ================================================= */}
+
+      {showTop && (
+        <button
+          type="button"
+          onClick={goHome}
+          className="fixed bottom-6 right-6 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-red-600 text-xl font-bold text-white shadow-xl transition hover:scale-110 hover:bg-red-700"
+          aria-label="Back to top"
+        >
+          ↑
+        </button>
+      )}
+
+      {/* =================================================
+          PRODUCT POPUP
+      ================================================= */}
+
+      {showProductPopup &&
+        selectedProduct && (
+          <div
+            className="fixed inset-0 z-[100] flex items-end justify-center bg-black/60 p-0 backdrop-blur-sm sm:items-center sm:p-5"
+            onClick={() =>
+              setShowProductPopup(false)
+            }
+          >
+            <div
+              className="relative w-full max-w-lg overflow-hidden rounded-t-3xl bg-white shadow-2xl sm:rounded-3xl"
+              onClick={(event) =>
+                event.stopPropagation()
+              }
+            >
+              {/* CLOSE */}
+
+              <button
+                type="button"
+                onClick={() =>
+                  setShowProductPopup(false)
+                }
+                className="absolute right-4 top-4 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-black/60 text-lg text-white backdrop-blur-md"
+                aria-label="Close product"
+              >
+                ×
+              </button>
+
+              {/* IMAGE */}
+
+              <div className="flex h-64 items-center justify-center bg-zinc-950 text-9xl">
+                {selectedProduct.emoji}
+              </div>
+
+              <div className="p-6">
+
+                <div className="text-xs font-bold uppercase text-orange-600">
+                  {selectedProduct.category}
+                </div>
+
+                <h2 className="mt-1 text-2xl font-bold">
+                  {selectedProduct.name}
+                </h2>
+
+                <p className="mt-1 text-sm text-zinc-500">
+                  {selectedProduct.pack}
+                </p>
+
+                <div className="mt-5 flex items-center gap-3">
+                  <span className="text-3xl font-bold text-red-600">
+                    ₹{selectedProduct.price}
+                  </span>
+
+                  <del className="text-sm text-zinc-400">
+                    ₹{selectedProduct.mrp}
+                  </del>
+
+                  <span className="rounded-full bg-green-100 px-3 py-1 text-xs font-bold text-green-700">
+                    {discount(
+                      selectedProduct.price,
+                      selectedProduct.mrp,
+                    )}
+                    % OFF
+                  </span>
+                </div>
+
+                <div className="mt-3 text-sm font-semibold text-green-600">
+                  ✓ In Stock
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    addToCart(
+                      selectedProduct.id,
+                    );
+                    setShowProductPopup(false);
+                  }}
+                  className="mt-6 w-full rounded-xl bg-red-600 py-4 font-bold text-white shadow-lg transition hover:bg-red-700"
+                >
+                  🛒 Add to Cart
+                </button>
+
+              </div>
+            </div>
+          </div>
+        )}
+
+      {/* =================================================
+          ANIMATIONS
+      ================================================= */}
+
+      <style jsx global>{`
+        @keyframes pinFloat {
+          0%,
+          100% {
+            transform: translateY(0px);
+          }
+
+          50% {
+            transform: translateY(-7px);
+          }
+        }
+
+        @keyframes pinRotate {
+          0% {
+            transform: rotate(-8deg);
+          }
+
+          25% {
+            transform: rotate(8deg);
+          }
+
+          50% {
+            transform: rotate(-5deg);
+          }
+
+          75% {
+            transform: rotate(6deg);
+          }
+
+          100% {
+            transform: rotate(-8deg);
+          }
+        }
+
+        @keyframes pinShadow {
+          0%,
+          100% {
+            transform: scaleX(1);
+            opacity: 0.25;
+          }
+
+          50% {
+            transform: scaleX(0.65);
+            opacity: 0.12;
+          }
+        }
+
+        @keyframes bestSellerProgress {
+          from {
+            width: 0%;
+          }
+
+          to {
+            width: 100%;
+          }
+        }
+      `}</style>
     </main>
   );
 }
