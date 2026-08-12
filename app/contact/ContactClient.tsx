@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { StoreSettings } from "@/lib/settings";
+import type { StoreSettings } from "@/lib/settings";
 import Header from "@/components/ui/Header";
 import Footer from "@/components/ui/Footer";
 import HeroFireworks from "@/components/ui/HeroFireworks";

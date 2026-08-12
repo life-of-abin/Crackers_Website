@@ -2,15 +2,10 @@ import dotenv from "dotenv";
 dotenv.config();
 
 import { PrismaClient } from "../generated/prisma/client";
-import { PrismaPg } from "@prisma/adapter-pg";
+import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
 
-async function updateStoreSettings() {
-  console.log("Updating PostgreSQL store settings table (id=1)...");
-  
-  const connectionString = process.env.DATABASE_URL || "";
-  console.log("DATABASE_URL present:", !!connectionString);
-
-  const adapter = new PrismaPg({ connectionString });
+export async function updateStoreSettings() {
+  const adapter = new PrismaBetterSqlite3({ url: process.env.DATABASE_URL || "file:dev.db" });
   const prisma = new PrismaClient({ adapter });
 
   const updated = await prisma.settings.upsert({

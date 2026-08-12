@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { updateSettingsAction } from "@/lib/actions";
-import { StoreSettings } from "@/lib/settings";
+import type { StoreSettings } from "@/lib/settings";
 
 export default function AdminSettingsForm({ settings }: { settings: StoreSettings }) {
   const router = useRouter();
@@ -33,7 +33,7 @@ export default function AdminSettingsForm({ settings }: { settings: StoreSetting
 
   return (
     <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-sm">
-      
+
       {error && (
         <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 text-xs font-bold rounded-2xl">
           ⚠️ {error}
@@ -47,9 +47,9 @@ export default function AdminSettingsForm({ settings }: { settings: StoreSetting
       )}
 
       <form onSubmit={handleSubmit} className="space-y-6 text-xs">
-        
+
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          
+
           <div className="sm:col-span-2">
             <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">
               Store Brand Name *

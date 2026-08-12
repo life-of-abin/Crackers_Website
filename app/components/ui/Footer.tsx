@@ -1,6 +1,6 @@
 import React from "react";
 import Link from "next/link";
-import { StoreSettings } from "@/lib/settings";
+import type { StoreSettings } from "@/lib/settings";
 
 interface FooterProps {
   settings: StoreSettings;

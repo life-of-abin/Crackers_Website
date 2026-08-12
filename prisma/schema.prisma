@@ -4,19 +4,10 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
 }
 
-enum Role {
-  CUSTOMER
-  ADMIN
-}
 
-enum AccountStatus {
-  ACTIVE
-  SUSPENDED
-  DISABLED
-}
 
 model User {
   id                 Int           @id @default(autoincrement())
@@ -24,8 +15,8 @@ model User {
   email              String        @unique
   phone              String
   passwordHash       String
-  role               Role          @default(CUSTOMER)
-  status             AccountStatus @default(ACTIVE)
+  role               String        @default("CUSTOMER")
+  status             String        @default("ACTIVE")
   createdAt          DateTime      @default(now())
   updatedAt          DateTime      @updatedAt
 
@@ -73,8 +64,8 @@ model Product {
   slug        String      @unique
   description String?
   categoryId  Int
-  price       Decimal     @db.Decimal(10, 2)
-  mrp         Decimal     @db.Decimal(10, 2)
+  price       Decimal
+  mrp         Decimal
   discount    String?
   quantity    String      @default("10 Pieces")
   unitType    String      @default("BOX") // BOX, PACK, BUNDLE, UNIT
@@ -109,10 +100,10 @@ model Order {
   district      String?
   state         String
   pincode       String
-  subtotal      Decimal     @db.Decimal(10, 2) @default(0)
-  discount      Decimal     @db.Decimal(10, 2) @default(0)
-  shipping      Decimal     @db.Decimal(10, 2) @default(0)
-  totalAmount   Decimal     @db.Decimal(10, 2)
+  subtotal      Decimal     @default(0)
+  discount      Decimal     @default(0)
+  shipping      Decimal     @default(0)
+  totalAmount   Decimal
   paymentStatus String      @default("PENDING_PAYMENT")
   orderStatus   String      @default("PLACED") // PLACED, CONFIRMED, PROCESSING, PACKED, SHIPPED, OUT_FOR_DELIVERY, DELIVERED, CANCELLED
   paymentId     String?
@@ -136,8 +127,8 @@ model OrderItem {
   quantity    Int       // Number of boxes/packs
   unitType    String?   @default("BOX")
   packSize    String?   @default("10 Pieces")
-  price       Decimal   @db.Decimal(10, 2)
-  total       Decimal   @db.Decimal(10, 2)
+  price       Decimal
+  total       Decimal
 
   order       Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
   product     Product   @relation(fields: [productId], references: [id], onDelete: Restrict)
@@ -151,7 +142,7 @@ model Payment {
   razorpaySignature String?
   paymentMethod     String?
   paymentRef        String?
-  amount            Decimal  @db.Decimal(10, 2)
+  amount            Decimal
   status            String   @default("PENDING")
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
@@ -192,8 +183,8 @@ model Settings {
   address              String   @default("123 Main Bazaar, Sivakasi, Tamil Nadu 626123")
   googleMapsUrl        String   @default("https://maps.google.com/?q=Sivakasi,Tamil+Nadu")
   whatsappNumber       String   @default("+919629525907")
-  minOrderAmount       Decimal  @db.Decimal(10, 2) @default(500)
-  flatShippingFee      Decimal  @db.Decimal(10, 2) @default(100)
-  freeShippingThreshold Decimal @db.Decimal(10, 2) @default(3000)
+  minOrderAmount       Decimal  @default(500)
+  flatShippingFee      Decimal  @default(100)
+  freeShippingThreshold Decimal @default(3000)
   updatedAt            DateTime @updatedAt
 }

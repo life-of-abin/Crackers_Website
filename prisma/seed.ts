@@ -1,14 +1,8 @@
 import "dotenv/config";
 import { PrismaClient } from "../app/generated/prisma/client";
-import { PrismaPg } from "@prisma/adapter-pg";
+import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
 
-let connectionString = process.env.DATABASE_URL || "postgres://localhost:5432/postgres";
-if (connectionString.includes("sslmode=require") && !connectionString.includes("uselibpqcompat=")) {
-  connectionString = connectionString.includes("?")
-    ? `${connectionString}&uselibpqcompat=true`
-    : `${connectionString}?uselibpqcompat=true`;
-}
-const adapter = new PrismaPg({ connectionString });
+const adapter = new PrismaBetterSqlite3({ url: process.env.DATABASE_URL || "file:dev.db" });
 const prisma = new PrismaClient({ adapter });
 
 const categories = [

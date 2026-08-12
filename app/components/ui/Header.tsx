@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { useCart } from "@/lib/cart-context";
-import { StoreSettings } from "@/lib/settings";
+import type { StoreSettings } from "@/lib/settings";
 import LiveSearch from "./LiveSearch";
 
 interface HeaderProps {
