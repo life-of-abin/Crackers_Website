@@ -1,0 +1,199 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  CUSTOMER
+  ADMIN
+}
+
+enum AccountStatus {
+  ACTIVE
+  SUSPENDED
+  DISABLED
+}
+
+model User {
+  id                 Int           @id @default(autoincrement())
+  name               String
+  email              String        @unique
+  phone              String
+  passwordHash       String
+  role               Role          @default(CUSTOMER)
+  status             AccountStatus @default(ACTIVE)
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+
+  addresses          Address[]
+  orders             Order[]
+
+  @@index([email])
+  @@index([phone])
+}
+
+model Address {
+  id           Int       @id @default(autoincrement())
+  userId       Int
+  name         String
+  phone        String
+  addressLine1 String
+  addressLine2 String?
+  city         String
+  state        String
+  pincode      String
+  isDefault    Boolean   @default(false)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Category {
+  id          Int       @id @default(autoincrement())
+  name        String    @unique
+  slug        String    @unique
+  description String?
+  image       String?
+  icon        String?
+  active      Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  products    Product[]
+}
+
+model Product {
+  id          Int         @id @default(autoincrement())
+  name        String
+  slug        String      @unique
+  description String?
+  categoryId  Int
+  price       Decimal     @db.Decimal(10, 2)
+  mrp         Decimal     @db.Decimal(10, 2)
+  discount    String?
+  quantity    String      @default("10 Pieces")
+  unitType    String      @default("BOX") // BOX, PACK, BUNDLE, UNIT
+  packSize    String      @default("10 Pieces")
+  image       String?
+  badge       String?
+  purchases   Int         @default(0)
+  stock       Int         @default(100) // Sellable units (boxes/packs)
+  active      Boolean     @default(true)
+  featured    Boolean     @default(false)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  category    Category    @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  orderItems  OrderItem[]
+
+  @@index([name])
+  @@index([categoryId])
+  @@index([active])
+  @@index([stock])
+}
+
+model Order {
+  id            Int         @id @default(autoincrement())
+  userId        Int?
+  customerName  String
+  phone         String
+  email         String?
+  address       String
+  landmark      String?
+  city          String
+  district      String?
+  state         String
+  pincode       String
+  subtotal      Decimal     @db.Decimal(10, 2) @default(0)
+  discount      Decimal     @db.Decimal(10, 2) @default(0)
+  shipping      Decimal     @db.Decimal(10, 2) @default(0)
+  totalAmount   Decimal     @db.Decimal(10, 2)
+  paymentStatus String      @default("PENDING_PAYMENT")
+  orderStatus   String      @default("PLACED") // PLACED, CONFIRMED, PROCESSING, PACKED, SHIPPED, OUT_FOR_DELIVERY, DELIVERED, CANCELLED
+  paymentId     String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  user          User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  items         OrderItem[]
+  payments      Payment[]
+
+  @@index([phone])
+  @@index([email])
+  @@index([paymentStatus])
+}
+
+model OrderItem {
+  id          Int       @id @default(autoincrement())
+  orderId     Int
+  productId   Int
+  productName String
+  quantity    Int       // Number of boxes/packs
+  unitType    String?   @default("BOX")
+  packSize    String?   @default("10 Pieces")
+  price       Decimal   @db.Decimal(10, 2)
+  total       Decimal   @db.Decimal(10, 2)
+
+  order       Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product     Product   @relation(fields: [productId], references: [id], onDelete: Restrict)
+}
+
+model Payment {
+  id                Int      @id @default(autoincrement())
+  orderId           Int
+  razorpayOrderId   String?
+  razorpayPaymentId String?
+  razorpaySignature String?
+  paymentMethod     String?
+  paymentRef        String?
+  amount            Decimal  @db.Decimal(10, 2)
+  status            String   @default("PENDING")
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  order             Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+}
+
+model PaymentAccount {
+  id            Int      @id @default(autoincrement())
+  type          String
+  displayName   String
+  upiId         String?
+  qrImage       String?
+  bankName      String?
+  accountHolder String?
+  accountNumber String?
+  ifsc          String?
+  branch        String?
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model AdminAuditLog {
+  id         Int      @id @default(autoincrement())
+  adminEmail String
+  action     String
+  details    String?
+  ipAddress  String?
+  createdAt  DateTime @default(now())
+}
+
+model Settings {
+  id                   Int      @id @default(1)
+  storeName            String   @default("Sri Sivakasi Crackers")
+  phone                String   @default("9629525907")
+  email                String   @default("abinesh.ece200@gmail.com")
+  address              String   @default("123 Main Bazaar, Sivakasi, Tamil Nadu 626123")
+  googleMapsUrl        String   @default("https://maps.google.com/?q=Sivakasi,Tamil+Nadu")
+  whatsappNumber       String   @default("+919629525907")
+  minOrderAmount       Decimal  @db.Decimal(10, 2) @default(500)
+  flatShippingFee      Decimal  @db.Decimal(10, 2) @default(100)
+  freeShippingThreshold Decimal @db.Decimal(10, 2) @default(3000)
+  updatedAt            DateTime @updatedAt
+}
