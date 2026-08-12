@@ -6,6 +6,7 @@ import { getSession } from "@/lib/auth";
 import Header from "@/components/ui/Header";
 import Footer from "@/components/ui/Footer";
 import ProductCard from "@/components/ui/ProductCard";
+import HeroFireworks from "@/components/ui/HeroFireworks";
 
 export const dynamic = "force-dynamic";
 
@@ -48,35 +49,36 @@ export default async function HomePage() {
       <Header settings={settings} user={session} />
 
       {/* Hero Section */}
-      <section className="relative bg-festive-hero text-white overflow-hidden py-16 lg:py-24 border-b border-amber-900/50">
-        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#f59e0b_1px,transparent_1px)] [background-size:16px_16px]" />
+      <section className="relative bg-festive-hero text-white overflow-hidden py-16 sm:py-20 lg:py-24 border-b border-amber-500/20">
+        <HeroFireworks />
+        <div className="absolute inset-0 opacity-15 bg-[radial-gradient(#f59e0b_1px,transparent_1px)] [background-size:20px_20px]" />
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
 
             <div className="space-y-6 text-center lg:text-left">
-              <div className="inline-flex items-center gap-2 bg-amber-950/80 border border-amber-500/30 text-amber-300 text-xs font-extrabold px-3 py-1.5 rounded-full uppercase tracking-wider">
+              <div className="inline-flex items-center gap-2 bg-amber-950/80 border border-amber-500/30 text-amber-300 text-xs font-black px-4 py-1.5 rounded-full uppercase tracking-widest shadow-sm">
                 <span>🪔 Official Sivakasi Wholesale Store</span>
               </div>
 
-              <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-tight">
+              <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-tight font-display">
                 Celebrate Festive Joy With <span className="text-gold-gradient">Genuine Fireworks</span>
               </h1>
 
-              <p className="text-slate-300 text-sm sm:text-base max-w-xl mx-auto lg:mx-0 leading-relaxed font-medium">
-                Direct factory pricing from Sivakasi, Tamil Nadu. Premium quality sparklers, rockets, gift boxes, and flower pots delivered safely to your doorstep.
+              <p className="text-slate-300 text-sm sm:text-base max-w-xl mx-auto lg:mx-0 leading-relaxed font-normal">
+                Direct factory wholesale pricing from Sivakasi, Tamil Nadu. Premium quality sparklers, rockets, gift boxes, and flower pots delivered safely to your doorstep.
               </p>
 
               <div className="flex flex-wrap items-center justify-center lg:justify-start gap-4 pt-2">
                 <Link
                   href="/products"
-                  className="bg-gradient-to-r from-red-600 to-amber-600 hover:from-red-700 hover:to-amber-700 text-white font-extrabold px-8 py-3.5 rounded-xl shadow-lg hover:shadow-amber-500/20 text-sm sm:text-base transition-all transform hover:-translate-y-0.5"
+                  className="bg-gradient-to-r from-rose-600 via-red-600 to-amber-500 hover:from-rose-700 hover:to-amber-600 text-white font-black px-8 py-3.5 rounded-2xl shadow-xl gold-glow hover:shadow-amber-500/30 text-sm sm:text-base transition-all transform hover:-translate-y-0.5 touch-target"
                 >
                   Shop Whole Catalogue →
                 </Link>
                 <Link
                   href="/category/gift-items"
-                  className="bg-slate-900/80 border border-slate-700 hover:bg-slate-800 text-amber-300 font-bold px-6 py-3.5 rounded-xl text-sm transition-all"
+                  className="bg-slate-900/90 border border-slate-700 hover:bg-slate-800 text-amber-300 font-bold px-6 py-3.5 rounded-2xl text-sm transition-all touch-target"
                 >
                   🎁 View Family Gift Boxes
                 </Link>
@@ -85,15 +87,15 @@ export default async function HomePage() {
               {/* Trust Indicators */}
               <div className="grid grid-cols-3 gap-4 pt-6 border-t border-slate-800/80 max-w-md mx-auto lg:mx-0 text-xs text-slate-300 font-semibold">
                 <div>
-                  <span className="block text-amber-400 font-extrabold text-base">100%</span>
+                  <span className="block text-amber-400 font-black text-base font-display">100%</span>
                   Genuine Crackers
                 </div>
                 <div>
-                  <span className="block text-amber-400 font-extrabold text-base">50% OFF</span>
+                  <span className="block text-amber-400 font-black text-base font-display">50% OFF</span>
                   Factory Discounts
                 </div>
                 <div>
-                  <span className="block text-amber-400 font-extrabold text-base">Safe</span>
+                  <span className="block text-amber-400 font-black text-base font-display">Safe</span>
                   Express Transit
                 </div>
               </div>
@@ -101,33 +103,33 @@ export default async function HomePage() {
 
             {/* Hero Visual Card */}
             <div className="relative">
-              <div className="relative mx-auto max-w-md bg-gradient-to-b from-slate-900/90 to-slate-950/90 border border-amber-500/30 p-6 rounded-3xl shadow-2xl gold-glow">
-                <div className="flex items-center justify-between pb-4 border-b border-slate-800">
+              <div className="relative mx-auto max-w-md glass-card-dark p-6 rounded-3xl shadow-2xl gold-glow-lg border border-amber-500/30">
+                <div className="flex items-center justify-between pb-4 border-b border-slate-800/80">
                   <div className="flex items-center gap-2">
                     <span className="text-2xl">✨</span>
                     <div>
-                      <h3 className="font-extrabold text-white text-sm">Festive Special Offer</h3>
-                      <p className="text-[10px] text-amber-400 font-medium">Limited Stock Available</p>
+                      <h3 className="font-black text-white text-sm font-display">Festive Special Offer</h3>
+                      <p className="text-[10px] text-amber-400 font-semibold">Limited Stock Available</p>
                     </div>
                   </div>
-                  <span className="bg-red-600 text-white text-[10px] font-black px-2.5 py-1 rounded-md uppercase">
+                  <span className="bg-rose-600 text-white text-[10px] font-black px-2.5 py-1 rounded-lg uppercase shadow-sm">
                     50% OFF
                   </span>
                 </div>
 
                 <div className="py-6 text-center space-y-3">
                   <div className="text-6xl animate-bounce">🎁</div>
-                  <h4 className="text-lg font-black text-amber-200">Deluxe Family Festive Combo Pack</h4>
+                  <h4 className="text-lg font-black text-amber-200 font-display">Deluxe Family Festive Combo Pack</h4>
                   <p className="text-xs text-slate-300">Contains 35 Assorted High-Quality Fireworks & Sparklers</p>
                   <div className="flex items-center justify-center gap-3">
-                    <span className="text-2xl font-black text-white">₹1,499</span>
+                    <span className="text-2xl font-black text-white font-display">₹1,499</span>
                     <span className="text-sm text-slate-400 line-through">₹2,999</span>
                   </div>
                 </div>
 
                 <Link
                   href="/products"
-                  className="block w-full text-center bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-black py-3 rounded-xl hover:from-amber-400 hover:to-amber-500 transition-colors text-xs uppercase tracking-wider"
+                  className="block w-full text-center bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 text-slate-950 font-black py-3.5 rounded-xl hover:from-amber-300 hover:to-amber-500 transition-colors text-xs uppercase tracking-wider shadow-md"
                 >
                   Explore All Offers Now
                 </Link>

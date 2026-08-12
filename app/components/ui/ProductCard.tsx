@@ -54,7 +54,7 @@ export default function ProductCard({ product }: { product: ProductCardData }) {
   const fallbackImage = `https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=400&q=80`;
 
   return (
-    <div className="group relative bg-white border border-slate-200/80 rounded-2xl overflow-hidden flex flex-col justify-between festive-card-hover shadow-sm hover:border-amber-300">
+    <div className="group relative bg-white border border-slate-200/90 rounded-2xl overflow-hidden flex flex-col justify-between festive-card-hover shadow-xs hover:border-amber-400/60 hover:shadow-xl">
       
       {/* Card Header & Media */}
       <div>
@@ -63,7 +63,7 @@ export default function ProductCard({ product }: { product: ProductCardData }) {
             <img
               src={product.image || fallbackImage}
               alt={product.name}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+              className="w-full h-full object-cover group-hover:scale-108 transition-transform duration-500 ease-out"
               loading="lazy"
             />
           </Link>
@@ -71,12 +71,12 @@ export default function ProductCard({ product }: { product: ProductCardData }) {
           {/* Badges Overlay */}
           <div className="absolute top-2 left-2 flex flex-col gap-1 z-10">
             {product.discount && (
-              <span className="bg-gradient-to-r from-red-600 to-amber-600 text-white font-extrabold text-[10px] px-2 py-0.5 rounded-md shadow-sm uppercase tracking-wider">
+              <span className="bg-gradient-to-r from-rose-600 via-red-600 to-amber-600 text-white font-black text-[10px] px-2.5 py-0.5 rounded-lg shadow-sm uppercase tracking-wider">
                 {product.discount}
               </span>
             )}
             {product.badge && (
-              <span className="bg-amber-400 text-slate-950 font-black text-[10px] px-2 py-0.5 rounded-md shadow-sm uppercase">
+              <span className="bg-amber-400 text-slate-950 font-black text-[10px] px-2.5 py-0.5 rounded-lg shadow-sm uppercase">
                 {product.badge}
               </span>
             )}
@@ -85,47 +85,47 @@ export default function ProductCard({ product }: { product: ProductCardData }) {
           {/* Stock Tag Overlay */}
           <div className="absolute bottom-2 right-2 z-10">
             {isOutOfStock ? (
-              <span className="bg-slate-950/90 backdrop-blur-md text-red-400 font-black text-[10px] px-2.5 py-1 rounded-full uppercase border border-red-800">
-                OUT OF STOCK
+              <span className="bg-slate-950/90 backdrop-blur-md text-rose-400 font-bold text-[10px] px-2.5 py-1 rounded-full uppercase border border-rose-800 shadow-sm">
+                Sold Out
               </span>
             ) : isLowStock ? (
-              <span className="bg-amber-950/90 backdrop-blur-md text-amber-300 font-extrabold text-[10px] px-2.5 py-1 rounded-full border border-amber-500/60 shadow animate-pulse">
-                🔥 Only {product.stock} {unitLabel.toLowerCase()}{product.stock > 1 ? "es" : ""} left
+              <span className="bg-amber-950/90 backdrop-blur-md text-amber-300 font-bold text-[10px] px-2.5 py-1 rounded-full border border-amber-500/60 shadow animate-pulse">
+                Only {product.stock} {unitLabel.toLowerCase()}{product.stock > 1 ? "es" : ""} left
               </span>
             ) : (
-              <span className="bg-emerald-950/80 backdrop-blur-md text-emerald-300 font-bold text-[10px] px-2.5 py-0.5 rounded-full border border-emerald-700/60">
-                Available
+              <span className="bg-emerald-950/80 backdrop-blur-md text-emerald-300 font-semibold text-[10px] px-2.5 py-0.5 rounded-full border border-emerald-700/60 shadow-xs">
+                In Stock
               </span>
             )}
           </div>
         </div>
 
         {/* Card Content */}
-        <div className="p-4 space-y-2">
+        <div className="p-3.5 sm:p-4 space-y-2">
           {product.category && (
-            <span className="text-[10px] font-extrabold text-amber-700 uppercase tracking-widest block">
+            <span className="text-[10px] font-extrabold text-amber-600 uppercase tracking-widest block truncate">
               {product.category.name}
             </span>
           )}
 
           <Link href={`/products/${product.slug}`} className="block">
-            <h3 className="text-xs sm:text-sm font-bold text-slate-900 group-hover:text-red-700 transition-colors line-clamp-2 leading-snug">
+            <h3 className="text-xs sm:text-sm font-bold text-slate-900 font-display group-hover:text-rose-600 transition-colors line-clamp-2 leading-snug">
               {product.name}
             </h3>
           </Link>
 
           {/* Package Info Tag: Pack Size / Unit Type */}
-          <div className="inline-flex items-center gap-1 bg-slate-100 text-slate-800 font-extrabold text-[11px] px-2.5 py-1 rounded-lg border border-slate-200">
-            <span>📦</span> {packSizeText} / {unitLabel}
+          <div className="inline-flex items-center gap-1 bg-slate-100/90 text-slate-700 font-semibold text-[10px] sm:text-[11px] px-2.5 py-0.5 rounded-md border border-slate-200/90">
+            <span>📦</span> <span>1 {unitLabel}</span> <span className="text-slate-400 font-medium">({packSizeText})</span>
           </div>
 
           {/* Price Section */}
-          <div className="pt-1 flex items-baseline gap-2">
-            <span className="text-base sm:text-lg font-black text-red-700">
+          <div className="pt-1 flex items-baseline gap-1.5 flex-wrap">
+            <span className="text-base sm:text-lg font-black text-rose-600 font-display">
               ₹{Number(product.price).toLocaleString("en-IN")}
             </span>
-            <span className="text-[10px] text-slate-500 font-bold">/ {unitLabel}</span>
-            <span className="text-xs text-slate-400 line-through font-medium ml-auto">
+            <span className="text-[10px] text-slate-500 font-medium">/ {unitLabel.toLowerCase()}</span>
+            <span className="text-xs text-slate-400 line-through font-normal ml-auto">
               ₹{Number(product.mrp).toLocaleString("en-IN")}
             </span>
           </div>
@@ -133,24 +133,22 @@ export default function ProductCard({ product }: { product: ProductCardData }) {
       </div>
 
       {/* Card Action */}
-      <div className="p-4 pt-0">
+      <div className="p-3.5 sm:p-4 pt-0">
         <button
           onClick={handleAdd}
           disabled={isOutOfStock}
-          className={`w-full py-2.5 px-4 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-sm ${
+          className={`w-full h-10 sm:h-11 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all shadow-sm touch-target ${
             isOutOfStock
               ? "bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200"
               : added
               ? "bg-emerald-600 text-white shadow-emerald-200 scale-95"
-              : "bg-gradient-to-r from-red-600 via-red-700 to-amber-600 hover:from-red-700 hover:to-amber-700 text-white hover:shadow-md"
+              : "bg-gradient-to-r from-rose-600 via-red-600 to-amber-600 hover:from-rose-700 hover:to-amber-700 text-white hover:shadow-md active:scale-98"
           }`}
         >
           {isOutOfStock ? (
             <span>Sold Out</span>
           ) : added ? (
-            <>
-              <span>✓ Added to Cart!</span>
-            </>
+            <span>✓ Added!</span>
           ) : (
             <>
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

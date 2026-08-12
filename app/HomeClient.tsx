@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import HeroFireworks from "@/components/ui/HeroFireworks";
 
 type Product = {
 id: number;
@@ -387,9 +388,11 @@ return ( <main className="min-h-screen bg-white text-zinc-900">
       }}
     />
 
-    <div className="absolute inset-0 bg-black/50" />
+    <HeroFireworks />
 
-    <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/60 to-transparent" />
+    <div className="absolute inset-0 bg-black/50 pointer-events-none" />
+
+    <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/60 to-transparent pointer-events-none" />
 
     <div className="relative z-10 mx-auto flex min-h-[560px] max-w-7xl items-center px-5 py-20 sm:px-8">
       <div className="max-w-2xl">

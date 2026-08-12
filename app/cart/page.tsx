@@ -153,22 +153,24 @@ export default function CartPage() {
                         
                         {/* Quantity Selector (Boxes/Packs) */}
                         <div className="flex flex-col items-center">
-                          <span className="text-[10px] text-slate-500 font-bold uppercase mb-0.5">
-                            {item.unitType || "BOX"} Count
+                          <span className="text-[10px] text-slate-500 font-bold uppercase mb-1">
+                            {item.cartQuantity} {item.unitType || "BOX"}{item.cartQuantity > 1 ? "ES" : ""}
                           </span>
-                          <div className="flex items-center border border-slate-200 rounded-lg bg-slate-50 overflow-hidden text-xs">
+                          <div className="flex items-center border border-slate-200 rounded-xl bg-slate-50 overflow-hidden text-xs shadow-2xs">
                             <button
                               onClick={() => updateQuantity(item.id, item.cartQuantity - 1)}
-                              className="w-8 h-8 flex items-center justify-center font-bold text-slate-700 hover:bg-slate-200"
+                              className="w-10 h-10 flex items-center justify-center font-bold text-slate-700 hover:bg-slate-200 touch-target focus:outline-none focus:bg-slate-200"
+                              aria-label="Decrease quantity"
                             >
                               -
                             </button>
-                            <span className="w-10 text-center font-extrabold text-slate-900">
+                            <span className="w-10 text-center font-extrabold text-slate-900 text-sm">
                               {item.cartQuantity}
                             </span>
                             <button
                               onClick={() => updateQuantity(item.id, item.cartQuantity + 1)}
-                              className="w-8 h-8 flex items-center justify-center font-bold text-slate-700 hover:bg-slate-200"
+                              className="w-10 h-10 flex items-center justify-center font-bold text-slate-700 hover:bg-slate-200 touch-target focus:outline-none focus:bg-slate-200"
+                              aria-label="Increase quantity"
                             >
                               +
                             </button>
