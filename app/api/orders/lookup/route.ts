@@ -33,7 +33,7 @@ export async function GET(request: Request) {
     const orders = await prisma.order.findMany({
       where: {
         OR: [
-          ...(query.includes("@") ? [{ email: { equals: query, mode: "insensitive" as const } }] : []),
+          ...(query.includes("@") ? [{ email: { equals: query.toLowerCase() } }] : []),
           ...(normalizedPhone ? [{ phone: normalizedPhone }] : []),
           ...(cleanDigits.length >= 10 ? [{ phone: { contains: cleanDigits.slice(-10) } }] : []),
         ],

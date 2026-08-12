@@ -40,7 +40,7 @@ export async function POST(request: Request) {
     const order = await prisma.order.findFirst({
       where: {
         id: orderIdNum,
-        email: { equals: rawEmail, mode: "insensitive" },
+        email: rawEmail,
       },
       include: {
         items: {

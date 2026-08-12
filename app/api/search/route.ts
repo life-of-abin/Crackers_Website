@@ -14,9 +14,9 @@ export async function GET(request: Request) {
       where: {
         active: true,
         OR: [
-          { name: { contains: query, mode: "insensitive" } },
-          { description: { contains: query, mode: "insensitive" } },
-          { category: { name: { contains: query, mode: "insensitive" } } },
+          { name: { contains: query } },
+          { description: { contains: query } },
+          { category: { name: { contains: query } } },
         ],
       },
       take: 8,
