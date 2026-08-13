@@ -161,7 +161,7 @@ export default function Footer({ settings }: FooterProps) {
             © {new Date().getFullYear()} <span className="text-slate-300 font-bold">{settings.storeName}</span>. All Rights Reserved. Sivakasi, Tamil Nadu, India.
           </div>
           <div className="flex items-center space-x-3 text-slate-400 font-medium">
-            <span className="bg-slate-900 px-2.5 py-1 rounded border border-slate-800">💳 Razorpay Secured</span>
+            <span className="bg-slate-900 px-2.5 py-1 rounded border border-slate-800">💳 Secure Checkout</span>
             <span className="bg-slate-900 px-2.5 py-1 rounded border border-slate-800">📲 UPI / GPay / PhonePe</span>
             <span className="bg-slate-900 px-2.5 py-1 rounded border border-slate-800">🚚 Safe Transit</span>
           </div>

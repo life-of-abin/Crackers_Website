@@ -60,7 +60,7 @@ export default function CartPage() {
   const flatFee = settings.flatShippingFee;
   const freeThreshold = settings.freeShippingThreshold;
 
-  const isMinOrderMet = subtotal >= minOrder;
+  const isMinOrderMet = totalItems >= 2;
   const isFreeShipping = subtotal >= freeThreshold;
   const shippingFee = items.length === 0 ? 0 : isFreeShipping ? 0 : flatFee;
   const grandTotal = subtotal + shippingFee;
@@ -257,7 +257,7 @@ export default function CartPage() {
                 {!isMinOrderMet && (
                   <div className="bg-red-50 border border-red-200 text-red-800 p-3.5 rounded-xl text-xs space-y-1">
                     <span className="font-bold block">⚠️ Minimum Order Required</span>
-                    <p>Minimum order threshold is ₹{minOrder.toLocaleString("en-IN")}. Please add ₹{(minOrder - subtotal).toLocaleString("en-IN")} more to proceed.</p>
+                    <p>Minimum purchase quantity is 2 items. Please add {2 - totalItems} more item{2 - totalItems > 1 ? 's' : ''} to proceed.</p>
                   </div>
                 )}
 

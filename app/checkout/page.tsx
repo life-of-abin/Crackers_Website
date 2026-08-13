@@ -73,7 +73,7 @@ const INDIAN_STATES = [
 ];
 
 export default function CheckoutPage() {
-  const { items, subtotal, clearCart, isMounted } = useCart();
+  const { items, subtotal, clearCart, isMounted, totalItems } = useCart();
   const [settings, setSettings] = useState<StoreSettings>(DEFAULT_SETTINGS);
 
   // Customer Input Fields
@@ -112,7 +112,8 @@ export default function CheckoutPage() {
   } | null>(null);
 
   // Payment Selection States
-  const [paymentMethod, setPaymentMethod] = useState<"RAZORPAY" | "UPI" | "QR">("QR");
+  const [paymentMethod, setPaymentMethod] = useState<"UPI" | "QR" | "GPAY" | "PHONEPE" | "PAYTM" | "COD">("QR");
+  const [dummyUpiId, setDummyUpiId] = useState("");
   const [paymentRef, setPaymentRef] = useState("");
   const [paymentAccounts, setPaymentAccounts] = useState<any[]>([]);
   const [copiedToast, setCopiedToast] = useState(false);
@@ -286,6 +287,16 @@ export default function CheckoutPage() {
       return false;
     }
 
+    if (paymentMethod === "UPI" && (!dummyUpiId || !dummyUpiId.includes("@"))) {
+      setGlobalError("Please enter a valid dummy UPI ID (e.g. test@upi).");
+      return false;
+    }
+
+    if (totalItems < 2) {
+      setGlobalError("Minimum purchase quantity is 2 items.");
+      return false;
+    }
+
     return true;
   };
 
@@ -326,7 +337,8 @@ export default function CheckoutPage() {
       if (result.success && result.orderId) {
         const paymentRes = await confirmPaymentAction(
           result.orderId,
-          paymentRef.trim() || `PAY_${Date.now()}`
+          paymentMethod === "UPI" ? dummyUpiId : (paymentRef.trim() || `PAY_TEST_${Date.now()}`),
+          paymentMethod
         );
 
         if (paymentRes.success) {
@@ -348,7 +360,7 @@ export default function CheckoutPage() {
             district: district.trim(),
             state,
             pincode: pincode.trim(),
-            paymentStatus: paymentMethod === "RAZORPAY" ? "PAID" : "PAYMENT_REVIEW",
+            paymentStatus: "TEST_PAID",
             paymentMethod,
             items: snapshotItems,
           });
@@ -487,6 +499,23 @@ export default function CheckoutPage() {
           <div className="text-5xl">🛒</div>
           <h2 className="text-lg font-bold text-slate-900">Your cart is empty</h2>
           <p className="text-xs text-slate-500">Please add items to your cart before proceeding to checkout.</p>
+          <Link href="/products" className="inline-block bg-red-600 text-white text-xs font-bold px-6 py-2.5 rounded-xl">
+            Browse Products
+          </Link>
+        </div>
+        <Footer settings={settings} />
+      </div>
+    );
+  }
+
+  if (totalItems < 2) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex flex-col justify-between">
+        <Header settings={settings} />
+        <div className="max-w-md mx-auto my-16 p-8 bg-white rounded-3xl border border-slate-200 text-center space-y-4 shadow-sm">
+          <div className="text-5xl">⚠️</div>
+          <h2 className="text-lg font-bold text-slate-900">Minimum Order Not Met</h2>
+          <p className="text-xs text-slate-500">Minimum purchase quantity is 2 items.</p>
           <Link href="/products" className="inline-block bg-red-600 text-white text-xs font-bold px-6 py-2.5 rounded-xl">
             Browse Products
           </Link>
@@ -787,154 +816,147 @@ export default function CheckoutPage() {
                 Payment Options
               </h2>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
                 <button
                   type="button"
                   onClick={() => setPaymentMethod("QR")}
-                  className={`p-4 rounded-2xl border text-left transition-all flex flex-col justify-between ${
+                  className={`p-3 rounded-2xl border text-center transition-all flex flex-col items-center justify-center ${
                     paymentMethod === "QR"
                       ? "border-red-600 bg-red-50/50 ring-2 ring-red-600"
                       : "border-slate-200 hover:border-slate-300"
                   }`}
                 >
-                  <div>
-                    <span className="text-xl block mb-1">📱</span>
-                    <span className="font-extrabold text-xs text-slate-900 block">Scan UPI QR</span>
-                    <span className="text-[10px] text-slate-500 block">GPay / PhonePe / Paytm</span>
-                  </div>
-                  <span className="text-[10px] font-extrabold text-red-600 mt-2 block">RECOMMENDED</span>
+                  <span className="text-xl block mb-1">📱</span>
+                  <span className="font-extrabold text-[11px] text-slate-900 block">QR Code</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setPaymentMethod("UPI")}
-                  className={`p-4 rounded-2xl border text-left transition-all flex flex-col justify-between ${
+                  className={`p-3 rounded-2xl border text-center transition-all flex flex-col items-center justify-center ${
                     paymentMethod === "UPI"
                       ? "border-red-600 bg-red-50/50 ring-2 ring-red-600"
                       : "border-slate-200 hover:border-slate-300"
                   }`}
                 >
-                  <div>
-                    <span className="text-xl block mb-1">💳</span>
-                    <span className="font-extrabold text-xs text-slate-900 block">UPI Direct App</span>
-                    <span className="text-[10px] text-slate-500 block">Instant App Payment</span>
-                  </div>
-                  <span className="text-[10px] font-bold text-slate-500 mt-2 block">Instant</span>
+                  <span className="text-xl block mb-1">💳</span>
+                  <span className="font-extrabold text-[11px] text-slate-900 block">UPI ID</span>
                 </button>
 
                 <button
                   type="button"
-                  onClick={() => setPaymentMethod("RAZORPAY")}
-                  className={`p-4 rounded-2xl border text-left transition-all flex flex-col justify-between ${
-                    paymentMethod === "RAZORPAY"
+                  onClick={() => setPaymentMethod("GPAY")}
+                  className={`p-3 rounded-2xl border text-center transition-all flex flex-col items-center justify-center ${
+                    paymentMethod === "GPAY"
                       ? "border-red-600 bg-red-50/50 ring-2 ring-red-600"
                       : "border-slate-200 hover:border-slate-300"
                   }`}
                 >
-                  <div>
-                    <span className="text-xl block mb-1">⚡</span>
-                    <span className="font-extrabold text-xs text-slate-900 block">Razorpay Gateway</span>
-                    <span className="text-[10px] text-slate-500 block">Cards / Netbanking</span>
-                  </div>
-                  <span className="text-[10px] font-bold text-slate-500 mt-2 block">Secure</span>
+                  <span className="text-xl block mb-1">G</span>
+                  <span className="font-extrabold text-[11px] text-slate-900 block">Google Pay</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setPaymentMethod("PHONEPE")}
+                  className={`p-3 rounded-2xl border text-center transition-all flex flex-col items-center justify-center ${
+                    paymentMethod === "PHONEPE"
+                      ? "border-red-600 bg-red-50/50 ring-2 ring-red-600"
+                      : "border-slate-200 hover:border-slate-300"
+                  }`}
+                >
+                  <span className="text-xl block mb-1">P</span>
+                  <span className="font-extrabold text-[11px] text-slate-900 block">PhonePe</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setPaymentMethod("PAYTM")}
+                  className={`p-3 rounded-2xl border text-center transition-all flex flex-col items-center justify-center ${
+                    paymentMethod === "PAYTM"
+                      ? "border-red-600 bg-red-50/50 ring-2 ring-red-600"
+                      : "border-slate-200 hover:border-slate-300"
+                  }`}
+                >
+                  <span className="text-xl block mb-1">T</span>
+                  <span className="font-extrabold text-[11px] text-slate-900 block">Paytm</span>
+                </button>
+                
+                <button
+                  type="button"
+                  onClick={() => setPaymentMethod("COD")}
+                  className={`p-3 rounded-2xl border text-center transition-all flex flex-col items-center justify-center ${
+                    paymentMethod === "COD"
+                      ? "border-red-600 bg-red-50/50 ring-2 ring-red-600"
+                      : "border-slate-200 hover:border-slate-300"
+                  }`}
+                >
+                  <span className="text-xl block mb-1">💵</span>
+                  <span className="font-extrabold text-[11px] text-slate-900 block">COD</span>
                 </button>
               </div>
 
               {/* Dynamic QR Code Card */}
               {paymentMethod === "QR" && (
                 <div className="p-6 bg-slate-900 rounded-3xl text-white space-y-4 text-center border border-slate-800">
+                  <h3 className="font-bold text-red-500">TEST QR CODE</h3>
                   <div className="inline-block bg-white p-3 rounded-2xl shadow-xl">
                     <img
-                      src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(
-                        upiDeepLink
-                      )}`}
-                      alt="UPI QR Code"
+                      src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=TEST_QR_CODE`}
+                      alt="TEST UPI QR Code"
                       className="w-40 h-40 object-contain mx-auto"
                     />
                   </div>
-
-                  <div>
-                    <p className="text-xs text-slate-300 font-medium">Official Store UPI ID:</p>
-                    <div className="inline-flex items-center gap-2 bg-slate-800 px-4 py-2 rounded-xl mt-1 border border-slate-700">
-                      <span className="font-mono text-xs font-bold text-amber-300">{upiIdToUse}</span>
-                      <button
-                        type="button"
-                        onClick={handleCopyUpiId}
-                        className="text-[10px] bg-amber-500 hover:bg-amber-600 text-slate-950 font-black px-2.5 py-1 rounded-lg transition-all"
-                      >
-                        Copy
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="pt-2">
-                    <label className="block text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-1 text-left">
-                      UPI Transaction Reference / UTR No. (Optional)
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="e.g. 421098765432"
-                      value={paymentRef}
-                      onChange={(e) => setPaymentRef(e.target.value)}
-                      className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-xl text-xs font-mono text-white focus:outline-none focus:ring-2 focus:ring-amber-400"
-                    />
-                  </div>
+                  <p className="text-xs text-slate-300">Scan this test QR code to simulate a payment.</p>
                 </div>
               )}
 
               {/* UPI Direct App Card */}
               {paymentMethod === "UPI" && (
                 <div className="p-6 bg-slate-900 rounded-3xl text-white space-y-4 border border-slate-800">
-                  <p className="text-xs text-slate-300 font-medium">Click your preferred UPI app to make instant payment:</p>
+                  <p className="text-xs text-slate-300 font-medium">Enter a Dummy UPI ID for testing:</p>
                   
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                    <a
-                      href={upiDeepLink}
-                      className="p-3 bg-slate-800 hover:bg-slate-700 rounded-xl text-center text-xs font-bold text-amber-300 border border-slate-700 transition-all block"
-                    >
-                      Google Pay
-                    </a>
-                    <a
-                      href={upiDeepLink}
-                      className="p-3 bg-slate-800 hover:bg-slate-700 rounded-xl text-center text-xs font-bold text-purple-300 border border-slate-700 transition-all block"
-                    >
-                      PhonePe
-                    </a>
-                    <a
-                      href={upiDeepLink}
-                      className="p-3 bg-slate-800 hover:bg-slate-700 rounded-xl text-center text-xs font-bold text-emerald-300 border border-slate-700 transition-all block"
-                    >
-                      BHIM UPI
-                    </a>
-                    <a
-                      href={upiDeepLink}
-                      className="p-3 bg-slate-800 hover:bg-slate-700 rounded-xl text-center text-xs font-bold text-cyan-300 border border-slate-700 transition-all block"
-                    >
-                      Paytm
-                    </a>
-                  </div>
-
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-1">
-                      UPI Transaction Reference / UTR No. (Optional)
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="e.g. 421098765432"
-                      value={paymentRef}
-                      onChange={(e) => setPaymentRef(e.target.value)}
-                      className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-xl text-xs font-mono text-white focus:outline-none focus:ring-2 focus:ring-amber-400"
-                    />
-                  </div>
+                  <input
+                    type="text"
+                    placeholder="e.g. test@upi"
+                    value={dummyUpiId}
+                    onChange={(e) => setDummyUpiId(e.target.value)}
+                    className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-xl text-xs font-mono text-white focus:outline-none focus:ring-2 focus:ring-amber-400"
+                  />
                 </div>
               )}
 
-              {paymentMethod === "RAZORPAY" && (
-                <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl text-amber-900 text-xs font-semibold">
-                  ⚡ Razorpay Gateway mode: Payment signature will be verified server-side after order creation.
+              {["GPAY", "PHONEPE", "PAYTM"].includes(paymentMethod) && (
+                <div className="p-6 bg-slate-900 rounded-3xl text-white space-y-4 border border-slate-800 text-center">
+                  <p className="text-xs text-slate-300 font-medium">Test Payment Selected</p>
+                  <p className="text-xs font-bold text-emerald-400">Placing the order will simulate a successful {paymentMethod} payment.</p>
                 </div>
               )}
 
+              {paymentMethod === "COD" && (
+                <div className="p-6 bg-slate-900 rounded-3xl text-white space-y-4 border border-slate-800 text-center">
+                  <p className="text-xs font-bold text-amber-400">Cash on Delivery</p>
+                  <p className="text-xs text-slate-300 font-medium">You can pay with cash when the order is delivered.</p>
+                </div>
+              )}
+
+              {/* Order Button */}
+              <button
+                type="submit"
+                disabled={loading || items.length < 2}
+                className="w-full py-4 mt-6 bg-gradient-to-r from-red-600 via-red-700 to-amber-600 hover:from-red-700 hover:to-amber-700 text-white font-black text-sm uppercase tracking-wider rounded-2xl shadow-lg transition-all flex items-center justify-center gap-3 disabled:opacity-70 disabled:cursor-not-allowed"
+              >
+                {loading ? (
+                  <span className="flex items-center gap-2">
+                    <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                    Processing Order...
+                  </span>
+                ) : items.length < 2 ? (
+                  <span>Min 2 Items Required to Checkout</span>
+                ) : (
+                  <span>Submit Order & Pay ₹{grandTotal.toLocaleString("en-IN")}</span>
+                )}
+              </button>
             </div>
 
           </div>

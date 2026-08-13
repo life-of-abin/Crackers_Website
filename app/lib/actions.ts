@@ -273,8 +273,9 @@ export async function createOrderAction(data: {
         });
       }
 
-      if (calculatedSubtotal < minOrder) {
-        throw new Error(`Minimum order amount required is ₹${minOrder}. Current subtotal is ₹${calculatedSubtotal.toFixed(2)}.`);
+      const totalQuantity = data.cartItems.reduce((acc, item) => acc + item.quantity, 0);
+      if (totalQuantity < 2) {
+        throw new Error("Minimum purchase quantity is 2 items.");
       }
 
       const shippingFee = calculatedSubtotal >= freeThreshold ? 0 : flatFee;
@@ -349,8 +350,7 @@ export async function createOrderAction(data: {
   }
 }
 
-// Confirm Payment status action
-export async function confirmPaymentAction(orderId: number, paymentId: string) {
+export async function confirmPaymentAction(orderId: number, paymentRefStr: string, paymentMethod: string = "DUMMY") {
   try {
     const existingOrder = await prisma.order.findUnique({
       where: { id: orderId },
@@ -363,8 +363,8 @@ export async function confirmPaymentAction(orderId: number, paymentId: string) {
     await prisma.order.update({
       where: { id: orderId },
       data: {
-        paymentStatus: "PAID",
-        paymentId: paymentId,
+        paymentStatus: "TEST_PAID",
+        paymentId: paymentRefStr,
         orderStatus: "CONFIRMED",
       },
     });
@@ -372,7 +372,8 @@ export async function confirmPaymentAction(orderId: number, paymentId: string) {
     await prisma.payment.create({
       data: {
         orderId,
-        razorpayPaymentId: paymentId,
+        paymentRef: paymentRefStr,
+        paymentMethod,
         amount: existingOrder.totalAmount,
         status: "SUCCESS",
       },

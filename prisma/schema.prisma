@@ -137,9 +137,6 @@ model OrderItem {
 model Payment {
   id                Int      @id @default(autoincrement())
   orderId           Int
-  razorpayOrderId   String?
-  razorpayPaymentId String?
-  razorpaySignature String?
   paymentMethod     String?
   paymentRef        String?
   amount            Decimal
