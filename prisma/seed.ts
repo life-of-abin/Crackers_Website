@@ -933,26 +933,35 @@ async function main() {
     },
   });
 
-  // Admin password: Admin@12345 (SHA256 / simple hash for seed or standard salt)
-  // Simple deterministic hash for seed:
-  const adminPasswordHash = "$2a$10$e8w.p8L5Z99K.O8wP.E8eu8e0V7sXz2Wp5Yx3.Z9o9/Z9o9/Z9o9."; 
+  // Admin credentials setup
+  const adminEmail = process.env.ADMIN_EMAIL || "abinesh.ece2003@gmail.com";
+  let adminPasswordHash = process.env.ADMIN_PASSWORD_HASH;
+
+  if (!adminPasswordHash) {
+    const adminPassword = process.env.ADMIN_PASSWORD || "Admin@12345";
+    // Dynamically generate PBKDF2 hash matching comparePassword in lib/auth.ts
+    const crypto = require("crypto");
+    const salt = crypto.randomBytes(16).toString("hex");
+    const hash = crypto.pbkdf2Sync(adminPassword, salt, 100000, 64, "sha512").toString("hex");
+    adminPasswordHash = `pbkdf2:100000:${salt}:${hash}`;
+  }
 
   await prisma.user.upsert({
-    where: { email: "abinesh.ece2003@gmail.com" },
+    where: { email: adminEmail },
     update: {
       role: "ADMIN",
       phone: "+919629525907",
     },
     create: {
       name: "Store Administrator",
-      email: "abinesh.ece2003@gmail.com",
+      email: adminEmail,
       phone: "+919629525907",
       passwordHash: adminPasswordHash,
       role: "ADMIN",
     },
   });
 
-  console.log("✅ Default settings and Admin user ready (abinesh.ece2003@gmail.com)");
+  console.log(`✅ Default settings and Admin user ready (${adminEmail})`);
 
   // ------------------------------------------------------------
   // 1. Create categories

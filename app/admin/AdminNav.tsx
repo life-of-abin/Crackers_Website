@@ -86,10 +86,10 @@ export default function AdminNav({ user, children }: AdminNavProps) {
                 await logoutAction();
                 window.location.href = "/admin/login";
               }}
-              className="text-xs text-red-400 hover:text-red-300 font-bold"
+              className="text-xs text-red-400 hover:text-red-300 font-extrabold uppercase bg-red-950/30 border border-red-900/40 hover:bg-red-950/60 px-3 py-1.5 rounded-lg transition-all"
               title="Logout"
             >
-              Exit
+              Logout
             </button>
           </div>
         </div>
@@ -125,6 +125,17 @@ export default function AdminNav({ user, children }: AdminNavProps) {
               <span>{item.label}</span>
             </Link>
           ))}
+          <button
+            onClick={async () => {
+              setMobileOpen(false);
+              await logoutAction();
+              window.location.href = "/admin/login";
+            }}
+            className="w-full flex items-center gap-3 p-2.5 rounded-lg hover:bg-red-950/40 text-red-400 font-extrabold text-left border border-red-900/40 mt-2 transition-colors cursor-pointer"
+          >
+            <span>🚪</span>
+            <span>Logout</span>
+          </button>
         </div>
       )}
 
