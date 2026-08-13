@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { useRouter, usePathname } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useCart } from "@/lib/cart-context";
 import type { StoreSettings } from "@/lib/settings";
 import LiveSearch from "./LiveSearch";
@@ -13,7 +13,6 @@ interface HeaderProps {
 }
 
 export default function Header({ settings, user }: HeaderProps) {
-  const router = useRouter();
   const pathname = usePathname();
   const { totalItems, isMounted } = useCart();
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -74,41 +73,42 @@ export default function Header({ settings, user }: HeaderProps) {
         </div>
 
         {/* Main Header Container */}
-        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-2 sm:py-3">
-          {/* Mobile Order: Shop Icon → Sivakasi Crackers Shop Name → Search Icon → Cart Icon */}
-          <div className="flex items-center justify-between gap-2 sm:gap-4 min-h-[40px] w-full">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-2.5 sm:py-3">
+          {/* Main Horizontal Header Row: [ MENU ] [ SHOP BRAND ] [ SEARCH ] [ CART ] */}
+          <div className="flex items-center justify-between gap-2 sm:gap-4 min-h-[40px] w-full flex-nowrap">
 
-            {/* Left Group: Shop Icon → Shop Name */}
-            <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1 sm:flex-initial">
-              {/* Shop Icon Button (Triggers Drawer Menu) */}
-              <button
-                onClick={() => setDrawerOpen(true)}
-                className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-gradient-to-tr from-rose-600 via-amber-500 to-yellow-400 flex items-center justify-center text-white font-black text-base sm:text-xl shadow-md gold-glow hover:scale-105 transition-transform flex-shrink-0 touch-target"
-                aria-label="Open menu drawer"
-                title="Open Shop Menu"
-              >
-                🪔
-              </button>
+            {/* 1. Menu Button (Far Left - Mobile Only) */}
+            <button
+              type="button"
+              onClick={() => setDrawerOpen(true)}
+              className="w-9 h-9 flex items-center justify-center text-slate-800 hover:text-rose-600 active:scale-95 bg-slate-100/80 border border-slate-200/80 hover:border-rose-300 rounded-xl transition-all duration-200 flex-shrink-0 touch-target shadow-2xs group"
+              aria-label="Open navigation menu"
+              title="Open Navigation Menu"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
 
-              {/* Brand Shop Name */}
-              <Link href="/" className="flex flex-col min-w-0 truncate group">
-                <span className="text-sm sm:text-xl md:text-2xl font-black tracking-tight text-slate-900 font-display group-hover:text-rose-700 transition-colors uppercase leading-none truncate">
-                  {settings.storeName}
-                </span>
-                <span className="hidden sm:block text-[9px] tracking-widest font-extrabold text-amber-600 uppercase mt-0.5 truncate">
-                  Direct From Sivakasi • Genuine Crackers
-                </span>
-              </Link>
-            </div>
+            {/* 2. Shop Icon + Sivakasi Crackers Shop Name (Flexible, Truncating) */}
+            <Link
+              href="/"
+              className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1 justify-start group truncate"
+            >
+              <span className="text-base sm:text-xl flex-shrink-0">🎆</span>
+              <span className="text-xs sm:text-sm md:text-xl font-black tracking-tight text-slate-900 font-display group-hover:text-rose-700 transition-colors uppercase leading-none truncate">
+                {settings.storeName}
+              </span>
+            </Link>
 
-            {/* Right Group: Search Icon → Cart Icon */}
+            {/* 3 & 4. Right Group Controls */}
             <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
-              {/* Desktop/Tablet Live Search Input Bar */}
+              {/* Desktop/Tablet Live Search Input Bar (Visible directly on desktop/tablet only, hidden on mobile) */}
               <div className="hidden md:block w-48 lg:w-64">
                 <LiveSearch />
               </div>
 
-              {/* Mobile Search Icon Button */}
+              {/* Mobile Search Icon Button (Visible on mobile only, toggles search row underneath header) */}
               <button
                 type="button"
                 onClick={() => setMobileSearchOpen((prev) => !prev)}
@@ -119,7 +119,7 @@ export default function Header({ settings, user }: HeaderProps) {
                 🔍
               </button>
 
-              {/* Shopping Cart Button */}
+              {/* Shopping Cart Button (Always visible) */}
               <Link
                 href="/cart"
                 className="group relative inline-flex items-center justify-center gap-1.5 sm:gap-2 h-8 sm:h-10 px-2.5 sm:px-4 rounded-xl text-xs sm:text-sm font-bold text-slate-800 bg-amber-50 hover:bg-amber-100 border border-amber-300/80 hover:border-amber-400 hover:text-slate-900 transition-all duration-200 shadow-2xs focus:outline-none focus:ring-2 focus:ring-amber-500/40 whitespace-nowrap touch-target flex-shrink-0"
@@ -138,15 +138,16 @@ export default function Header({ settings, user }: HeaderProps) {
             </div>
           </div>
 
-          {/* Toggled Mobile Search Bar (Expands smoothly below header when Search Icon is clicked on mobile) */}
+          {/* Mobile Dedicated Search Row (Revealed underneath header when Search Icon is clicked on mobile) */}
           {mobileSearchOpen && (
-            <div className="md:hidden mt-2 pt-2 border-t border-slate-200/80 flex items-center gap-2">
-              <div className="flex-1">
+            <div className="md:hidden mt-2 pt-2 border-t border-amber-100 flex items-center gap-2">
+              <div className="flex-1 min-w-0">
                 <LiveSearch />
               </div>
               <button
+                type="button"
                 onClick={() => setMobileSearchOpen(false)}
-                className="w-8 h-8 rounded-lg bg-slate-100 text-slate-600 hover:text-slate-900 flex items-center justify-center text-xs font-bold flex-shrink-0"
+                className="w-8 h-8 flex items-center justify-center rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 text-xs font-bold flex-shrink-0 touch-target"
                 aria-label="Close search"
               >
                 ✕
@@ -154,10 +155,9 @@ export default function Header({ settings, user }: HeaderProps) {
             </div>
           )}
         </div>
-
       </header>
 
-      {/* Slide-Over Responsive Navigation Drawer */}
+      {/* Slide-Over Navigation Drawer (Left to Right) */}
       <div
         className={`fixed inset-0 z-[100] flex transition-opacity duration-300 ${drawerOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}`}
         role="dialog"
@@ -165,23 +165,26 @@ export default function Header({ settings, user }: HeaderProps) {
       >
         {/* Backdrop Overlay */}
         <div
-          className="absolute inset-0 bg-slate-950/70 backdrop-blur-sm"
+          className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm transition-opacity"
           onClick={() => setDrawerOpen(false)}
         />
 
-        {/* Drawer Panel */}
-        <div className={`relative z-10 w-[85vw] max-w-sm sm:w-80 bg-slate-950 text-slate-100 border-r border-amber-500/30 flex flex-col shadow-2xl h-[100dvh] overflow-hidden transition-transform duration-300 ease-in-out ${drawerOpen ? "translate-x-0" : "-translate-x-full"}`}>
-          {/* Drawer Header */}
+        {/* Drawer Panel - Fixed to Left side, slides left to right */}
+        <div
+          className={`relative z-10 w-[85vw] max-w-xs bg-slate-950 text-slate-100 border-r border-amber-500/30 flex flex-col shadow-2xl h-[100dvh] overflow-hidden transition-transform duration-300 ease-in-out ${
+            drawerOpen ? "translate-x-0" : "-translate-x-full"
+          }`}
+        >
+          {/* Drawer Header with Close X Button */}
           <div className="p-4 bg-slate-900 border-b border-slate-800 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-rose-600 via-amber-500 to-yellow-400 flex items-center justify-center text-white font-black text-sm">
-                🪔
-              </div>
-              <span className="font-black text-lg text-white font-display uppercase tracking-tight">
+              <span className="text-xl">🎆</span>
+              <span className="font-black text-lg text-white font-display uppercase tracking-tight truncate">
                 {settings.storeName}
               </span>
             </div>
             <button
+              type="button"
               onClick={() => setDrawerOpen(false)}
               className="w-9 h-9 rounded-xl bg-slate-800 hover:bg-rose-900/60 text-slate-300 hover:text-white flex items-center justify-center transition-colors focus:outline-none focus:ring-2 focus:ring-amber-400 touch-target"
               aria-label="Close navigation menu"
@@ -192,33 +195,23 @@ export default function Header({ settings, user }: HeaderProps) {
             </button>
           </div>
 
-          {/* Drawer Scrollable Content */}
+          {/* Drawer Scrollable Navigation Links */}
           <div className="flex-1 overflow-y-auto px-5 py-6 space-y-6">
-
-            {/* 1. SHOP (Main Destinations) */}
             <div>
               <h3 className="text-[11px] font-extrabold text-amber-400 uppercase tracking-widest mb-3 border-b border-slate-800 pb-1.5">
-                Shop
+                Navigation
               </h3>
               <ul className="space-y-1.5 font-semibold text-sm">
                 <li>
                   <Link
                     href="/"
                     onClick={() => setDrawerOpen(false)}
-                    className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors ${pathname === "/" ? "bg-amber-500/20 text-amber-300 font-bold" : "hover:bg-slate-900 hover:text-amber-300"}`}
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors ${
+                      pathname === "/" ? "bg-amber-500/20 text-amber-300 font-bold" : "hover:bg-slate-900 hover:text-amber-300"
+                    }`}
                   >
                     <span>🏠</span>
                     <span>Home</span>
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    href="/products"
-                    onClick={() => setDrawerOpen(false)}
-                    className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors ${pathname.startsWith("/products") ? "bg-amber-500/20 text-amber-300 font-bold" : "hover:bg-slate-900 hover:text-amber-300"}`}
-                  >
-                    <span>🎆</span>
-                    <span>Products</span>
                   </Link>
                 </li>
                 <li>
@@ -231,49 +224,60 @@ export default function Header({ settings, user }: HeaderProps) {
                     <span>Categories</span>
                   </Link>
                 </li>
-              </ul>
-            </div>
-
-            {/* 2. EXPLORE */}
-            <div>
-              <h3 className="text-[11px] font-extrabold text-amber-400 uppercase tracking-widest mb-3 border-b border-slate-800 pb-1.5">
-                Explore
-              </h3>
-              <ul className="space-y-1.5 font-semibold text-sm">
+                <li>
+                  <Link
+                    href="/products"
+                    onClick={() => setDrawerOpen(false)}
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors ${
+                      pathname.startsWith("/products") && !pathname.includes("#categories")
+                        ? "bg-amber-500/20 text-amber-300 font-bold"
+                        : "hover:bg-slate-900 hover:text-amber-300"
+                    }`}
+                  >
+                    <span>🎆</span>
+                    <span>Products</span>
+                  </Link>
+                </li>
                 <li>
                   <Link
                     href="/about"
                     onClick={() => setDrawerOpen(false)}
-                    className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors ${pathname === "/about" ? "bg-amber-500/20 text-amber-300 font-bold" : "hover:bg-slate-900 hover:text-amber-300"}`}
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors ${
+                      pathname === "/about" ? "bg-amber-500/20 text-amber-300 font-bold" : "hover:bg-slate-900 hover:text-amber-300"
+                    }`}
                   >
                     <span>ℹ️</span>
-                    <span>About Us</span>
+                    <span>About</span>
                   </Link>
                 </li>
                 <li>
                   <Link
                     href="/contact"
                     onClick={() => setDrawerOpen(false)}
-                    className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors ${pathname === "/contact" ? "bg-amber-500/20 text-amber-300 font-bold" : "hover:bg-slate-900 hover:text-amber-300"}`}
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors ${
+                      pathname === "/contact" ? "bg-amber-500/20 text-amber-300 font-bold" : "hover:bg-slate-900 hover:text-amber-300"
+                    }`}
                   >
                     <span>📞</span>
-                    <span>Contact Us</span>
+                    <span>Contact</span>
                   </Link>
                 </li>
               </ul>
             </div>
 
-            {/* 3. USEFUL */}
+            {/* Quick Links Section */}
             <div>
               <h3 className="text-[11px] font-extrabold text-amber-400 uppercase tracking-widest mb-3 border-b border-slate-800 pb-1.5">
-                Useful
+                Quick Help
               </h3>
               <ul className="space-y-1.5 font-semibold text-sm">
                 <li>
                   <Link
                     href="/track-order"
                     onClick={() => setDrawerOpen(false)}
-                    className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors ${pathname === "/track-order" ? "bg-amber-500/20 text-amber-300 font-bold" : "hover:bg-slate-900 hover:text-amber-300"}`}
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors ${
+                      pathname === "/track-order" ? "bg-amber-500/20 text-amber-300 font-bold" : "hover:bg-slate-900 hover:text-amber-300"
+                    }`}
                   >
                     <span>🚚</span>
                     <span>Track Order</span>
@@ -281,79 +285,33 @@ export default function Header({ settings, user }: HeaderProps) {
                 </li>
                 <li>
                   <Link
-                    href="/contact"
+                    href="/faq"
                     onClick={() => setDrawerOpen(false)}
-                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-900 hover:text-amber-300 transition-colors"
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors ${
+                      pathname === "/faq" ? "bg-amber-500/20 text-amber-300 font-bold" : "hover:bg-slate-900 hover:text-amber-300"
+                    }`}
                   >
-                    <span>💬</span>
-                    <span>Customer Support</span>
+                    <span>❓</span>
+                    <span>FAQ</span>
                   </Link>
                 </li>
                 <li>
                   <Link
                     href="/shipping"
                     onClick={() => setDrawerOpen(false)}
-                    className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors ${pathname === "/shipping" ? "bg-amber-500/20 text-amber-300 font-bold" : "hover:bg-slate-900 hover:text-amber-300"}`}
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors ${
+                      pathname === "/shipping" ? "bg-amber-500/20 text-amber-300 font-bold" : "hover:bg-slate-900 hover:text-amber-300"
+                    }`}
                   >
                     <span>📦</span>
                     <span>Shipping Policy</span>
                   </Link>
                 </li>
-                <li>
-                  <Link
-                    href="/faq"
-                    onClick={() => setDrawerOpen(false)}
-                    className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors ${pathname === "/faq" ? "bg-amber-500/20 text-amber-300 font-bold" : "hover:bg-slate-900 hover:text-amber-300"}`}
-                  >
-                    <span>❓</span>
-                    <span>FAQ</span>
-                  </Link>
-                </li>
               </ul>
             </div>
-
-            {/* 4. LEGAL */}
-            <div>
-              <h3 className="text-[11px] font-extrabold text-amber-400 uppercase tracking-widest mb-3 border-b border-slate-800 pb-1.5">
-                Legal
-              </h3>
-              <ul className="space-y-1.5 font-semibold text-sm">
-                <li>
-                  <Link
-                    href="/privacy"
-                    onClick={() => setDrawerOpen(false)}
-                    className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors ${pathname === "/privacy" ? "bg-amber-500/20 text-amber-300 font-bold" : "hover:bg-slate-900 hover:text-amber-300"}`}
-                  >
-                    <span>🛡️</span>
-                    <span>Privacy Policy</span>
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    href="/terms"
-                    onClick={() => setDrawerOpen(false)}
-                    className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors ${pathname === "/terms" ? "bg-amber-500/20 text-amber-300 font-bold" : "hover:bg-slate-900 hover:text-amber-300"}`}
-                  >
-                    <span>📜</span>
-                    <span>Terms & Conditions</span>
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    href="/refund-policy"
-                    onClick={() => setDrawerOpen(false)}
-                    className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors ${pathname === "/refund-policy" ? "bg-amber-500/20 text-amber-300 font-bold" : "hover:bg-slate-900 hover:text-amber-300"}`}
-                  >
-                    <span>🔄</span>
-                    <span>Refund & Cancellation</span>
-                  </Link>
-                </li>
-              </ul>
-            </div>
-
           </div>
 
-          {/* Drawer Footer / Helpline Action */}
+          {/* Drawer Footer */}
           <div className="p-4 bg-slate-900 border-t border-slate-800">
             <a
               href={`https://wa.me/${settings.whatsappNumber.replace(/[^0-9]/g, "")}`}
@@ -362,7 +320,7 @@ export default function Header({ settings, user }: HeaderProps) {
               className="w-full inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition-colors shadow-md"
             >
               <span>💬</span>
-              <span>WhatsApp Helpline</span>
+              <span>WhatsApp Support</span>
             </a>
           </div>
         </div>
