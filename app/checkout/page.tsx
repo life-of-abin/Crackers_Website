@@ -30,7 +30,7 @@ const DEFAULT_SETTINGS: StoreSettings = {
   id: 1,
   storeName: "Sri Sivakasi Crackers",
   phone: "9629525907",
-  email: "abinesh.ece200@gmail.com",
+  email: "abinesh.ece2003@gmail.com",
   address: "123 Main Bazaar, Sivakasi, Tamil Nadu 626123",
   googleMapsUrl: "https://maps.google.com/?q=Sivakasi,Tamil+Nadu",
   whatsappNumber: "+919629525907",

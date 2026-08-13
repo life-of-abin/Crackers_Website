@@ -76,52 +76,42 @@ export default function Footer({ settings }: FooterProps) {
             <h3 className="text-sm font-bold text-white uppercase tracking-wider mb-4 border-b border-slate-800 pb-2">
               Store Information
             </h3>
-            <ul className="space-y-2.5 text-xs font-medium">
-              <li>
-                <a
-                  href={settings.googleMapsUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="hover:text-amber-400 transition-colors flex items-center gap-2"
-                >
-                  <svg className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
-                  <span>Store Location & Directions</span>
+            <ul className="space-y-3 text-xs font-medium">
+              <li className="flex items-center gap-2">
+                <span className="text-amber-400">📞</span>
+                <a href="tel:9629525907" className="font-bold text-white hover:text-amber-400 transition-colors">
+                  Phone: 9629525907
                 </a>
               </li>
-              <li>
-                <Link href="/contact" className="hover:text-amber-400 transition-colors flex items-center gap-2">
-                  <span>📞</span> Contact Us
-                </Link>
+              <li className="flex items-center gap-2">
+                <span className="text-emerald-400">💬</span>
+                <a
+                  href="https://wa.me/919629525907"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-bold text-emerald-400 hover:text-emerald-300 transition-colors"
+                >
+                  WhatsApp: 9629525907
+                </a>
               </li>
-              <li>
-                <Link href="/about" className="hover:text-amber-400 transition-colors flex items-center gap-2">
-                  <span>ℹ️</span> About Us
-                </Link>
+              <li className="flex items-center gap-2">
+                <span className="text-amber-400">✉️</span>
+                <a href="mailto:abinesh.ece2003@gmail.com" className="font-bold text-amber-300 hover:underline break-all">
+                  Email: abinesh.ece2003@gmail.com
+                </a>
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="text-rose-400">📍</span>
+                <a
+                  href={settings.googleMapsUrl || "https://maps.google.com/?q=Sivakasi,Tamil+Nadu"}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-medium text-slate-300 hover:text-amber-400 transition-colors"
+                >
+                  Shop Location: Sivakasi, Tamil Nadu, India
+                </a>
               </li>
             </ul>
-
-            <div className="mt-6 pt-4 border-t border-slate-900 space-y-2 text-xs">
-              <div className="flex items-center gap-2">
-                <span className="text-amber-400">📞</span>
-                <a href={`tel:${settings.phone}`} className="font-bold text-white hover:text-amber-400">
-                  {settings.phone}
-                </a>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-amber-400">💬</span>
-                <a
-                  href={`https://wa.me/${settings.whatsappNumber.replace(/[^0-9]/g, "")}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="font-bold text-emerald-400 hover:underline"
-                >
-                  WhatsApp Support
-                </a>
-              </div>
-            </div>
           </div>
 
           {/* Column 4: Legal & Policies */}

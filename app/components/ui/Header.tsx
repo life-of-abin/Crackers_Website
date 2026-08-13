@@ -17,10 +17,12 @@ export default function Header({ settings, user }: HeaderProps) {
   const pathname = usePathname();
   const { totalItems, isMounted } = useCart();
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
 
-  // Close drawer when route changes
+  // Close drawer & mobile search when route changes
   useEffect(() => {
     setDrawerOpen(false);
+    setMobileSearchOpen(false);
   }, [pathname]);
 
   // Handle ESC key press & body scroll lock when drawer is open
@@ -28,6 +30,7 @@ export default function Header({ settings, user }: HeaderProps) {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         setDrawerOpen(false);
+        setMobileSearchOpen(false);
       }
     };
 
@@ -55,9 +58,11 @@ export default function Header({ settings, user }: HeaderProps) {
               🔥 DIWALI FESTIVE SALE IS LIVE! FREE EXPRESS SHIPPING OVER ₹{settings.freeShippingThreshold.toLocaleString("en-IN")}
             </span>
             <div className="hidden sm:flex items-center space-x-6 text-amber-300 font-semibold">
-              <span>📞 Support: {settings.phone}</span>
+              <a href="tel:9629525907" className="hover:text-amber-200 transition-colors">
+                📞 Support: 9629525907
+              </a>
               <a
-                href={`https://wa.me/${settings.whatsappNumber.replace(/[^0-9]/g, "")}`}
+                href="https://wa.me/919629525907"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="hover:text-emerald-400 transition-colors flex items-center gap-1 font-bold"
@@ -70,51 +75,54 @@ export default function Header({ settings, user }: HeaderProps) {
 
         {/* Main Header Container */}
         <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-2 sm:py-3">
-          {/* Row 1: Controls & Brand */}
-          <div className="flex items-center justify-between gap-2 sm:gap-4 min-h-[40px]">
+          {/* Mobile Order: Shop Icon → Sivakasi Crackers Shop Name → Search Icon → Cart Icon */}
+          <div className="flex items-center justify-between gap-2 sm:gap-4 min-h-[40px] w-full">
 
-            {/* Left: Hamburger Button + Brand Logo */}
+            {/* Left Group: Shop Icon → Shop Name */}
             <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1 sm:flex-initial">
-              {/* Three-Horizontal-Line (Hamburger) Menu Button */}
+              {/* Shop Icon Button (Triggers Drawer Menu) */}
               <button
                 onClick={() => setDrawerOpen(true)}
-                className="inline-flex items-center justify-center gap-1.5 h-9 sm:h-10 px-2.5 sm:px-3 rounded-xl text-slate-800 hover:text-rose-700 bg-slate-100 hover:bg-amber-100/70 border border-slate-200 hover:border-amber-400/60 font-semibold text-xs sm:text-sm transition-all focus:outline-none focus:ring-2 focus:ring-amber-500/40 touch-target flex-shrink-0"
-                aria-label="Open navigation menu drawer"
-                title="Open Navigation Menu"
+                className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-gradient-to-tr from-rose-600 via-amber-500 to-yellow-400 flex items-center justify-center text-white font-black text-base sm:text-xl shadow-md gold-glow hover:scale-105 transition-transform flex-shrink-0 touch-target"
+                aria-label="Open menu drawer"
+                title="Open Shop Menu"
               >
-                <svg className="w-5 h-5 text-slate-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-                <span className="hidden sm:inline font-bold uppercase tracking-wider text-[11px]">Menu</span>
+                🪔
               </button>
 
-              {/* Brand Logo & Name */}
-              <Link href="/" className="flex items-center gap-1.5 sm:gap-2 group min-w-0 flex-shrink truncate">
-                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-gradient-to-tr from-rose-600 via-amber-500 to-yellow-400 flex items-center justify-center text-white font-black text-base sm:text-xl shadow-md gold-glow group-hover:scale-105 transition-transform flex-shrink-0">
-                  🪔
-                </div>
-                <div className="flex flex-col min-w-0 truncate">
-                  <span className="text-base sm:text-xl md:text-2xl font-black tracking-tight text-slate-900 font-display group-hover:text-rose-700 transition-colors uppercase leading-none truncate">
-                    {settings.storeName}
-                  </span>
-                  <span className="hidden sm:block text-[9px] tracking-widest font-extrabold text-amber-600 uppercase mt-0.5 truncate">
-                    Direct From Sivakasi • Genuine Crackers
-                  </span>
-                </div>
+              {/* Brand Shop Name */}
+              <Link href="/" className="flex flex-col min-w-0 truncate group">
+                <span className="text-sm sm:text-xl md:text-2xl font-black tracking-tight text-slate-900 font-display group-hover:text-rose-700 transition-colors uppercase leading-none truncate">
+                  {settings.storeName}
+                </span>
+                <span className="hidden sm:block text-[9px] tracking-widest font-extrabold text-amber-600 uppercase mt-0.5 truncate">
+                  Direct From Sivakasi • Genuine Crackers
+                </span>
               </Link>
             </div>
 
-            {/* Right: Search Bar (Desktop/Tablet) & Cart Button */}
+            {/* Right Group: Search Icon → Cart Icon */}
             <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
-              {/* Live Search - Tablet & Desktop */}
+              {/* Desktop/Tablet Live Search Input Bar */}
               <div className="hidden md:block w-48 lg:w-64">
                 <LiveSearch />
               </div>
 
+              {/* Mobile Search Icon Button */}
+              <button
+                type="button"
+                onClick={() => setMobileSearchOpen((prev) => !prev)}
+                className="md:hidden w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-xl bg-slate-100 hover:bg-amber-100/70 border border-slate-200 hover:border-amber-400/60 text-slate-800 text-sm font-bold transition-all touch-target flex-shrink-0"
+                aria-label="Toggle mobile search"
+                title="Search Fireworks"
+              >
+                🔍
+              </button>
+
               {/* Shopping Cart Button */}
               <Link
                 href="/cart"
-                className="group relative inline-flex items-center justify-center gap-1.5 sm:gap-2 h-9 sm:h-10 px-2.5 sm:px-4 rounded-xl text-xs sm:text-sm font-bold text-slate-800 bg-amber-50 hover:bg-amber-100 border border-amber-300/80 hover:border-amber-400 hover:text-slate-900 transition-all duration-200 shadow-2xs focus:outline-none focus:ring-2 focus:ring-amber-500/40 whitespace-nowrap touch-target flex-shrink-0"
+                className="group relative inline-flex items-center justify-center gap-1.5 sm:gap-2 h-8 sm:h-10 px-2.5 sm:px-4 rounded-xl text-xs sm:text-sm font-bold text-slate-800 bg-amber-50 hover:bg-amber-100 border border-amber-300/80 hover:border-amber-400 hover:text-slate-900 transition-all duration-200 shadow-2xs focus:outline-none focus:ring-2 focus:ring-amber-500/40 whitespace-nowrap touch-target flex-shrink-0"
                 title="View shopping cart"
               >
                 <svg className="w-4 h-4 sm:w-5 sm:h-5 text-amber-700 group-hover:text-rose-600 transition-colors flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -130,10 +138,21 @@ export default function Header({ settings, user }: HeaderProps) {
             </div>
           </div>
 
-          {/* Mobile Dedicated Search Bar Row */}
-          <div className="mt-2 md:hidden w-full">
-            <LiveSearch />
-          </div>
+          {/* Toggled Mobile Search Bar (Expands smoothly below header when Search Icon is clicked on mobile) */}
+          {mobileSearchOpen && (
+            <div className="md:hidden mt-2 pt-2 border-t border-slate-200/80 flex items-center gap-2">
+              <div className="flex-1">
+                <LiveSearch />
+              </div>
+              <button
+                onClick={() => setMobileSearchOpen(false)}
+                className="w-8 h-8 rounded-lg bg-slate-100 text-slate-600 hover:text-slate-900 flex items-center justify-center text-xs font-bold flex-shrink-0"
+                aria-label="Close search"
+              >
+                ✕
+              </button>
+            </div>
+          )}
         </div>
 
       </header>

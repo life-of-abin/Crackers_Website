@@ -219,57 +219,61 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* Why Shop With Us Trust Section */}
+      {/* Why Choose Sivakasi Section */}
       <section className="py-16 bg-slate-900 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-2xl mx-auto mb-12">
-            <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-white mb-2">
+          <div className="text-center max-w-2xl mx-auto mb-12 space-y-2">
+            <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-white font-display">
               Why Choose <span className="text-gold-gradient">{settings.storeName}</span>
             </h2>
             <p className="text-xs sm:text-sm text-slate-400">
-              We take pride in delivering certified safe fireworks with maximum festivity.
+              We take pride in delivering genuine fireworks and exceptional service direct from Sivakasi.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
 
-            <div className="bg-slate-800/80 border border-slate-700/80 p-6 rounded-2xl space-y-3">
-              <div className="w-12 h-12 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-2xl text-amber-400">
+            {/* Card 1: Authentic Sivakasi Crackers */}
+            <div className="bg-slate-800/80 border border-slate-700/80 hover:border-amber-500/50 p-6 rounded-2xl space-y-3 text-center flex flex-col items-center justify-start transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-amber-500/10 group">
+              <div className="w-14 h-14 rounded-2xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-3xl text-amber-400 shadow-sm group-hover:scale-110 transition-transform">
                 🏭
               </div>
-              <h3 className="font-extrabold text-sm text-white">Direct Factory Rates</h3>
+              <h3 className="font-extrabold text-base text-white">Authentic Sivakasi Crackers</h3>
               <p className="text-xs text-slate-400 leading-relaxed">
-                Directly sourced from licensed Sivakasi manufacturers without middleman markups.
+                Genuine fireworks sourced from Sivakasi manufacturers.
               </p>
             </div>
 
-            <div className="bg-slate-800/80 border border-slate-700/80 p-6 rounded-2xl space-y-3">
-              <div className="w-12 h-12 rounded-xl bg-red-500/20 border border-red-500/30 flex items-center justify-center text-2xl text-red-400">
+            {/* Card 2: Quality You Can Trust */}
+            <div className="bg-slate-800/80 border border-slate-700/80 hover:border-amber-500/50 p-6 rounded-2xl space-y-3 text-center flex flex-col items-center justify-start transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-amber-500/10 group">
+              <div className="w-14 h-14 rounded-2xl bg-red-500/20 border border-red-500/30 flex items-center justify-center text-3xl text-red-400 shadow-sm group-hover:scale-110 transition-transform">
                 🛡️
               </div>
-              <h3 className="font-extrabold text-sm text-white">100% Genuine Quality</h3>
+              <h3 className="font-extrabold text-base text-white">Quality You Can Trust</h3>
               <p className="text-xs text-slate-400 leading-relaxed">
-                Strict quality controls to ensure vivid colors, crisp sound, and high security standards.
+                Carefully selected products with a focus on quality and reliability.
               </p>
             </div>
 
-            <div className="bg-slate-800/80 border border-slate-700/80 p-6 rounded-2xl space-y-3">
-              <div className="w-12 h-12 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-2xl text-emerald-400">
-                📦
+            {/* Card 3: Best Value Prices */}
+            <div className="bg-slate-800/80 border border-slate-700/80 hover:border-amber-500/50 p-6 rounded-2xl space-y-3 text-center flex flex-col items-center justify-start transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-amber-500/10 group">
+              <div className="w-14 h-14 rounded-2xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-3xl text-amber-300 shadow-sm group-hover:scale-110 transition-transform">
+                🏷️
               </div>
-              <h3 className="font-extrabold text-sm text-white">Safe Heavy Packaging</h3>
+              <h3 className="font-extrabold text-base text-white">Best Value Prices</h3>
               <p className="text-xs text-slate-400 leading-relaxed">
-                Corrugated moisture-proof outer boxes to ensure zero damage during transit.
+                Competitive prices with seasonal offers and attractive savings.
               </p>
             </div>
 
-            <div className="bg-slate-800/80 border border-slate-700/80 p-6 rounded-2xl space-y-3">
-              <div className="w-12 h-12 rounded-xl bg-blue-500/20 border border-blue-500/30 flex items-center justify-center text-2xl text-blue-400">
+            {/* Card 4: Safe & Reliable Service */}
+            <div className="bg-slate-800/80 border border-slate-700/80 hover:border-amber-500/50 p-6 rounded-2xl space-y-3 text-center flex flex-col items-center justify-start transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-amber-500/10 group">
+              <div className="w-14 h-14 rounded-2xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-3xl text-emerald-400 shadow-sm group-hover:scale-110 transition-transform">
                 🚚
               </div>
-              <h3 className="font-extrabold text-sm text-white">Reliable Transit</h3>
+              <h3 className="font-extrabold text-base text-white">Safe & Reliable Service</h3>
               <p className="text-xs text-slate-400 leading-relaxed">
-                Express dispatch across India with real-time order tracking and SMS updates.
+                Secure ordering, careful packing, and dependable customer support.
               </p>
             </div>
 
@@ -277,75 +281,101 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* Need Help? Contact Section */}
-      <section className="py-12 bg-gradient-to-r from-red-950 via-slate-900 to-red-950 border-t border-amber-500/20 text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6">
+      {/* Store Information / Contact Section */}
+      <section className="py-16 bg-gradient-to-r from-red-950 via-slate-900 to-red-950 border-t border-amber-500/20 text-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-8">
           <div className="inline-flex items-center gap-2 bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-black px-4 py-1.5 rounded-full uppercase tracking-widest">
-            <span>📞 CUSTOMER SUPPORT</span>
+            <span>📍 STORE INFORMATION & CONTACT</span>
           </div>
 
-          <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
-            Need Help With Your Cracker Order?
-          </h2>
-          <p className="text-slate-300 text-xs sm:text-sm max-w-md mx-auto">
-            Our team is available to assist you with order inquiries, bulk pricing, and delivery details.
-          </p>
+          <div className="max-w-xl mx-auto space-y-2">
+            <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight font-display">
+              Connect With Sivakasi Crackers
+            </h2>
+            <p className="text-slate-300 text-xs sm:text-sm">
+              Our store support team is here to assist you with inquiries, custom orders, and quick tracking.
+            </p>
+          </div>
 
-          <div className="flex flex-wrap items-center justify-center gap-6 pt-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 pt-2">
             {/* Phone Card */}
             <a
               href="tel:9629525907"
-              className="flex items-center gap-3 bg-slate-900/90 border border-slate-700/80 hover:border-amber-500/60 p-4 rounded-2xl hover:bg-slate-800/90 transition-all group shadow-lg text-left"
+              className="bg-slate-900/90 border border-slate-700/80 hover:border-amber-500/60 p-6 rounded-2xl hover:bg-slate-800/90 transition-all group shadow-lg text-center flex flex-col items-center justify-between space-y-4"
             >
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-red-600 to-amber-600 text-white flex items-center justify-center text-xl font-bold group-hover:scale-105 transition-transform">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-red-600 to-amber-600 text-white flex items-center justify-center text-2xl font-bold group-hover:scale-105 transition-transform shadow-md">
                 📞
               </div>
-              <div>
+              <div className="space-y-1">
                 <span className="text-[10px] text-amber-400 font-extrabold uppercase tracking-wider block">
-                  Call Us Directly
+                  Phone Support
                 </span>
-                <span className="text-base sm:text-lg font-black text-white group-hover:text-amber-300 transition-colors">
+                <span className="text-base sm:text-lg font-black text-white group-hover:text-amber-300 transition-colors font-mono">
                   9629525907
                 </span>
               </div>
+              <span className="text-[11px] font-bold text-amber-400/80">Tap to Call →</span>
             </a>
 
-            {/* WhatsApp Chat Card */}
+            {/* WhatsApp Card */}
             <a
               href="https://wa.me/919629525907"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-3 bg-slate-900/90 border border-slate-700/80 hover:border-emerald-500/60 p-4 rounded-2xl hover:bg-slate-800/90 transition-all group shadow-lg text-left"
+              className="bg-slate-900/90 border border-slate-700/80 hover:border-emerald-500/60 p-6 rounded-2xl hover:bg-slate-800/90 transition-all group shadow-lg text-center flex flex-col items-center justify-between space-y-4"
             >
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-600 to-teal-500 text-white flex items-center justify-center text-xl font-bold group-hover:scale-105 transition-transform">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-500 text-white flex items-center justify-center text-2xl font-bold group-hover:scale-105 transition-transform shadow-md">
                 💬
               </div>
-              <div>
+              <div className="space-y-1">
                 <span className="text-[10px] text-emerald-400 font-extrabold uppercase tracking-wider block">
                   WhatsApp Support
                 </span>
-                <span className="text-base sm:text-lg font-black text-emerald-400 group-hover:text-emerald-300 transition-colors">
-                  Chat on WhatsApp
+                <span className="text-base sm:text-lg font-black text-emerald-400 group-hover:text-emerald-300 transition-colors font-mono">
+                  9629525907
                 </span>
               </div>
+              <span className="text-[11px] font-bold text-emerald-400/80">Chat on WhatsApp →</span>
             </a>
 
             {/* Email Card */}
             <a
-              href="mailto:abinesh.ece200@gmail.com"
-              className="flex items-center gap-3 bg-slate-900/90 border border-slate-700/80 hover:border-amber-500/60 p-4 rounded-2xl hover:bg-slate-800/90 transition-all group shadow-lg text-left"
+              href="mailto:abinesh.ece2003@gmail.com"
+              className="bg-slate-900/90 border border-slate-700/80 hover:border-amber-500/60 p-6 rounded-2xl hover:bg-slate-800/90 transition-all group shadow-lg text-center flex flex-col items-center justify-between space-y-4"
             >
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500 to-red-600 text-white flex items-center justify-center text-xl font-bold group-hover:scale-105 transition-transform">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-500 to-red-600 text-white flex items-center justify-center text-2xl font-bold group-hover:scale-105 transition-transform shadow-md">
                 ✉️
               </div>
-              <div>
+              <div className="space-y-1">
                 <span className="text-[10px] text-amber-400 font-extrabold uppercase tracking-wider block">
                   Email Support
                 </span>
-                <span className="text-sm sm:text-base font-black text-white group-hover:text-amber-300 transition-colors">
-                  abinesh.ece200@gmail.com
+                <span className="text-xs sm:text-sm font-black text-white group-hover:text-amber-300 transition-colors break-all">
+                  abinesh.ece2003@gmail.com
                 </span>
               </div>
+              <span className="text-[11px] font-bold text-amber-400/80">Send Email →</span>
+            </a>
+
+            {/* Shop Location Card */}
+            <a
+              href="https://maps.google.com/?q=Sivakasi,Tamil+Nadu"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-slate-900/90 border border-slate-700/80 hover:border-amber-500/60 p-6 rounded-2xl hover:bg-slate-800/90 transition-all group shadow-lg text-center flex flex-col items-center justify-between space-y-4"
+            >
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-rose-600 to-amber-500 text-white flex items-center justify-center text-2xl font-bold group-hover:scale-105 transition-transform shadow-md">
+                📍
+              </div>
+              <div className="space-y-1">
+                <span className="text-[10px] text-amber-400 font-extrabold uppercase tracking-wider block">
+                  Shop Location
+                </span>
+                <span className="text-xs sm:text-sm font-black text-white group-hover:text-amber-300 transition-colors">
+                  Sivakasi, Tamil Nadu, India
+                </span>
+              </div>
+              <span className="text-[11px] font-bold text-amber-400/80">Open Location Map →</span>
             </a>
           </div>
         </div>

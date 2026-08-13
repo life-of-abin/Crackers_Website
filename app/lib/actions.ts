@@ -13,7 +13,7 @@ import { verifyIndianPincode, normalizeIndianPhone, isValidEmailFormat, isValidG
 import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 
-const OWNER_EMAIL = "abinesh.ece200@gmail.com";
+const OWNER_EMAIL = "abinesh.ece2003@gmail.com";
 const OWNER_MOBILE = "9629525907";
 
 function slugify(text: string): string {
