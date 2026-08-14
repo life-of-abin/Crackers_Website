@@ -33,7 +33,7 @@ const DEFAULT_SETTINGS: StoreSettings = {
 };
 
 export default function CartPage() {
-  const { items, updateQuantity, removeFromCart, clearCart, subtotal, mrpTotal, savings, totalItems, isMounted } = useCart();
+  const { items, updateQuantity, removeFromCart, clearCart, subtotal, mrpTotal, savings, totalQuantity, uniqueItemCount, isMounted } = useCart();
   const [settings, setSettings] = useState<StoreSettings>(DEFAULT_SETTINGS);
 
   useEffect(() => {
@@ -47,20 +47,19 @@ export default function CartPage() {
 
   if (!isMounted) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+      <div className="min-h-screen bg-[#080B1A] text-[#FFF9EA] flex items-center justify-center">
         <div className="text-center space-y-3">
-          <div className="w-8 h-8 border-4 border-red-600 border-t-transparent rounded-full animate-spin mx-auto" />
-          <p className="text-xs text-slate-500 font-bold uppercase">Loading Shopping Cart...</p>
+          <div className="w-8 h-8 border-4 border-[#F5C451] border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="text-xs text-[#B9B8C7] font-bold uppercase tracking-wider">Loading Shopping Cart...</p>
         </div>
       </div>
     );
   }
 
-  const minOrder = settings.minOrderAmount;
   const flatFee = settings.flatShippingFee;
   const freeThreshold = settings.freeShippingThreshold;
 
-  const isMinOrderMet = totalItems >= 2;
+  const isMinOrderMet = totalQuantity >= 2;
   const isFreeShipping = subtotal >= freeThreshold;
   const shippingFee = items.length === 0 ? 0 : isFreeShipping ? 0 : flatFee;
   const grandTotal = subtotal + shippingFee;
@@ -68,219 +67,218 @@ export default function CartPage() {
   const amountNeededForFreeShipping = Math.max(0, freeThreshold - subtotal);
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50">
+    <div className="min-h-screen flex flex-col bg-[#080B1A] text-[#FFF9EA]">
       <Header settings={settings} />
 
       {/* Cart Page Banner */}
-      <div className="bg-slate-900 text-white py-8 border-b border-slate-800">
+      <div className="bg-[#11152E] text-[#FFF9EA] py-8 border-b border-[#292E4D]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-2 text-amber-400 text-xs font-semibold uppercase tracking-wider mb-1">
-            <Link href="/">Home</Link>
+          <div className="flex items-center gap-2 text-[#F5C451] text-xs font-semibold uppercase tracking-wider mb-1">
+            <Link href="/" className="hover:underline">Home</Link>
             <span>/</span>
             <span>Shopping Cart</span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-black text-white">
-            Your Festive Cart ({totalItems} {totalItems === 1 ? "Item" : "Items"})
+          <h1 className="text-2xl sm:text-3xl font-black text-[#FFF9EA] font-display">
+            Your Festive Cart ({uniqueItemCount} {uniqueItemCount === 1 ? "Item" : "Items"})
           </h1>
         </div>
       </div>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full">
         {items.length === 0 ? (
-          <div className="bg-white rounded-3xl border border-slate-200 p-12 text-center space-y-4 max-w-md mx-auto my-8 shadow-sm">
+          <div className="bg-[#151A35] rounded-3xl border border-[#292E4D] p-12 text-center space-y-4 max-w-md mx-auto my-8 shadow-xl">
             <div className="text-6xl">🛒</div>
-            <h2 className="text-xl font-black text-slate-900">Your Cart is Currently Empty</h2>
-            <p className="text-xs text-slate-500">
+            <h2 className="text-xl font-black text-[#FFF9EA] font-display">Your Cart is Currently Empty</h2>
+            <p className="text-xs text-[#B9B8C7]">
               Explore our wide catalogue of genuine Sivakasi sparklers, rockets, and gift boxes to start your order.
             </p>
             <Link
               href="/products"
-              className="inline-block bg-gradient-to-r from-red-600 to-amber-600 text-white font-extrabold text-xs px-8 py-3 rounded-xl hover:from-red-700 hover:to-amber-700 transition-colors shadow"
+              className="inline-block bg-[#F5C451] hover:bg-[#FFE29A] text-[#080B1A] font-extrabold text-xs px-8 py-3.5 rounded-xl transition-colors shadow-lg gold-glow"
             >
               Explore Products Now →
             </Link>
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="max-w-3xl mx-auto space-y-6">
             
-            {/* Items List (2 cols) */}
-            <div className="lg:col-span-2 space-y-4">
+            {/* Free Shipping Progress Bar */}
+            <div className="bg-[#11152E] border border-[#6D3FD6]/40 p-4 rounded-2xl space-y-2 shadow-md">
+              <div className="flex items-center justify-between text-xs font-extrabold text-[#FFE29A]">
+                <span>🚚 Free Express Shipping Threshold</span>
+                <span>{isFreeShipping ? "Unlocked! 🎉" : `Add ₹${amountNeededForFreeShipping.toFixed(0)} more`}</span>
+              </div>
+              <div className="w-full bg-[#151A35] h-2 rounded-full overflow-hidden border border-[#292E4D]">
+                <div
+                  className="bg-gradient-to-r from-[#6D3FD6] to-[#F5C451] h-full transition-all duration-500"
+                  style={{ width: `${Math.min(100, (subtotal / freeThreshold) * 100)}%` }}
+                />
+              </div>
+            </div>
+
+            {/* Single Unified Order Summary Card */}
+            <div className="bg-[#151A35] rounded-3xl border border-[#292E4D] p-5 sm:p-8 shadow-xl space-y-6">
               
-              {/* Free Shipping Progress Bar */}
-              <div className="bg-amber-50 border border-amber-200 p-4 rounded-2xl space-y-2">
-                <div className="flex items-center justify-between text-xs font-extrabold text-amber-900">
-                  <span>🚚 Free Express Shipping Threshold</span>
-                  <span>{isFreeShipping ? "Unlocked! 🎉" : `Add ₹${amountNeededForFreeShipping.toFixed(0)} more`}</span>
-                </div>
-                <div className="w-full bg-amber-200 h-2 rounded-full overflow-hidden">
-                  <div
-                    className="bg-amber-500 h-full transition-all duration-500"
-                    style={{ width: `${Math.min(100, (subtotal / freeThreshold) * 100)}%` }}
-                  />
-                </div>
+              <div className="flex items-center justify-between border-b border-[#292E4D] pb-4">
+                <h2 className="text-lg sm:text-xl font-black text-[#FFF9EA] uppercase tracking-wider font-display flex items-center gap-2">
+                  <span>🛍️</span> Order Summary
+                </h2>
+                <span className="text-xs font-bold text-[#F5C451] bg-[#11152E] border border-[#292E4D] px-3 py-1 rounded-full">
+                  {uniqueItemCount} {uniqueItemCount === 1 ? "Item" : "Items"} ({totalQuantity} Total)
+                </span>
               </div>
 
-              {/* Items Card List */}
-              <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden divide-y divide-slate-100">
-                {items.map((item) => {
-                  const itemTotal = item.price * item.cartQuantity;
-                  const fallbackImg = `https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=200&q=80`;
+              {/* A. Selected Items — Top Section (Vertically Scrollable with Max Height) */}
+              <div className="space-y-3">
+                <p className="text-[11px] font-extrabold text-[#B9B8C7] uppercase tracking-widest">
+                  Selected Products
+                </p>
+                <div className="max-h-[360px] overflow-y-auto pr-1 sm:pr-2 divide-y divide-[#292E4D] border border-[#292E4D]/80 rounded-2xl bg-[#11152E]/60 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-[#292E4D] [&::-webkit-scrollbar-thumb]:rounded-full">
+                  {items.map((item) => {
+                    const itemTotal = item.price * item.cartQuantity;
+                    const fallbackImg = `https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=200&q=80`;
 
-                  return (
-                    <div key={item.id} className="p-4 sm:p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-                      
-                      <div className="flex items-center gap-4 w-full sm:w-auto">
-                        <img
-                          src={item.image || fallbackImg}
-                          alt={item.name}
-                          className="w-16 h-16 sm:w-20 sm:h-20 object-cover rounded-xl border border-slate-200 bg-slate-50 flex-shrink-0"
-                        />
-                        <div className="space-y-1">
-                          <Link href={`/products/${item.slug}`} className="font-bold text-xs sm:text-sm text-slate-900 hover:text-red-700 line-clamp-2">
-                            {item.name}
-                          </Link>
-                          <div className="flex flex-wrap items-center gap-2 text-[11px] text-slate-500">
-                            <span className="bg-slate-100 border border-slate-200 px-2 py-0.5 rounded font-bold text-slate-800">
-                              📦 Pack: {item.packSize || item.quantity || "10 Pieces"} / {item.unitType || "BOX"}
-                            </span>
-                            <span>₹{item.price.toLocaleString("en-IN")} / {item.unitType || "BOX"}</span>
+                    return (
+                      <div key={item.id} className="p-3 sm:p-4 flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 hover:bg-[#11152E]/40 transition-colors">
+                        
+                        {/* Product Image + Details */}
+                        <div className="flex items-center gap-3 w-full sm:w-auto flex-1 min-w-0">
+                          <img
+                            src={item.image || fallbackImg}
+                            alt={item.name}
+                            className="w-14 h-14 sm:w-16 sm:h-16 object-cover rounded-xl border border-[#292E4D] bg-[#080B1A] flex-shrink-0"
+                          />
+                          <div className="min-w-0 flex-1 space-y-0.5">
+                            <Link href={`/products/${item.slug}`} className="font-bold text-xs sm:text-sm text-[#FFF9EA] hover:text-[#F5C451] transition-colors line-clamp-1">
+                              {item.name}
+                            </Link>
+                            <div className="flex flex-wrap items-center gap-2 text-[11px] text-[#B9B8C7]">
+                              <span className="bg-[#151A35] border border-[#292E4D] px-2 py-0.5 rounded font-semibold text-[#FFF9EA]">
+                                📦 {item.packSize || item.quantity || "10 Pieces"} / {item.unitType || "BOX"}
+                              </span>
+                              <span>₹{item.price.toLocaleString("en-IN")} / {item.unitType || "BOX"}</span>
+                            </div>
                           </div>
                         </div>
-                      </div>
 
-                      {/* Quantity & Price Controls */}
-                      <div className="flex items-center justify-between sm:justify-end gap-6 w-full sm:w-auto border-t sm:border-t-0 pt-3 sm:pt-0">
-                        
-                        {/* Quantity Selector (Boxes/Packs) */}
-                        <div className="flex flex-col items-center">
-                          <span className="text-[10px] text-slate-500 font-bold uppercase mb-1">
-                            {item.cartQuantity} {item.unitType || "BOX"}{item.cartQuantity > 1 ? "ES" : ""}
-                          </span>
-                          <div className="flex items-center border border-slate-200 rounded-xl bg-slate-50 overflow-hidden text-xs shadow-2xs">
+                        {/* Controls & Price */}
+                        <div className="flex items-center justify-between sm:justify-end gap-3 sm:gap-5 w-full sm:w-auto border-t sm:border-t-0 border-[#292E4D]/40 pt-2 sm:pt-0">
+                          
+                          {/* Quantity Selector */}
+                          <div className="flex items-center border border-[#292E4D] rounded-xl bg-[#11152E] overflow-hidden text-xs">
                             <button
                               onClick={() => updateQuantity(item.id, item.cartQuantity - 1)}
-                              className="w-10 h-10 flex items-center justify-center font-bold text-slate-700 hover:bg-slate-200 touch-target focus:outline-none focus:bg-slate-200"
+                              className="w-8 h-8 flex items-center justify-center font-bold text-[#FFF9EA] hover:bg-[#151A35] touch-target focus:outline-none"
                               aria-label="Decrease quantity"
                             >
                               -
                             </button>
-                            <span className="w-10 text-center font-extrabold text-slate-900 text-sm">
+                            <span className="w-8 text-center font-extrabold text-[#F5C451] text-xs">
                               {item.cartQuantity}
                             </span>
                             <button
                               onClick={() => updateQuantity(item.id, item.cartQuantity + 1)}
-                              className="w-10 h-10 flex items-center justify-center font-bold text-slate-700 hover:bg-slate-200 touch-target focus:outline-none focus:bg-slate-200"
+                              className="w-8 h-8 flex items-center justify-center font-bold text-[#FFF9EA] hover:bg-[#151A35] touch-target focus:outline-none"
                               aria-label="Increase quantity"
                             >
                               +
                             </button>
                           </div>
-                        </div>
 
-                        {/* Item Total */}
-                        <div className="text-right min-w-20">
-                          <span className="font-black text-sm text-red-700 block">
-                            ₹{itemTotal.toLocaleString("en-IN")}
-                          </span>
-                        </div>
+                          {/* Item Total */}
+                          <div className="text-right min-w-[70px]">
+                            <span className="font-black text-xs sm:text-sm text-[#F5C451] block">
+                              ₹{itemTotal.toLocaleString("en-IN")}
+                            </span>
+                          </div>
 
-                        {/* Delete Button */}
-                        <button
-                          onClick={() => removeFromCart(item.id)}
-                          className="p-1.5 text-slate-400 hover:text-red-600 transition-colors"
-                          title="Remove item"
-                        >
-                          🗑️
-                        </button>
+                          {/* Delete Button */}
+                          <button
+                            onClick={() => removeFromCart(item.id)}
+                            className="p-1.5 text-[#B9B8C7] hover:text-red-400 transition-colors"
+                            title="Remove item"
+                          >
+                            🗑️
+                          </button>
+
+                        </div>
 
                       </div>
-
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
 
-              <div className="flex items-center justify-between text-xs pt-2">
+              {/* B. Pricing Section — Below Items */}
+              <div className="border-t border-[#292E4D] pt-5 space-y-3 text-xs sm:text-sm">
+                <div className="flex justify-between text-[#B9B8C7]">
+                  <span>MRP Total:</span>
+                  <span className="line-through">₹{mrpTotal.toLocaleString("en-IN")}</span>
+                </div>
+                
+                <div className="flex justify-between text-[#B9B8C7]">
+                  <span>Subtotal:</span>
+                  <span className="font-bold text-[#FFF9EA]">₹{subtotal.toLocaleString("en-IN")}</span>
+                </div>
+
+                {savings > 0 && (
+                  <div className="flex justify-between text-[#4ADE80] font-extrabold bg-[#11152E] border border-[#4ADE80]/30 p-2.5 rounded-xl">
+                    <span>Total Savings:</span>
+                    <span>- ₹{savings.toLocaleString("en-IN")}</span>
+                  </div>
+                )}
+
+                <div className="flex justify-between text-[#B9B8C7]">
+                  <span>Shipping Fee:</span>
+                  <span className={shippingFee === 0 ? "text-[#4ADE80] font-bold" : "font-bold text-[#FFF9EA]"}>
+                    {shippingFee === 0 ? "FREE" : `₹${shippingFee.toLocaleString("en-IN")}`}
+                  </span>
+                </div>
+
+                <div className="border-t border-[#292E4D] pt-3.5 flex justify-between items-baseline">
+                  <span className="text-sm sm:text-base font-black text-[#FFF9EA] uppercase">Grand Total:</span>
+                  <span className="text-xl sm:text-2xl font-black text-[#F5C451] font-display">₹{grandTotal.toLocaleString("en-IN")}</span>
+                </div>
+              </div>
+
+              {/* Minimum Order Warning */}
+              {!isMinOrderMet && (
+                <div className="bg-[#11152E] border border-[#6D3FD6]/60 text-[#FFE29A] p-3.5 rounded-xl text-xs space-y-1">
+                  <span className="font-bold block">⚠️ Minimum Order Required</span>
+                  <p>Minimum purchase quantity is 2 items. Please add {2 - totalQuantity} more item{2 - totalQuantity > 1 ? 's' : ''} to proceed.</p>
+                </div>
+              )}
+
+              {/* C. Proceed Button — Bottom */}
+              <Link
+                href={isMinOrderMet ? "/checkout" : "#"}
+                className={`block w-full py-4 rounded-2xl font-black text-sm text-center uppercase tracking-wider shadow-xl transition-all ${
+                  isMinOrderMet
+                    ? "bg-[#F5C451] hover:bg-[#FFE29A] text-[#080B1A] gold-glow"
+                    : "bg-[#11152E] text-[#B9B8C7] border border-[#292E4D] cursor-not-allowed"
+                }`}
+              >
+                PROCEED TO CHECKOUT →
+              </Link>
+
+              <div className="flex items-center justify-between text-xs pt-1 border-t border-[#292E4D]/60">
                 <button
                   onClick={clearCart}
-                  className="text-slate-500 hover:text-red-600 font-semibold underline"
+                  className="text-[#B9B8C7] hover:text-red-400 font-semibold underline transition-colors"
                 >
                   Clear Entire Cart
                 </button>
-                <Link href="/products" className="text-red-700 hover:underline font-bold">
+                <Link href="/products" className="text-[#F5C451] hover:underline font-bold">
                   ← Continue Shopping
                 </Link>
               </div>
 
-            </div>
-
-            {/* Cart Summary Sidebar (1 col) */}
-            <div className="space-y-6">
-              <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm space-y-6">
-                
-                <h2 className="text-base font-black text-slate-900 border-b border-slate-100 pb-3 uppercase tracking-wider">
-                  Order Summary
-                </h2>
-
-                <div className="space-y-3 text-xs">
-                  <div className="flex justify-between text-slate-600">
-                    <span>MRP Total:</span>
-                    <span className="line-through">₹{mrpTotal.toLocaleString("en-IN")}</span>
-                  </div>
-                  
-                  <div className="flex justify-between text-slate-600">
-                    <span>Subtotal:</span>
-                    <span className="font-bold text-slate-900">₹{subtotal.toLocaleString("en-IN")}</span>
-                  </div>
-
-                  {savings > 0 && (
-                    <div className="flex justify-between text-emerald-600 font-extrabold bg-emerald-50 p-2 rounded-lg">
-                      <span>Total Savings:</span>
-                      <span>- ₹{savings.toLocaleString("en-IN")}</span>
-                    </div>
-                  )}
-
-                  <div className="flex justify-between text-slate-600">
-                    <span>Shipping Fee:</span>
-                    <span className={shippingFee === 0 ? "text-emerald-600 font-bold" : "font-bold text-slate-900"}>
-                      {shippingFee === 0 ? "FREE" : `₹${shippingFee.toLocaleString("en-IN")}`}
-                    </span>
-                  </div>
-
-                  <div className="border-t border-slate-200 pt-3 flex justify-between items-baseline">
-                    <span className="text-sm font-black text-slate-900">Grand Total:</span>
-                    <span className="text-xl font-black text-red-700">₹{grandTotal.toLocaleString("en-IN")}</span>
-                  </div>
-                </div>
-
-                {/* Minimum Order Warning */}
-                {!isMinOrderMet && (
-                  <div className="bg-red-50 border border-red-200 text-red-800 p-3.5 rounded-xl text-xs space-y-1">
-                    <span className="font-bold block">⚠️ Minimum Order Required</span>
-                    <p>Minimum purchase quantity is 2 items. Please add {2 - totalItems} more item{2 - totalItems > 1 ? 's' : ''} to proceed.</p>
-                  </div>
-                )}
-
-                {/* Checkout CTA Button */}
-                <Link
-                  href={isMinOrderMet ? "/checkout" : "#"}
-                  className={`block w-full py-4 rounded-2xl font-black text-sm text-center uppercase tracking-wider shadow-lg transition-all ${
-                    isMinOrderMet
-                      ? "bg-gradient-to-r from-red-600 via-red-700 to-amber-600 hover:from-red-700 hover:to-amber-700 text-white shadow-amber-500/20"
-                      : "bg-slate-200 text-slate-400 cursor-not-allowed"
-                  }`}
-                >
-                  Proceed to Checkout →
-                </Link>
-
-                <div className="text-[10px] text-slate-400 text-center space-y-1">
-                  <p>🔒 256-Bit SSL Encrypted Checkout</p>
-                  <p>Direct Factory Invoice & SMS Dispatch Updates</p>
-                </div>
-
+              <div className="text-[10px] text-[#B9B8C7] text-center space-y-1 pt-1">
+                <p>🔒 256-Bit Encrypted Checkout</p>
+                <p>Direct Factory Invoice & Dispatch Updates</p>
               </div>
-            </div>
 
+            </div>
           </div>
         )}
       </main>

@@ -67,6 +67,8 @@ model Product {
   price       Decimal
   mrp         Decimal
   discount    String?
+  hsnCode     String?
+  taxRate     Decimal?    @default(18)
   quantity    String      @default("10 Pieces")
   unitType    String      @default("BOX") // BOX, PACK, BUNDLE, UNIT
   packSize    String      @default("10 Pieces")
@@ -100,7 +102,14 @@ model Order {
   district      String?
   state         String
   pincode       String
-  subtotal      Decimal     @default(0)
+  billingAddress String?
+  billingCity    String?
+  billingState   String?
+  billingPincode String?
+  customerGstin  String?
+  placeOfSupply  String?
+  invoiceNumber  String?     @unique
+  subtotal       Decimal     @default(0)
   discount      Decimal     @default(0)
   shipping      Decimal     @default(0)
   totalAmount   Decimal
@@ -129,6 +138,12 @@ model OrderItem {
   packSize    String?   @default("10 Pieces")
   price       Decimal
   total       Decimal
+  hsnCode     String?
+  taxRate     Decimal?    @default(18)
+  taxableValue Decimal?
+  cgstAmount  Decimal?
+  sgstAmount  Decimal?
+  igstAmount  Decimal?
 
   order       Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
   product     Product   @relation(fields: [productId], references: [id], onDelete: Restrict)
@@ -183,5 +198,10 @@ model Settings {
   minOrderAmount       Decimal  @default(500)
   flatShippingFee      Decimal  @default(100)
   freeShippingThreshold Decimal @default(3000)
+  gstin                String?
+  legalName            String?
+  invoiceTerms         String?
+  isGstRegistered      Boolean  @default(false)
+  signatureImage       String?
   updatedAt            DateTime @updatedAt
 }

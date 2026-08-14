@@ -11,6 +11,11 @@ export interface StoreSettings {
   minOrderAmount: number;
   flatShippingFee: number;
   freeShippingThreshold: number;
+  gstin?: string | null;
+  legalName?: string | null;
+  invoiceTerms?: string | null;
+  isGstRegistered?: boolean;
+  signatureImage?: string | null;
 }
 
 export const DEFAULT_SETTINGS: StoreSettings = {
@@ -24,6 +29,7 @@ export const DEFAULT_SETTINGS: StoreSettings = {
   minOrderAmount: 500,
   flatShippingFee: 100,
   freeShippingThreshold: 3000,
+  isGstRegistered: false,
 };
 
 export async function getStoreSettings(): Promise<StoreSettings> {
@@ -47,6 +53,11 @@ export async function getStoreSettings(): Promise<StoreSettings> {
       minOrderAmount: Number(settings.minOrderAmount),
       flatShippingFee: Number(settings.flatShippingFee),
       freeShippingThreshold: Number(settings.freeShippingThreshold),
+      gstin: settings.gstin,
+      legalName: settings.legalName,
+      invoiceTerms: settings.invoiceTerms,
+      isGstRegistered: settings.isGstRegistered,
+      signatureImage: settings.signatureImage,
     };
   } catch {
     return DEFAULT_SETTINGS;

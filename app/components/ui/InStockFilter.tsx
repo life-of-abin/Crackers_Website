@@ -18,14 +18,14 @@ export default function InStockFilter({ inStockOnly }: InStockFilterProps) {
   };
 
   return (
-    <label className="flex items-center gap-2 cursor-pointer">
+    <label className="flex items-center gap-2 cursor-pointer select-none">
       <input
         type="checkbox"
         checked={inStockOnly}
         onChange={handleChange}
-        className="rounded text-red-600 focus:ring-red-500 w-4 h-4 cursor-pointer"
+        className="rounded text-[#6D3FD6] focus:ring-[#F5C451] border-[#292E4D] bg-[#11152E] w-4 h-4 cursor-pointer"
       />
-      <span className="text-xs font-semibold text-slate-700">In Stock Only</span>
+      <span className="text-xs font-semibold text-[#B9B8C7]">In Stock Only</span>
     </label>
   );
 }

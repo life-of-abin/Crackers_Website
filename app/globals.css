@@ -2,17 +2,22 @@
 
 @layer base {
   :root {
-    --brand-red: #e11d48;
-    --brand-red-hover: #be123c;
-    --brand-gold: #f59e0b;
-    --brand-gold-hover: #d97706;
-    --brand-dark: #050811;
-    --brand-dark-surface: #0c1222;
+    --bg-navy: #080B1A;
+    --bg-indigo: #11152E;
+    --bg-card: #151A35;
+    --border-color: #292E4D;
+    --gold-rich: #F5C451;
+    --gold-champagne: #FFE29A;
+    --purple-royal: #6D3FD6;
+    --purple-violet: #9B6DFF;
+    --text-warm-white: #FFF9EA;
+    --text-soft-gray: #B9B8C7;
+    --color-success: #4ADE80;
   }
 
   body {
-    background-color: #f8fafc;
-    color: #0f172a;
+    background-color: #080B1A;
+    color: #FFF9EA;
     font-family: var(--font-sans), system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     overflow-x: hidden;
     -webkit-tap-highlight-color: transparent;
@@ -54,48 +59,52 @@
   padding-top: max(1rem, env(safe-area-inset-top));
 }
 
-/* Custom Festive & Luxury Utilities */
+/* Midnight Diwali Custom Utilities */
 .bg-festive-hero {
-  background: radial-gradient(circle at 50% 0%, #1a080d 0%, #080d1a 60%, #04060c 100%);
+  background: radial-gradient(circle at 50% 0%, #151A35 0%, #11152E 55%, #080B1A 100%);
 }
 
 .text-gold-gradient {
-  background: linear-gradient(135deg, #fef08a 0%, #fbbf24 40%, #f59e0b 70%, #d97706 100%);
+  background: linear-gradient(135deg, #FFE29A 0%, #F5C451 50%, #D97706 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
-.text-rose-gradient {
-  background: linear-gradient(135deg, #fda4af 0%, #f43f5e 50%, #e11d48 100%);
+.text-purple-gradient {
+  background: linear-gradient(135deg, #C4B5FD 0%, #9B6DFF 50%, #6D3FD6 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
 .gold-glow {
-  box-shadow: 0 0 25px rgba(245, 158, 11, 0.22);
+  box-shadow: 0 0 25px rgba(245, 196, 81, 0.25);
 }
 
 .gold-glow-lg {
-  box-shadow: 0 0 45px rgba(245, 158, 11, 0.28);
+  box-shadow: 0 0 45px rgba(245, 196, 81, 0.35);
 }
 
-.rose-glow {
-  box-shadow: 0 0 20px rgba(225, 29, 72, 0.3);
+.purple-glow {
+  box-shadow: 0 0 25px rgba(109, 63, 214, 0.35);
+}
+
+.purple-glow-lg {
+  box-shadow: 0 0 50px rgba(109, 63, 214, 0.45);
 }
 
 /* Glassmorphism Classes */
 .glass-card-dark {
-  background: rgba(12, 18, 34, 0.85);
+  background: rgba(21, 26, 53, 0.9);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(41, 46, 77, 0.8);
 }
 
 .glass-card-light {
-  background: rgba(255, 255, 255, 0.95);
+  background: rgba(17, 21, 46, 0.95);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(241, 245, 249, 0.9);
+  border: 1px solid rgba(41, 46, 77, 0.9);
 }
 
 .festive-card-hover {
@@ -104,7 +113,7 @@
 
 .festive-card-hover:hover {
   transform: translateY(-4px);
-  box-shadow: 0 16px 32px -8px rgba(15, 23, 42, 0.12), 0 4px 8px -2px rgba(15, 23, 42, 0.04);
+  box-shadow: 0 16px 32px -8px rgba(8, 11, 26, 0.6), 0 0 20px rgba(109, 63, 214, 0.25);
 }
 
 /* Hide Scrollbar for Horizontal Touch Swiping */
@@ -127,7 +136,7 @@
 }
 
 .skeleton {
-  background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%);
+  background: linear-gradient(90deg, #11152E 25%, #151A35 50%, #11152E 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
 }
@@ -139,14 +148,14 @@
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f5f9;
+  background: #080B1A;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: #292E4D;
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: #6D3FD6;
 }

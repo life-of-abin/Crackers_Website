@@ -129,6 +129,64 @@ export default function AdminSettingsForm({ settings }: { settings: StoreSetting
           </div>
 
           <div className="sm:col-span-2 pt-2 border-t border-slate-100 font-extrabold text-sm text-slate-900 uppercase">
+            GST & Billing Configuration
+          </div>
+
+          <div className="sm:col-span-2">
+            <label className="flex items-center gap-2 font-bold text-slate-700 uppercase tracking-wider mb-2">
+              <input
+                type="checkbox"
+                name="isGstRegistered"
+                value="true"
+                defaultChecked={settings.isGstRegistered}
+                className="w-4 h-4 rounded border-slate-300 text-red-600 focus:ring-red-600"
+              />
+              Business is GST Registered
+            </label>
+            <p className="text-[10px] text-slate-500 normal-case font-normal -mt-1 ml-6">
+              Enable this to generate GST Tax Invoices and calculate CGST/SGST/IGST.
+            </p>
+          </div>
+
+          <div>
+            <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">
+              Legal Business Name (For Invoice)
+            </label>
+            <input
+              type="text"
+              name="legalName"
+              defaultValue={settings.legalName || ""}
+              placeholder="E.g., Sri Sivakasi Crackers Pvt Ltd"
+              className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:ring-2 focus:ring-red-600"
+            />
+          </div>
+
+          <div>
+            <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">
+              Business GSTIN
+            </label>
+            <input
+              type="text"
+              name="gstin"
+              defaultValue={settings.gstin || ""}
+              placeholder="E.g., 33XXXXX1234X1ZX"
+              className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:ring-2 focus:ring-red-600 uppercase"
+            />
+          </div>
+
+          <div className="sm:col-span-2">
+            <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">
+              Invoice Terms & Conditions
+            </label>
+            <textarea
+              name="invoiceTerms"
+              rows={4}
+              defaultValue={settings.invoiceTerms || "1. Goods once sold will not be taken back.\n2. Use fireworks safely according to local laws.\n3. Subject to Sivakasi Jurisdiction."}
+              className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium text-slate-900 focus:ring-2 focus:ring-red-600 leading-relaxed"
+            />
+          </div>
+
+          <div className="sm:col-span-2 pt-2 border-t border-slate-100 font-extrabold text-sm text-slate-900 uppercase">
             Order & Shipping Rules
           </div>
 

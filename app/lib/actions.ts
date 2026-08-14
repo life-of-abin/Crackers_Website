@@ -690,6 +690,10 @@ export async function updateSettingsAction(formData: FormData) {
     const minOrderAmount = parseFloat((formData.get("minOrderAmount") as string) || "500");
     const flatShippingFee = parseFloat((formData.get("flatShippingFee") as string) || "100");
     const freeShippingThreshold = parseFloat((formData.get("freeShippingThreshold") as string) || "3000");
+    const legalName = (formData.get("legalName") as string) || null;
+    const gstin = (formData.get("gstin") as string) || null;
+    const invoiceTerms = (formData.get("invoiceTerms") as string) || null;
+    const isGstRegistered = formData.get("isGstRegistered") === "true";
 
     await prisma.settings.upsert({
       where: { id: 1 },
@@ -703,6 +707,10 @@ export async function updateSettingsAction(formData: FormData) {
         minOrderAmount,
         flatShippingFee,
         freeShippingThreshold,
+        legalName,
+        gstin,
+        invoiceTerms,
+        isGstRegistered,
       },
       create: {
         id: 1,
@@ -715,6 +723,10 @@ export async function updateSettingsAction(formData: FormData) {
         minOrderAmount,
         flatShippingFee,
         freeShippingThreshold,
+        legalName,
+        gstin,
+        invoiceTerms,
+        isGstRegistered,
       },
     });
 

@@ -22,7 +22,8 @@ interface CartContextType {
   removeFromCart: (id: number) => void;
   updateQuantity: (id: number, quantity: number) => void;
   clearCart: () => void;
-  totalItems: number;
+  uniqueItemCount: number;
+  totalQuantity: number;
   subtotal: number;
   mrpTotal: number;
   savings: number;
@@ -106,7 +107,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     setItems([]);
   };
 
-  const totalItems = items.reduce((acc, item) => acc + item.cartQuantity, 0);
+  const uniqueItemCount = items.length;
+
+  const totalQuantity = items.reduce((acc, item) => acc + item.cartQuantity, 0);
 
   const subtotal = items.reduce(
     (acc, item) => acc + item.price * item.cartQuantity,
@@ -128,7 +131,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         removeFromCart,
         updateQuantity,
         clearCart,
-        totalItems,
+        uniqueItemCount,
+        totalQuantity,
         subtotal,
         mrpTotal,
         savings,

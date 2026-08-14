@@ -59,6 +59,22 @@ export default function AdminOrderUpdater({ order }: OrderUpdaterProps) {
     <div className="space-y-6">
       
       {/* Control Panel */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white p-4 sm:p-6 rounded-3xl border border-slate-200 shadow-sm gap-4">
+        <div>
+          <h2 className="text-lg font-black text-slate-900">Order Actions</h2>
+          <p className="text-xs text-slate-500 font-medium mt-1">Manage status and generate invoice</p>
+        </div>
+        <button
+          onClick={() => window.open(`/admin/orders/${order.id}/invoice`, '_blank')}
+          className="bg-slate-900 hover:bg-red-700 text-white px-6 py-2.5 rounded-xl font-bold text-sm tracking-wide transition-all shadow-md active:scale-95 flex items-center gap-2 w-full sm:w-auto justify-center"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+          </svg>
+          Print Invoice
+        </button>
+      </div>
+
       <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm grid grid-cols-1 sm:grid-cols-2 gap-6 text-xs">
         
         <div>
