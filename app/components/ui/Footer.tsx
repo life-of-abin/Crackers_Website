@@ -10,7 +10,7 @@ export default function Footer({ settings }: FooterProps) {
   return (
     <footer className="bg-slate-950 text-slate-300 border-t border-slate-900 pt-12 pb-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 mb-12">
           
           {/* Column 1: Store Information & Brand */}
           <div className="space-y-4">
@@ -42,7 +42,41 @@ export default function Footer({ settings }: FooterProps) {
             </div>
           </div>
 
-          {/* Column 2: Customer Service */}
+          {/* Column 2: Quick Links */}
+          <div>
+            <h3 className="text-sm font-bold text-white uppercase tracking-wider mb-4 border-b border-slate-800 pb-2">
+              Quick Links
+            </h3>
+            <ul className="space-y-2.5 text-xs font-medium">
+              <li>
+                <Link href="/" className="hover:text-amber-400 transition-colors flex items-center gap-2">
+                  <span>🏠</span> Home
+                </Link>
+              </li>
+              <li>
+                <Link href="/products" className="hover:text-amber-400 transition-colors flex items-center gap-2">
+                  <span>🎆</span> Products
+                </Link>
+              </li>
+              <li>
+                <Link href="/products#categories" className="hover:text-amber-400 transition-colors flex items-center gap-2">
+                  <span>📦</span> Categories
+                </Link>
+              </li>
+              <li>
+                <Link href="/about" className="hover:text-amber-400 transition-colors flex items-center gap-2">
+                  <span>ℹ️</span> About
+                </Link>
+              </li>
+              <li>
+                <Link href="/contact" className="hover:text-amber-400 transition-colors flex items-center gap-2">
+                  <span>📞</span> Contact
+                </Link>
+              </li>
+            </ul>
+          </div>
+
+          {/* Column 3: Customer Service */}
           <div>
             <h3 className="text-sm font-bold text-white uppercase tracking-wider mb-4 border-b border-slate-800 pb-2">
               Customer Service
@@ -71,10 +105,10 @@ export default function Footer({ settings }: FooterProps) {
             </ul>
           </div>
 
-          {/* Column 3: Store Information */}
+          {/* Column 4: Contact Us */}
           <div>
             <h3 className="text-sm font-bold text-white uppercase tracking-wider mb-4 border-b border-slate-800 pb-2">
-              Store Information
+              Contact Us
             </h3>
             <ul className="space-y-3 text-xs font-medium">
               <li className="flex items-center gap-2">
@@ -114,7 +148,7 @@ export default function Footer({ settings }: FooterProps) {
             </ul>
           </div>
 
-          {/* Column 4: Legal & Policies */}
+          {/* Column 5: Legal & Policies */}
           <div>
             <h3 className="text-sm font-bold text-white uppercase tracking-wider mb-4 border-b border-slate-800 pb-2">
               Legal & Policies
