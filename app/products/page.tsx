@@ -99,8 +99,8 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
               </div>
               <div className="h-6 w-px bg-slate-200" />
               <div>
-                <span className="block text-emerald-600 font-extrabold">Min. 2 Items</span>
-                <span className="text-slate-500">Order Requirement</span>
+                <span className="block text-[#6D3FD6] font-extrabold">{products.length}</span>
+                <span className="text-slate-500">Products</span>
               </div>
             </div>
           </div>
