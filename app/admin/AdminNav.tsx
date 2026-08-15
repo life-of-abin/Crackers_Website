@@ -26,11 +26,11 @@ export default function AdminNav({ user, children }: AdminNavProps) {
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col md:flex-row selection:bg-[#6D3FD6] selection:text-white">
-      
+
       {/* Permanent Desktop Sidebar */}
       <aside className="hidden md:flex flex-col w-64 bg-white text-slate-800 border-r border-slate-200 flex-shrink-0 sticky top-0 h-screen justify-between p-4 z-30 shadow-sm">
         <div className="space-y-6 flex-1 flex flex-col overflow-y-auto">
-          
+
           {/* Brand Logo & Title */}
           <div className="flex items-center gap-3 px-2 pt-2">
             <div className="w-10 h-10 rounded-2xl bg-[#6D3FD6] text-white flex items-center justify-center text-xl font-black shadow-md shadow-purple-200 shrink-0">
@@ -54,11 +54,10 @@ export default function AdminNav({ user, children }: AdminNavProps) {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
-                    isActive
-                      ? "bg-[#6D3FD6] text-white shadow-md shadow-purple-200"
-                      : "text-slate-700 hover:bg-slate-100 hover:text-slate-900"
-                  }`}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${isActive
+                    ? "bg-[#6D3FD6] text-white shadow-md shadow-purple-200"
+                    : "text-slate-700 hover:bg-slate-100 hover:text-slate-900"
+                    }`}
                 >
                   <span className="text-base">{item.icon}</span>
                   <span>{item.label}</span>
@@ -126,10 +125,10 @@ export default function AdminNav({ user, children }: AdminNavProps) {
 
       {/* Main Content & Top Header Area */}
       <div className="flex-1 flex flex-col min-w-0">
-        
+
         {/* Desktop & Mobile Header Bar */}
         <header className="bg-white border-b border-slate-200 px-4 sm:px-8 py-3.5 flex items-center justify-between sticky top-0 z-20 shadow-xs">
-          
+
           {/* Mobile Only Menu Toggle */}
           <div className="flex items-center gap-3 md:hidden">
             <button
@@ -168,7 +167,7 @@ export default function AdminNav({ user, children }: AdminNavProps) {
 
           {/* Header Right Actions: Notification Bell + Admin Profile */}
           <div className="flex items-center gap-4">
-            
+
             {/* Realtime New Orders Notification Bell */}
             <NotificationBell />
 
@@ -201,11 +200,10 @@ export default function AdminNav({ user, children }: AdminNavProps) {
                 key={item.href}
                 href={item.href}
                 onClick={() => setMobileOpen(false)}
-                className={`flex items-center gap-3 p-3 rounded-xl transition-all ${
-                  pathname.startsWith(item.href)
-                    ? "bg-[#6D3FD6] text-white"
-                    : "text-slate-700 hover:bg-slate-100"
-                }`}
+                className={`flex items-center gap-3 p-3 rounded-xl transition-all ${pathname.startsWith(item.href)
+                  ? "bg-[#6D3FD6] text-white"
+                  : "text-slate-700 hover:bg-slate-100"
+                  }`}
               >
                 <span className="text-base">{item.icon}</span>
                 <span>{item.label}</span>
