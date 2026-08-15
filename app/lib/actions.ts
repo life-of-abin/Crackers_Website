@@ -10,7 +10,7 @@ import {
   validatePasswordPolicy,
 } from "@/lib/auth";
 import { verifyIndianPincode, normalizeIndianPhone, isValidEmailFormat, isValidGmailFormat } from "@/lib/pincode";
-import { validateTransactionRef, generateInvoiceNumber } from "@/lib/payment-utils";
+import { validateTransactionRef, generateInvoiceNumber, isValidCustomerName } from "@/lib/payment-utils";
 import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 
@@ -177,6 +177,7 @@ export async function createOrderAction(data: {
   district?: string;
   state: string;
   pincode: string;
+  paymentMethod?: string;
   cartItems: { productId: number; quantity: number }[];
 }) {
   try {
@@ -185,8 +186,8 @@ export async function createOrderAction(data: {
       return { error: "Please complete all mandatory delivery address fields." };
     }
 
-    if (data.customerName.trim().length < 2) {
-      return { error: "Please enter a valid full name." };
+    if (!isValidCustomerName(data.customerName)) {
+      return { error: "Name can contain letters and spaces only." };
     }
 
     // 2. Email format validation (Strict Gmail requirement)
@@ -276,6 +277,7 @@ export async function createOrderAction(data: {
 
       const shippingFee = calculatedSubtotal >= freeThreshold ? 0 : flatFee;
       const grandTotal = calculatedSubtotal + shippingFee;
+      const selectedPayMethod = data.paymentMethod || "UPI_QR";
 
       // Create Order & OrderItems with packSize & unitType
       const createdOrder = await tx.order.create({
@@ -293,8 +295,10 @@ export async function createOrderAction(data: {
           discount: 0,
           shipping: shippingFee,
           totalAmount: grandTotal,
-          paymentStatus: "PENDING",
-          orderStatus: "PLACED",
+          paymentStatus: "PAID",
+          orderStatus: "CONFIRMED",
+          paymentMethod: selectedPayMethod,
+          paidAt: new Date(),
           items: {
             create: validatedItems.map((item) => ({
               productId: item.productId,
@@ -306,6 +310,23 @@ export async function createOrderAction(data: {
               total: item.total,
             })),
           },
+        },
+      });
+
+      // Generate & set invoice number
+      const invoiceNumber = generateInvoiceNumber(createdOrder.id, createdOrder.createdAt);
+      await tx.order.update({
+        where: { id: createdOrder.id },
+        data: { invoiceNumber },
+      });
+
+      // Record successful payment entry
+      await tx.payment.create({
+        data: {
+          orderId: createdOrder.id,
+          paymentMethod: selectedPayMethod,
+          amount: grandTotal,
+          status: "SUCCESS",
         },
       });
 
@@ -322,6 +343,7 @@ export async function createOrderAction(data: {
 
       return {
         orderId: createdOrder.id,
+        invoiceNumber,
         grandTotal,
         subtotal: calculatedSubtotal,
         shippingFee,

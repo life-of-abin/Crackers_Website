@@ -25,23 +25,36 @@ export function generateUpiUri(params: UpiParams): string {
 }
 
 /**
- * Returns mobile app deep-link for Google Pay, PhonePe, Paytm, or generic UPI
+ * Returns mobile app deep-link for Google Pay, PhonePe, Paytm, BHIM or generic UPI
  */
-export function getAppPaymentLink(method: "GPAY" | "PHONEPE" | "PAYTM" | "UPI" | "QR", upiUri: string): string {
+export function getAppPaymentLink(method: "GPAY" | "PHONEPE" | "PAYTM" | "BHIM" | "UPI" | "QR", upiUri: string): string {
   if (!upiUri) return "#";
+  const queryParams = upiUri.replace("upi://pay?", "");
   
   switch (method) {
     case "GPAY":
-      return `gpay://upi/pay?${upiUri.replace("upi://pay?", "")}`;
+      return `gpay://upi/pay?${queryParams}`;
     case "PHONEPE":
-      return `phonepe://pay?${upiUri.replace("upi://pay?", "")}`;
+      return `phonepe://pay?${queryParams}`;
     case "PAYTM":
-      return `paytmmp://pay?${upiUri.replace("upi://pay?", "")}`;
+      return `paytmmp://pay?${queryParams}`;
+    case "BHIM":
+      return `bhim://pay?${queryParams}`;
     case "UPI":
     case "QR":
     default:
       return upiUri;
   }
+}
+
+/**
+ * Validates customer full name (Alphabetic characters A-Z, a-z and spaces ONLY)
+ */
+export function isValidCustomerName(name: string): boolean {
+  if (!name || typeof name !== "string") return false;
+  const trimmed = name.trim();
+  if (trimmed.length < 2) return false;
+  return /^[A-Za-z\s]+$/.test(trimmed);
 }
 
 /**

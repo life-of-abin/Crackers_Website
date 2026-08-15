@@ -6,16 +6,13 @@ import { useRouter } from "next/navigation";
 import { useCart } from "@/lib/cart-context";
 import Header from "@/components/ui/Header";
 import Footer from "@/components/ui/Footer";
-import FireworksCanvas from "@/components/ui/FireworksCanvas";
 import {
-  validateTransactionRef,
   generateUpiUri,
   getAppPaymentLink,
+  isValidCustomerName,
 } from "@/lib/payment-utils";
 import {
   createOrderAction,
-  verifyAndConfirmPaymentAction,
-  handlePaymentFailureAction,
   getPaymentAccountsAction,
 } from "@/lib/actions";
 
@@ -86,9 +83,8 @@ export default function CheckoutPage() {
   const [district, setDistrict] = useState("");
   const [state, setState] = useState("Tamil Nadu");
 
-  // Payment Selection & Reference State
-  const [paymentMethod, setPaymentMethod] = useState<"GPAY" | "PHONEPE" | "PAYTM" | "QR">("QR");
-  const [paymentRef, setPaymentRef] = useState("");
+  // Payment Selection State (DEFAULT = QR Paytm/UPI)
+  const [paymentMethod, setPaymentMethod] = useState<"QR" | "GPAY" | "PHONEPE" | "PAYTM" | "BHIM">("QR");
   const [paymentAccounts, setPaymentAccounts] = useState<any[]>([]);
 
   // Pincode Lookup & Error States
@@ -103,6 +99,9 @@ export default function CheckoutPage() {
   const [pinError, setPinError] = useState("");
   const [autoFilledPin, setAutoFilledPin] = useState<string | null>(null);
 
+  // App Unavailability Notice State
+  const [appNotice, setAppNotice] = useState<string | null>(null);
+
   // Input Field References for Scrolling
   const nameRef = useRef<HTMLInputElement | null>(null);
   const phoneRef = useRef<HTMLInputElement | null>(null);
@@ -111,15 +110,11 @@ export default function CheckoutPage() {
   const pinRef = useRef<HTMLInputElement | null>(null);
   const cityRef = useRef<HTMLInputElement | null>(null);
   const districtRef = useRef<HTMLInputElement | null>(null);
-  const upiRef = useRef<HTMLInputElement | null>(null);
 
   // Validation & Processing States
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
-  const [paymentState, setPaymentState] = useState<"IDLE" | "PROCESSING" | "SUCCESS" | "FAILED">("IDLE");
-  const [copiedToast, setCopiedToast] = useState(false);
   const [globalError, setGlobalError] = useState("");
-  const [confirmedOrder, setConfirmedOrder] = useState<any>(null);
 
   // Fetch Store Settings & Payment Accounts on Mount
   useEffect(() => {
@@ -215,11 +210,21 @@ export default function CheckoutPage() {
     }
   };
 
-  // Name Validation
+  // Name Validation (Letters and Spaces ONLY)
   const handleNameInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     setCustomerName(val);
-    if (val.trim().length >= 2) {
+
+    if (!val || val.trim().length === 0) {
+      return;
+    }
+
+    if (!isValidCustomerName(val)) {
+      setErrors((prev) => ({
+        ...prev,
+        name: "Name can contain letters and spaces only.",
+      }));
+    } else {
       setErrors((prev) => {
         const copy = { ...prev };
         delete copy.name;
@@ -299,8 +304,8 @@ export default function CheckoutPage() {
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
-    if (!customerName || customerName.trim().length < 2) {
-      newErrors.name = "Please enter your full name (minimum 2 characters).";
+    if (!customerName || customerName.trim().length < 2 || !isValidCustomerName(customerName)) {
+      newErrors.name = "Name can contain letters and spaces only.";
     }
 
     if (!phone || phone.length !== 10) {
@@ -329,12 +334,6 @@ export default function CheckoutPage() {
       newErrors.district = "Please enter a valid District.";
     }
 
-    // UTR / Transaction Reference Validation
-    const refCheck = validateTransactionRef(paymentRef);
-    if (!refCheck.valid) {
-      newErrors.paymentRef = refCheck.error || "Please enter your valid 12-digit UTR or Transaction Reference ID.";
-    }
-
     setErrors(newErrors);
 
     if (Object.keys(newErrors).length > 0) {
@@ -347,7 +346,6 @@ export default function CheckoutPage() {
       else if (firstInvalidField === "pincode") ref = pinRef;
       else if (firstInvalidField === "city") ref = cityRef;
       else if (firstInvalidField === "district") ref = districtRef;
-      else if (firstInvalidField === "paymentRef") ref = upiRef;
 
       if (ref && ref.current) {
         ref.current.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -369,22 +367,59 @@ export default function CheckoutPage() {
     storeName: settings.storeName,
     amount: grandTotalAmount,
     orderId: "TEMP",
-    note: "Sivakasi Crackers Festive Purchase",
+    note: "Sivakasi Crackers Purchase",
   });
+
+  // Direct App Tap Handler
+  const handleAppTap = (method: "BHIM" | "GPAY" | "PHONEPE" | "PAYTM") => {
+    setPaymentMethod(method);
+    setAppNotice(null);
+
+    const appNames: Record<string, string> = {
+      BHIM: "BHIM",
+      GPAY: "Google Pay",
+      PHONEPE: "PhonePe",
+      PAYTM: "Paytm",
+    };
+
+    const appName = appNames[method] || method;
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+      typeof navigator !== "undefined" ? navigator.userAgent : ""
+    );
+
+    if (!isMobile) {
+      setAppNotice(
+        `Direct app payment for ${appName} is available on supported mobile devices. Please scan the QR code using your UPI app.`
+      );
+      return;
+    }
+
+    const deepLink = getAppPaymentLink(method, dynamicUpiUri);
+    try {
+      window.location.href = deepLink;
+      setTimeout(() => {
+        setAppNotice(`${appName} is not installed on your device. Please try another payment option.`);
+      }, 2500);
+    } catch {
+      setAppNotice(`${appName} is not installed on your device. Please try another payment option.`);
+    }
+  };
 
   // SUBMIT ORDER HANDLER
   const handleSubmitOrder = async (e: React.FormEvent) => {
     e.preventDefault();
     setGlobalError("");
-    setPaymentState("IDLE");
 
     if (!validateForm()) return;
 
+    if (items.length === 0) {
+      setGlobalError("Your shopping cart is empty.");
+      return;
+    }
+
     setLoading(true);
-    setPaymentState("PROCESSING");
 
     try {
-      // 1. Create Pending Order
       const result = await createOrderAction({
         customerName: customerName.trim(),
         phone: `+91${phone}`,
@@ -395,6 +430,7 @@ export default function CheckoutPage() {
         district: district.trim(),
         state,
         pincode: pincode.trim(),
+        paymentMethod: paymentMethod,
         cartItems: items.map((item) => ({
           productId: item.id,
           quantity: item.cartQuantity,
@@ -404,204 +440,61 @@ export default function CheckoutPage() {
       if (result.error) {
         setGlobalError(result.error);
         setLoading(false);
-        setPaymentState("FAILED");
         return;
       }
 
       if (result.success && result.orderId) {
-        // 2. Server-Side Payment Verification
-        const paymentRes = await verifyAndConfirmPaymentAction(
-          result.orderId,
-          paymentRef.trim(),
-          paymentMethod
-        );
-
-        if (paymentRes.success) {
-          clearCart();
-          setLoading(false);
-          router.push(`/order-confirmation/${result.orderId}`);
-        } else {
-          // Handle payment verification failure cleanly without losing cart
-          await handlePaymentFailureAction(result.orderId, "FAILED");
-          setGlobalError(paymentRes.error || "Payment could not be verified. Please check your 12-digit UTR/Transaction ID.");
-          setLoading(false);
-          setPaymentState("FAILED");
-        }
-      } else {
-        setGlobalError("Failed to initialize payment session. Please try again.");
+        clearCart();
         setLoading(false);
-        setPaymentState("FAILED");
+        router.push(`/order-confirmation/${result.orderId}`);
+      } else {
+        setGlobalError("Failed to complete order. Please try again.");
+        setLoading(false);
       }
     } catch (err: any) {
       console.error("Submit order error:", err);
-      setGlobalError("An unexpected error occurred during payment processing.");
+      setGlobalError("An unexpected error occurred during order processing.");
       setLoading(false);
-      setPaymentState("FAILED");
     }
   };
 
   if (!isMounted) {
     return (
-      <div className="min-h-screen bg-[#F8FAFC] text-slate-900 flex items-center justify-center">
+      <div className="min-h-screen bg-[#080B1A] text-[#FFF9EA] flex items-center justify-center">
         <div className="animate-spin text-4xl">🎆</div>
       </div>
     );
   }
 
-  // SAME-PAGE ORDER CONFIRMATION SCREEN
-  if (confirmedOrder) {
-    return (
-      <div className="min-h-screen bg-[#F8FAFC] text-slate-900 flex flex-col justify-between relative overflow-hidden">
-        <Header settings={settings} />
-        <FireworksCanvas durationSeconds={7} />
-
-        <main className="max-w-3xl mx-auto px-4 py-12 flex-1 w-full text-center z-10 space-y-8">
-          
-          <div className="bg-white border border-purple-200 p-6 sm:p-10 rounded-3xl shadow-xl space-y-6">
-            
-            <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-[#6D3FD6] to-[#8B5CF6] rounded-full text-4xl shadow-lg animate-bounce text-white">
-              🎉
-            </div>
-
-            <h1 className="text-3xl sm:text-4xl font-black text-[#6D3FD6] tracking-tight font-display">
-              ORDER CONFIRMED!
-            </h1>
-            
-            <p className="text-slate-600 text-xs sm:text-sm max-w-md mx-auto">
-              Thank you for ordering with <strong className="text-[#6D3FD6]">{settings.storeName}</strong>! Your cracker order has been successfully placed.
-            </p>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-left">
-              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-1">
-                <span className="text-[10px] text-[#6D3FD6] font-extrabold uppercase tracking-wider block">
-                  Order Number
-                </span>
-                <span className="text-xl font-black text-slate-900 font-mono">{confirmedOrder.formattedId}</span>
-              </div>
-
-              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-1">
-                <span className="text-[10px] text-[#6D3FD6] font-extrabold uppercase tracking-wider block">
-                  Total Amount
-                </span>
-                <span className="text-xl font-black text-[#6D3FD6]">₹{Number(confirmedOrder.totalAmount).toLocaleString("en-IN")}</span>
-              </div>
-
-              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-1 sm:col-span-2">
-                <span className="text-[10px] text-[#6D3FD6] font-extrabold uppercase tracking-wider block">
-                  Delivery Address
-                </span>
-                <p className="font-extrabold text-slate-900 text-xs">{confirmedOrder.customerName}</p>
-                <p className="text-slate-600 text-xs leading-relaxed">
-                  {confirmedOrder.address}{confirmedOrder.landmark ? `, Near ${confirmedOrder.landmark}` : ""}, {confirmedOrder.city}, {confirmedOrder.district}, {confirmedOrder.state} - <strong className="text-slate-900">{confirmedOrder.pincode}</strong>
-                </p>
-              </div>
-
-              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-1 sm:col-span-2">
-                <span className="text-[10px] text-[#6D3FD6] font-extrabold uppercase tracking-wider block">
-                  Contact Information
-                </span>
-                <p className="text-xs text-slate-600">
-                  Mobile: <strong className="text-slate-900 font-mono text-sm">{confirmedOrder.phone}</strong>
-                </p>
-                <p className="text-xs text-slate-600">
-                  Email: <span className="text-slate-900">{confirmedOrder.email}</span>
-                </p>
-              </div>
-            </div>
-
-            <div className="pt-4 border-t border-slate-200 flex flex-wrap items-center justify-center gap-4">
-              <a
-                href={`/api/orders/${confirmedOrder.id}/invoice`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full sm:w-auto px-6 py-3.5 bg-[#6D3FD6] hover:bg-[#5B21B6] text-white font-extrabold text-xs uppercase tracking-wider rounded-xl shadow-md transition-all flex items-center justify-center gap-2"
-              >
-                <span>📄 Download Invoice PDF</span>
-              </a>
-
-              <Link
-                href={`/orders?query=${encodeURIComponent(confirmedOrder.phone)}`}
-                className="w-full sm:w-auto px-6 py-3.5 bg-slate-100 hover:bg-slate-200 text-[#6D3FD6] border border-slate-200 font-extrabold text-xs uppercase tracking-wider rounded-xl transition-all flex items-center justify-center gap-2"
-              >
-                <span>📦 View Order History</span>
-              </Link>
-
-              <Link
-                href="/products"
-                className="w-full sm:w-auto px-6 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-200 font-extrabold text-xs uppercase tracking-wider rounded-xl transition-all flex items-center justify-center gap-2"
-              >
-                <span>Continue Shopping →</span>
-              </Link>
-            </div>
-
-          </div>
-
-        </main>
-
-        <Footer settings={settings} />
-      </div>
-    );
-  }
-
-  // EMPTY CART SCREEN
-  if (items.length === 0) {
-    return (
-      <div className="min-h-screen bg-[#F8FAFC] text-slate-900 flex flex-col justify-between">
-        <Header settings={settings} />
-        <div className="max-w-md mx-auto my-16 p-8 bg-white rounded-3xl border border-slate-200 text-center space-y-4 shadow-md">
-          <div className="text-5xl">🛒</div>
-          <h2 className="text-lg font-bold text-slate-900 font-display">Your cart is empty</h2>
-          <p className="text-xs text-slate-500">Please add items to your cart before proceeding to checkout.</p>
-          <Link href="/products" className="inline-block bg-[#6D3FD6] text-white text-xs font-bold px-6 py-2.5 rounded-xl">
-            Browse Products
-          </Link>
-        </div>
-        <Footer settings={settings} />
-      </div>
-    );
-  }
-
-  const shippingFee = subtotal >= settings.freeShippingThreshold ? 0 : settings.flatShippingFee;
-  const grandTotal = subtotal + shippingFee;
-
   return (
-    <div className="min-h-screen flex flex-col bg-[#F8FAFC] text-slate-900">
+    <div className="min-h-screen flex flex-col bg-[#080B1A] text-[#FFF9EA] selection:bg-[#6D3FD6] selection:text-white">
       <Header settings={settings} />
 
-      {/* Copy Toast */}
-      {copiedToast && (
-        <div className="fixed top-20 right-5 z-50 bg-slate-900 text-amber-300 border border-amber-400 text-xs font-extrabold px-4 py-3 rounded-2xl shadow-2xl animate-bounce flex items-center gap-2">
-          <span>✓ UPI ID copied to clipboard</span>
-        </div>
-      )}
-
-      <div className="bg-white text-slate-900 py-8 border-b border-slate-200 shadow-xs">
+      {/* Guest Checkout Banner */}
+      <div className="bg-[#151A35] text-[#FFF9EA] py-8 border-b border-white/10 shadow-lg">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-2 text-[#6D3FD6] text-xs font-bold uppercase tracking-wider mb-1">
+          <div className="flex items-center gap-2 text-[#F5C451] text-xs font-bold uppercase tracking-wider mb-1">
+            <Link href="/" className="hover:underline">Home</Link>
+            <span>/</span>
             <Link href="/cart" className="hover:underline">Cart</Link>
             <span>/</span>
             <span>Guest Checkout</span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 font-display">
-            Delivery Details & Order Checkout
+          <h1 className="text-2xl sm:text-3xl font-black text-white font-display">
+            Guest Checkout & Payment
           </h1>
+          <p className="text-xs text-slate-400 mt-1">
+            Fast, secure guest checkout. Order 1 or more festive items with instant factory dispatch.
+          </p>
         </div>
       </div>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full">
-        
-        {globalError && (
-          <div className="mb-6 p-4 bg-amber-50 border border-amber-300 text-amber-900 text-xs font-bold rounded-2xl flex items-center justify-between shadow-xs">
-            <span className="flex items-center gap-2">⚠️ {globalError}</span>
-            <button onClick={() => setGlobalError("")} className="text-amber-900 hover:text-black font-extrabold text-sm cursor-pointer">✕</button>
-          </div>
-        )}
-
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 flex-1 w-full">
         <form onSubmit={handleSubmitOrder} className="max-w-3xl mx-auto space-y-6" noValidate>
           
           {/* Section 1: Customer Contact Information */}
-          <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-xl space-y-5">
-            <h2 className="text-sm font-black text-slate-900 border-b border-slate-200 pb-3 uppercase tracking-wider flex items-center gap-2 font-display">
+          <div className="bg-[#151A35]/90 rounded-3xl border border-[#6D3FD6]/30 p-6 sm:p-8 shadow-2xl space-y-5 backdrop-blur-md">
+            <h2 className="text-sm font-black text-[#FFF9EA] border-b border-white/10 pb-3 uppercase tracking-wider flex items-center gap-2 font-display">
               <span className="w-6 h-6 rounded-full bg-[#6D3FD6] text-white text-xs flex items-center justify-center font-bold">1</span>
               Customer Contact Information
             </h2>
@@ -610,8 +503,8 @@ export default function CheckoutPage() {
               
               {/* Full Name */}
               <div className="sm:col-span-2">
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
-                  Full Name *
+                <label className="block text-xs font-bold text-[#F5C451] uppercase tracking-wider mb-1">
+                  Full Name (Letters & Spaces Only) *
                 </label>
                 <input
                   ref={nameRef}
@@ -622,42 +515,44 @@ export default function CheckoutPage() {
                   onChange={handleNameInput}
                   aria-invalid={errors.name ? "true" : "false"}
                   aria-describedby={errors.name ? "name-error" : undefined}
-                  className={`w-full px-4 py-2.5 bg-slate-50 border rounded-xl text-xs font-semibold text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 transition-all ${
-                    errors.name ? "border-red-500 ring-1 ring-red-500 bg-red-50" : "border-slate-200 focus:ring-[#6D3FD6] focus:border-[#6D3FD6]"
+                  className={`w-full px-4 py-3 bg-[#080B1A] border rounded-xl text-xs font-semibold text-white placeholder-slate-500 focus:outline-none focus:ring-2 transition-all ${
+                    errors.name ? "border-red-500 ring-1 ring-red-500 bg-red-950/20" : "border-white/20 focus:ring-[#6D3FD6] focus:border-[#6D3FD6]"
                   }`}
                 />
-                {errors.name && (
-                  <span id="name-error" className="text-[11px] font-bold text-red-600 mt-1 block">
+                {errors.name ? (
+                  <span id="name-error" className="text-[11px] font-bold text-red-400 mt-1 block">
                     {errors.name}
+                  </span>
+                ) : (
+                  <span className="text-[10px] text-slate-400 mt-1 block">
+                    Accepts letters (A-Z, a-z) and spaces. E.g. Abinesh N, Ravi Kumar
                   </span>
                 )}
               </div>
 
               {/* Mobile Input */}
               <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
+                <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">
                   Mobile Number *
                 </label>
-                <div className="relative">
-                  <input
-                    ref={phoneRef}
-                    type="tel"
-                    required
-                    maxLength={10}
-                    placeholder="98765 43210"
-                    value={phone ? phone.replace(/(\d{5})(\d{5})/, "$1 $2") : ""}
-                    onChange={handlePhoneInput}
-                    aria-invalid={errors.phone ? "true" : "false"}
-                    aria-describedby={errors.phone ? "phone-error" : undefined}
-                    className={`w-full px-4 py-2.5 bg-slate-50 border rounded-xl text-xs font-semibold text-slate-900 font-mono placeholder-slate-400 focus:outline-none focus:ring-2 transition-all ${
-                      errors.phone ? "border-red-500 ring-1 ring-red-500 bg-red-50" : "border-slate-200 focus:ring-[#6D3FD6] focus:border-[#6D3FD6]"
-                    }`}
-                  />
-                </div>
-                <span className="text-[10px] text-slate-400 mt-1 block">Enter 10-digit Indian mobile number</span>
+                <input
+                  ref={phoneRef}
+                  type="tel"
+                  required
+                  maxLength={10}
+                  placeholder="98765 43210"
+                  value={phone ? phone.replace(/(\d{5})(\d{5})/, "$1 $2") : ""}
+                  onChange={handlePhoneInput}
+                  aria-invalid={errors.phone ? "true" : "false"}
+                  aria-describedby={errors.phone ? "phone-error" : undefined}
+                  className={`w-full px-4 py-3 bg-[#080B1A] border rounded-xl text-xs font-semibold text-white font-mono placeholder-slate-500 focus:outline-none focus:ring-2 transition-all ${
+                    errors.phone ? "border-red-500 ring-1 ring-red-500 bg-red-950/20" : "border-white/20 focus:ring-[#6D3FD6] focus:border-[#6D3FD6]"
+                  }`}
+                />
+                <span className="text-[10px] text-slate-400 mt-1 block">10-digit Indian mobile number</span>
 
                 {errors.phone && (
-                  <span id="phone-error" className="text-[11px] font-bold text-red-600 mt-1 block">
+                  <span id="phone-error" className="text-[11px] font-bold text-red-400 mt-1 block">
                     {errors.phone}
                   </span>
                 )}
@@ -665,7 +560,7 @@ export default function CheckoutPage() {
 
               {/* Email Address Input */}
               <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
+                <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">
                   Email Address *
                 </label>
                 <input
@@ -677,14 +572,14 @@ export default function CheckoutPage() {
                   onChange={handleEmailInput}
                   aria-invalid={errors.email ? "true" : "false"}
                   aria-describedby={errors.email ? "email-error" : undefined}
-                  className={`w-full px-4 py-2.5 bg-slate-50 border rounded-xl text-xs font-semibold text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 transition-all ${
-                    errors.email ? "border-red-500 ring-1 ring-red-500 bg-red-50" : "border-slate-200 focus:ring-[#6D3FD6] focus:border-[#6D3FD6]"
+                  className={`w-full px-4 py-3 bg-[#080B1A] border rounded-xl text-xs font-semibold text-white placeholder-slate-500 focus:outline-none focus:ring-2 transition-all ${
+                    errors.email ? "border-red-500 ring-1 ring-red-500 bg-red-950/20" : "border-white/20 focus:ring-[#6D3FD6] focus:border-[#6D3FD6]"
                   }`}
                 />
-                <span className="text-[10px] text-slate-400 mt-1 block">Order updates & receipt sent here</span>
+                <span className="text-[10px] text-slate-400 mt-1 block">Order updates & invoice sent here</span>
 
                 {errors.email && (
-                  <span id="email-error" className="text-[11px] font-bold text-red-600 mt-1 block">
+                  <span id="email-error" className="text-[11px] font-bold text-red-400 mt-1 block">
                     {errors.email}
                   </span>
                 )}
@@ -694,16 +589,16 @@ export default function CheckoutPage() {
           </div>
 
           {/* Section 2: Address & PIN Code */}
-          <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-xl space-y-5">
-            <h2 className="text-sm font-black text-slate-900 border-b border-slate-200 pb-3 uppercase tracking-wider flex items-center gap-2 font-display">
+          <div className="bg-[#151A35]/90 rounded-3xl border border-[#6D3FD6]/30 p-6 sm:p-8 shadow-2xl space-y-5 backdrop-blur-md">
+            <h2 className="text-sm font-black text-[#FFF9EA] border-b border-white/10 pb-3 uppercase tracking-wider flex items-center gap-2 font-display">
               <span className="w-6 h-6 rounded-full bg-[#6D3FD6] text-white text-xs flex items-center justify-center font-bold">2</span>
-              Delivery Address & Smart Postal Auto-Fill
+              Delivery Address & Postal Code
             </h2>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               
               <div className="sm:col-span-2">
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
+                <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">
                   Address Line 1 (House No., Building, Street Name) *
                 </label>
                 <textarea
@@ -715,19 +610,19 @@ export default function CheckoutPage() {
                   onChange={handleAddressInput}
                   aria-invalid={errors.address ? "true" : "false"}
                   aria-describedby={errors.address ? "address-error" : undefined}
-                  className={`w-full px-4 py-2.5 bg-slate-50 border rounded-xl text-xs font-semibold text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 transition-all ${
-                    errors.address ? "border-red-500 ring-1 ring-red-500 bg-red-50" : "border-slate-200 focus:ring-[#6D3FD6] focus:border-[#6D3FD6]"
+                  className={`w-full px-4 py-3 bg-[#080B1A] border rounded-xl text-xs font-semibold text-white placeholder-slate-500 focus:outline-none focus:ring-2 transition-all ${
+                    errors.address ? "border-red-500 ring-1 ring-red-500 bg-red-950/20" : "border-white/20 focus:ring-[#6D3FD6] focus:border-[#6D3FD6]"
                   }`}
                 />
                 {errors.address && (
-                  <span id="address-error" className="text-[11px] font-bold text-red-600 mt-1 block">
+                  <span id="address-error" className="text-[11px] font-bold text-red-400 mt-1 block">
                     {errors.address}
                   </span>
                 )}
               </div>
 
               <div className="sm:col-span-2">
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
+                <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">
                   Address Line 2 / Landmark (Optional)
                 </label>
                 <input
@@ -735,27 +630,27 @@ export default function CheckoutPage() {
                   placeholder="Near Bus Stand / Opposite SBI Bank"
                   value={landmark}
                   onChange={(e) => setLandmark(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#6D3FD6]"
+                  className="w-full px-4 py-3 bg-[#080B1A] border border-white/20 rounded-xl text-xs font-semibold text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-[#6D3FD6]"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
+                <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">
                   State *
                 </label>
                 <select
                   value={state}
                   onChange={(e) => setState(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#6D3FD6]"
+                  className="w-full px-4 py-3 bg-[#080B1A] border border-white/20 rounded-xl text-xs font-semibold text-white focus:outline-none focus:ring-2 focus:ring-[#6D3FD6]"
                 >
                   {INDIAN_STATES.map((st) => (
-                    <option key={st} value={st} className="bg-white text-slate-900">{st}</option>
+                    <option key={st} value={st} className="bg-[#080B1A] text-white">{st}</option>
                   ))}
                 </select>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
+                <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">
                   PIN Code (6 Digits) *
                 </label>
                 <input
@@ -768,43 +663,42 @@ export default function CheckoutPage() {
                   onChange={handlePincodeChange}
                   aria-invalid={errors.pincode ? "true" : "false"}
                   aria-describedby={errors.pincode ? "pincode-error" : undefined}
-                  className={`w-full px-4 py-2.5 bg-slate-50 border rounded-xl text-xs font-semibold text-slate-900 font-mono focus:outline-none focus:ring-2 transition-all ${
-                    errors.pincode ? "border-red-500 ring-1 ring-red-500 bg-red-50" : "border-slate-200 focus:ring-[#6D3FD6] focus:border-[#6D3FD6]"
+                  className={`w-full px-4 py-3 bg-[#080B1A] border rounded-xl text-xs font-semibold text-white font-mono focus:outline-none focus:ring-2 transition-all ${
+                    errors.pincode ? "border-red-500 ring-1 ring-red-500 bg-red-950/20" : "border-white/20 focus:ring-[#6D3FD6] focus:border-[#6D3FD6]"
                   }`}
                 />
                 
                 <div className="mt-1.5 text-xs font-bold">
                   {pinLoading && (
-                    <span className="text-[#6D3FD6] animate-pulse flex items-center gap-1 text-[11px] mt-1">
-                      <span className="w-2 h-2 rounded-full bg-[#6D3FD6] animate-ping" />
+                    <span className="text-[#F5C451] animate-pulse flex items-center gap-1 text-[11px] mt-1">
+                      <span className="w-2 h-2 rounded-full bg-[#F5C451] animate-ping" />
                       Detecting location...
                     </span>
                   )}
                   {pinError && (
-                    <span className="text-red-600 block bg-red-50 p-2 rounded-lg border border-red-200 text-[11px] mt-1">
+                    <span className="text-red-400 block bg-red-950/40 p-2 rounded-lg border border-red-900/50 text-[11px] mt-1">
                       {pinError}
                     </span>
                   )}
                   {errors.pincode && !pinError && (
-                    <span id="pincode-error" className="text-red-600 block text-[11px] mt-1">
+                    <span id="pincode-error" className="text-red-400 block text-[11px] mt-1">
                       {errors.pincode}
                     </span>
                   )}
                   {pinVerifiedInfo && pinVerifiedInfo.valid && (
-                    <div className="text-emerald-700 bg-emerald-50 p-2.5 rounded-lg border border-emerald-200 text-[11px] space-y-0.5 mt-1">
+                    <div className="text-emerald-400 bg-emerald-950/30 p-2.5 rounded-lg border border-emerald-800/40 text-[11px] space-y-0.5 mt-1">
                       <span className="font-extrabold flex items-center gap-1">
                         ✓ Pincode verified
                       </span>
-                      <div>City: {pinVerifiedInfo.city} (Automatically detected)</div>
-                      <div>District: {pinVerifiedInfo.district} (Automatically detected)</div>
-                      <div>State: {pinVerifiedInfo.state} (Automatically detected)</div>
+                      <div>City: {pinVerifiedInfo.city}</div>
+                      <div>District: {pinVerifiedInfo.district}</div>
                     </div>
                   )}
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
+                <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">
                   City / Town *
                 </label>
                 <input
@@ -817,19 +711,19 @@ export default function CheckoutPage() {
                   onChange={handleCityInput}
                   aria-invalid={errors.city ? "true" : "false"}
                   aria-describedby={errors.city ? "city-error" : undefined}
-                  className={`w-full px-4 py-2.5 bg-slate-50 border rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 transition-all ${
-                    errors.city ? "border-red-500 ring-1 ring-red-500 bg-red-50" : "border-slate-200 focus:ring-[#6D3FD6] focus:border-[#6D3FD6]"
+                  className={`w-full px-4 py-3 bg-[#080B1A] border rounded-xl text-xs font-semibold text-white focus:outline-none focus:ring-2 transition-all ${
+                    errors.city ? "border-red-500 ring-1 ring-red-500 bg-red-950/20" : "border-white/20 focus:ring-[#6D3FD6] focus:border-[#6D3FD6]"
                   } disabled:opacity-50 disabled:cursor-not-allowed`}
                 />
                 {errors.city && (
-                  <span id="city-error" className="text-[11px] font-bold text-red-600 mt-1 block">
+                  <span id="city-error" className="text-[11px] font-bold text-red-400 mt-1 block">
                     {errors.city}
                   </span>
                 )}
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
+                <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">
                   District *
                 </label>
                 <input
@@ -842,12 +736,12 @@ export default function CheckoutPage() {
                   onChange={handleDistrictInput}
                   aria-invalid={errors.district ? "true" : "false"}
                   aria-describedby={errors.district ? "district-error" : undefined}
-                  className={`w-full px-4 py-2.5 bg-slate-50 border rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 transition-all ${
-                    errors.district ? "border-red-500 ring-1 ring-red-500 bg-red-50" : "border-slate-200 focus:ring-[#6D3FD6] focus:border-[#6D3FD6]"
+                  className={`w-full px-4 py-3 bg-[#080B1A] border rounded-xl text-xs font-semibold text-white focus:outline-none focus:ring-2 transition-all ${
+                    errors.district ? "border-red-500 ring-1 ring-red-500 bg-red-950/20" : "border-white/20 focus:ring-[#6D3FD6] focus:border-[#6D3FD6]"
                   } disabled:opacity-50 disabled:cursor-not-allowed`}
                 />
                 {errors.district && (
-                  <span id="district-error" className="text-[11px] font-bold text-red-600 mt-1 block">
+                  <span id="district-error" className="text-[11px] font-bold text-red-400 mt-1 block">
                     {errors.district}
                   </span>
                 )}
@@ -856,113 +750,53 @@ export default function CheckoutPage() {
             </div>
           </div>
 
-          {/* Section 3: Payment Options */}
-          <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-xl space-y-6">
-            <h2 className="text-sm font-black text-slate-900 border-b border-slate-200 pb-3 uppercase tracking-wider flex items-center gap-2 font-display">
+          {/* Section 3: Payment Section (Default: Paytm / UPI QR) */}
+          <div className="bg-[#151A35]/90 rounded-3xl border border-[#6D3FD6]/30 p-6 sm:p-8 shadow-2xl space-y-6 backdrop-blur-md">
+            <h2 className="text-sm font-black text-[#FFF9EA] border-b border-white/10 pb-3 uppercase tracking-wider flex items-center gap-2 font-display">
               <span className="w-6 h-6 rounded-full bg-[#6D3FD6] text-white text-xs flex items-center justify-center font-bold">3</span>
-              Choose Payment Method
+              Payment Method
             </h2>
 
-            {/* Payment Method Selector Grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              {/* Option 1: Google Pay */}
-              <button
-                type="button"
-                onClick={() => setPaymentMethod("GPAY")}
-                className={`p-4 rounded-2xl border text-center transition-all flex flex-col items-center justify-center space-y-2 cursor-pointer ${
-                  paymentMethod === "GPAY"
-                    ? "border-[#6D3FD6] bg-purple-50 ring-2 ring-[#6D3FD6]"
-                    : "border-slate-200 hover:border-purple-300 bg-slate-50"
-                }`}
-              >
-                <div className="w-10 h-10 rounded-full bg-[#4285F4]/10 border border-[#4285F4]/30 flex items-center justify-center text-xl font-bold text-[#4285F4]">
-                  G
-                </div>
-                <span className="font-extrabold text-xs text-slate-900 block">Google Pay</span>
-                <span className="text-[10px] text-slate-500">Direct App / UPI</span>
-              </button>
-
-              {/* Option 2: PhonePe */}
-              <button
-                type="button"
-                onClick={() => setPaymentMethod("PHONEPE")}
-                className={`p-4 rounded-2xl border text-center transition-all flex flex-col items-center justify-center space-y-2 cursor-pointer ${
-                  paymentMethod === "PHONEPE"
-                    ? "border-[#6D3FD6] bg-purple-50 ring-2 ring-[#6D3FD6]"
-                    : "border-slate-200 hover:border-purple-300 bg-slate-50"
-                }`}
-              >
-                <div className="w-10 h-10 rounded-full bg-[#5f259f]/10 border border-[#5f259f]/30 flex items-center justify-center text-xl font-bold text-[#5f259f]">
-                  P
-                </div>
-                <span className="font-extrabold text-xs text-slate-900 block">PhonePe</span>
-                <span className="text-[10px] text-slate-500">Instant Transfer</span>
-              </button>
-
-              {/* Option 3: Paytm */}
-              <button
-                type="button"
-                onClick={() => setPaymentMethod("PAYTM")}
-                className={`p-4 rounded-2xl border text-center transition-all flex flex-col items-center justify-center space-y-2 cursor-pointer ${
-                  paymentMethod === "PAYTM"
-                    ? "border-[#6D3FD6] bg-purple-50 ring-2 ring-[#6D3FD6]"
-                    : "border-slate-200 hover:border-purple-300 bg-slate-50"
-                }`}
-              >
-                <div className="w-10 h-10 rounded-full bg-[#00baf2]/10 border border-[#00baf2]/30 flex items-center justify-center text-xl font-bold text-[#00baf2]">
-                  Paytm
-                </div>
-                <span className="font-extrabold text-xs text-slate-900 block">Paytm</span>
-                <span className="text-[10px] text-slate-500">Paytm App / UPI</span>
-              </button>
-
-              {/* Option 4: UPI QR Code */}
-              <button
-                type="button"
-                onClick={() => setPaymentMethod("QR")}
-                className={`p-4 rounded-2xl border text-center transition-all flex flex-col items-center justify-center space-y-2 cursor-pointer ${
-                  paymentMethod === "QR"
-                    ? "border-[#6D3FD6] bg-purple-50 ring-2 ring-[#6D3FD6]"
-                    : "border-slate-200 hover:border-purple-300 bg-slate-50"
-                }`}
-              >
-                <div className="w-10 h-10 rounded-full bg-amber-100 border border-amber-300 flex items-center justify-center text-xl">
-                  📱
-                </div>
-                <span className="font-extrabold text-xs text-slate-900 block">UPI QR Code</span>
-                <span className="text-[10px] text-slate-500">Scan & Pay</span>
-              </button>
-            </div>
-
-            {/* PAYMENT METHOD DETAILS CARD */}
-            <div className="p-6 bg-slate-50 rounded-3xl border border-slate-200 text-center space-y-6">
-              
-              {/* App Opening Deep-Link for Mobile (Google Pay / PhonePe / Paytm) */}
-              {["GPAY", "PHONEPE", "PAYTM"].includes(paymentMethod) && (
-                <div className="space-y-4">
-                  <div className="inline-flex items-center gap-2 px-3 py-1 bg-purple-100 border border-purple-200 rounded-full text-[11px] font-extrabold text-[#6D3FD6]">
-                    ⚡ Mobile App Payment Supported
+            {/* DEFAULT PAYMENT OPTION: PAYTM / UPI QR CODE (Selected by default) */}
+            <div
+              onClick={() => {
+                setPaymentMethod("QR");
+                setAppNotice(null);
+              }}
+              className={`p-6 rounded-3xl border transition-all space-y-4 cursor-pointer relative ${
+                paymentMethod === "QR"
+                  ? "border-[#6D3FD6] bg-[#6D3FD6]/20 ring-2 ring-[#6D3FD6] shadow-xl"
+                  : "border-white/10 bg-[#080B1A]/80 hover:border-[#6D3FD6]/40"
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-[#6D3FD6] text-white flex items-center justify-center text-xl font-bold">
+                    📱
                   </div>
-                  <p className="text-xs text-slate-600">
-                    Tap below to open <strong className="text-slate-900">{paymentMethod === "GPAY" ? "Google Pay" : paymentMethod === "PHONEPE" ? "PhonePe" : "Paytm"}</strong> on your mobile device, or scan the QR code below.
-                  </p>
-                  
-                  <a
-                    href={getAppPaymentLink(paymentMethod, dynamicUpiUri)}
-                    className="inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-[#6D3FD6] hover:bg-[#5B21B6] text-white font-extrabold text-xs uppercase tracking-wider rounded-xl shadow-md transition-all cursor-pointer"
-                  >
-                    <span>Open {paymentMethod === "GPAY" ? "Google Pay" : paymentMethod === "PHONEPE" ? "PhonePe" : "Paytm"} App →</span>
-                  </a>
+                  <div>
+                    <span className="font-extrabold text-sm text-white block">
+                      Paytm / UPI QR Code
+                    </span>
+                    <span className="text-[11px] text-[#F5C451] font-semibold">
+                      Selected by Default • Instant Payment
+                    </span>
+                  </div>
                 </div>
-              )}
+                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                  paymentMethod === "QR" ? "border-[#F5C451] bg-[#F5C451]" : "border-slate-500"
+                }`}>
+                  {paymentMethod === "QR" && <span className="text-[10px] text-black font-black">✓</span>}
+                </div>
+              </div>
 
-              {/* QR Code Section - Scan & Pay */}
-              <div className="space-y-4">
-                <h3 className="font-extrabold text-sm text-[#6D3FD6] uppercase tracking-wider">
+              {/* Scan & Pay Details */}
+              <div className="pt-2 text-center space-y-3">
+                <span className="inline-block px-3 py-1 bg-[#6D3FD6]/30 border border-[#6D3FD6]/50 rounded-full text-xs font-bold text-[#F5C451]">
                   Scan & Pay
-                </h3>
+                </span>
 
-                <div className="inline-block bg-white p-4 rounded-3xl shadow-xl border-4 border-amber-300">
+                <div className="inline-block bg-white p-4 rounded-3xl shadow-2xl border-4 border-[#F5C451]">
                   {qrAccount?.qrImage ? (
                     <img
                       src={qrAccount.qrImage}
@@ -978,102 +812,149 @@ export default function CheckoutPage() {
                   )}
                 </div>
 
-                <div className="space-y-1 text-xs text-slate-600">
-                  <p>Merchant: <strong className="text-slate-900">{settings.storeName}</strong></p>
-                  <p>UPI ID: <strong className="text-[#6D3FD6] font-mono">{upiIdToUse}</strong></p>
-                  <p>Amount to Pay: <strong className="text-base text-emerald-700 font-black">₹{grandTotalAmount.toLocaleString("en-IN")}</strong></p>
+                <div className="space-y-1 text-xs text-slate-300">
+                  <p>Merchant: <strong className="text-white">{settings.storeName}</strong></p>
+                  <p>UPI ID: <strong className="text-[#F5C451] font-mono">{upiIdToUse}</strong></p>
+                  <p className="text-sm pt-1">
+                    Payment Amount: <strong className="text-lg text-[#F5C451] font-black font-display">₹{grandTotalAmount.toLocaleString("en-IN")}</strong>
+                  </p>
                 </div>
               </div>
-
-              {/* UTR / Transaction Reference ID Input for Server Verification */}
-              <div className="pt-4 border-t border-slate-200 space-y-3 text-left max-w-md mx-auto">
-                <label className="block text-xs font-bold text-slate-900 uppercase tracking-wider">
-                  Enter 12-Digit UTR / Transaction Reference ID *
-                </label>
-                <input
-                  ref={upiRef}
-                  type="text"
-                  required
-                  maxLength={35}
-                  placeholder="e.g. 423456789012"
-                  value={paymentRef}
-                  onChange={(e) => setPaymentRef(e.target.value)}
-                  className={`w-full px-4 py-3 bg-white border rounded-xl text-xs font-mono text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 transition-all ${
-                    errors.paymentRef ? "border-red-500 ring-1 ring-red-500" : "border-slate-200 focus:ring-[#6D3FD6]"
-                  }`}
-                />
-                {errors.paymentRef && (
-                  <span className="text-[11px] font-bold text-red-600 block">
-                    {errors.paymentRef}
-                  </span>
-                )}
-                <span className="text-[10px] text-slate-500 block">
-                  Copy the 12-digit UTR/Ref number from your payment app receipt after completing payment.
-                </span>
-              </div>
-
             </div>
 
-            {/* Error & Failure Handling Alert */}
-            {globalError && (
-              <div className="p-4 bg-red-50 border border-red-200 rounded-2xl space-y-3 text-center">
-                <p className="text-xs font-extrabold text-red-700">
-                  ⚠️ {globalError}
-                </p>
-                {paymentState === "FAILED" && (
-                  <div className="flex flex-wrap justify-center gap-3 pt-1">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setGlobalError("");
-                        setPaymentState("IDLE");
-                      }}
-                      className="px-4 py-2 bg-[#6D3FD6] text-white text-xs font-black rounded-xl hover:bg-[#5B21B6] cursor-pointer"
-                    >
-                      Try Payment Again
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setGlobalError("");
-                        setPaymentState("IDLE");
-                        setPaymentMethod("QR");
-                      }}
-                      className="px-4 py-2 bg-slate-100 text-slate-800 border border-slate-200 text-xs font-bold rounded-xl cursor-pointer"
-                    >
-                      Change Payment Method
-                    </button>
+            {/* OTHER PAYMENT OPTIONS SECTION */}
+            <div className="space-y-3 pt-2">
+              <h3 className="text-xs font-extrabold text-[#F5C451] uppercase tracking-wider">
+                Other Payment Options
+              </h3>
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {/* BHIM Button */}
+                <button
+                  type="button"
+                  onClick={() => handleAppTap("BHIM")}
+                  className={`p-3.5 rounded-2xl border text-center transition-all flex flex-col items-center justify-center space-y-1.5 cursor-pointer ${
+                    paymentMethod === "BHIM"
+                      ? "border-[#6D3FD6] bg-[#6D3FD6]/30 ring-2 ring-[#6D3FD6]"
+                      : "border-white/10 bg-[#080B1A] hover:border-purple-500/40"
+                  }`}
+                >
+                  <div className="w-9 h-9 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center font-black text-amber-400 text-xs">
+                    BHIM
                   </div>
-                )}
+                  <span className="font-bold text-xs text-white">BHIM</span>
+                </button>
+
+                {/* Google Pay Button */}
+                <button
+                  type="button"
+                  onClick={() => handleAppTap("GPAY")}
+                  className={`p-3.5 rounded-2xl border text-center transition-all flex flex-col items-center justify-center space-y-1.5 cursor-pointer ${
+                    paymentMethod === "GPAY"
+                      ? "border-[#6D3FD6] bg-[#6D3FD6]/30 ring-2 ring-[#6D3FD6]"
+                      : "border-white/10 bg-[#080B1A] hover:border-purple-500/40"
+                  }`}
+                >
+                  <div className="w-9 h-9 rounded-xl bg-blue-500/20 border border-blue-500/40 flex items-center justify-center font-black text-blue-400 text-xs">
+                    GPay
+                  </div>
+                  <span className="font-bold text-xs text-white">Google Pay</span>
+                </button>
+
+                {/* PhonePe Button */}
+                <button
+                  type="button"
+                  onClick={() => handleAppTap("PHONEPE")}
+                  className={`p-3.5 rounded-2xl border text-center transition-all flex flex-col items-center justify-center space-y-1.5 cursor-pointer ${
+                    paymentMethod === "PHONEPE"
+                      ? "border-[#6D3FD6] bg-[#6D3FD6]/30 ring-2 ring-[#6D3FD6]"
+                      : "border-white/10 bg-[#080B1A] hover:border-purple-500/40"
+                  }`}
+                >
+                  <div className="w-9 h-9 rounded-xl bg-purple-500/20 border border-purple-500/40 flex items-center justify-center font-black text-purple-300 text-xs">
+                    PhonePe
+                  </div>
+                  <span className="font-bold text-xs text-white">PhonePe</span>
+                </button>
+
+                {/* Paytm Button */}
+                <button
+                  type="button"
+                  onClick={() => handleAppTap("PAYTM")}
+                  className={`p-3.5 rounded-2xl border text-center transition-all flex flex-col items-center justify-center space-y-1.5 cursor-pointer ${
+                    paymentMethod === "PAYTM"
+                      ? "border-[#6D3FD6] bg-[#6D3FD6]/30 ring-2 ring-[#6D3FD6]"
+                      : "border-white/10 bg-[#080B1A] hover:border-purple-500/40"
+                  }`}
+                >
+                  <div className="w-9 h-9 rounded-xl bg-cyan-500/20 border border-cyan-500/40 flex items-center justify-center font-black text-cyan-300 text-xs">
+                    Paytm
+                  </div>
+                  <span className="font-bold text-xs text-white">Paytm</span>
+                </button>
+              </div>
+            </div>
+
+            {/* App Not Installed / Desktop Warning Box */}
+            {appNotice && (
+              <div className="p-4 bg-amber-950/40 border border-amber-500/40 rounded-2xl space-y-2 text-center text-xs">
+                <p className="font-extrabold text-[#F5C451]">
+                  ⚠️ {appNotice}
+                </p>
+                <div className="flex flex-wrap justify-center gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPaymentMethod("QR");
+                      setAppNotice(null);
+                    }}
+                    className="px-3.5 py-1.5 bg-[#6D3FD6] text-white font-bold rounded-xl text-xs cursor-pointer hover:bg-[#5B21B6]"
+                  >
+                    Scan QR Code Instead
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAppNotice(null)}
+                    className="px-3.5 py-1.5 bg-white/10 text-slate-300 font-bold rounded-xl text-xs cursor-pointer hover:bg-white/20"
+                  >
+                    Dismiss
+                  </button>
+                </div>
               </div>
             )}
 
-            {/* Submit Order & Verify Payment Button */}
+            {/* Global Error Banner */}
+            {globalError && (
+              <div className="p-4 bg-red-950/40 border border-red-500/40 rounded-2xl text-center">
+                <p className="text-xs font-extrabold text-red-400">
+                  ⚠️ {globalError}
+                </p>
+              </div>
+            )}
+
+            {/* Submit & Complete Order Button */}
             <button
               type="submit"
-              disabled={loading || items.length < 2}
-              className="w-full py-4 mt-6 bg-[#6D3FD6] hover:bg-[#5B21B6] text-white font-black text-sm uppercase tracking-wider rounded-2xl shadow-md transition-all flex items-center justify-center gap-3 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+              disabled={loading || items.length === 0}
+              className="w-full py-4 mt-6 bg-[#6D3FD6] hover:bg-[#5B21B6] text-white font-black text-sm uppercase tracking-wider rounded-2xl shadow-xl transition-all flex items-center justify-center gap-3 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer shadow-purple-900/40"
             >
               {loading ? (
                 <span className="flex items-center gap-2">
                   <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-                  Verifying Payment Server-Side...
+                  Processing Order...
                 </span>
-              ) : items.length < 2 ? (
-                <span>Min 2 Items Required to Checkout</span>
               ) : (
-                <span>Pay & Verify Order ₹{grandTotalAmount.toLocaleString("en-IN")} →</span>
+                <span>Complete Order ₹{grandTotalAmount.toLocaleString("en-IN")} →</span>
               )}
             </button>
 
-            <div className="text-center text-[10px] text-slate-500 space-y-1 pt-2">
-              <p>🔒 100% Secure & Server-Verified Payment Flow</p>
-              <p>⚡ Direct Sivakasi Factory Quality Guarantee</p>
+            <div className="text-center text-[10px] text-slate-400 space-y-1 pt-1">
+              <p>🔒 Safe & Verified Festive Order Checkout</p>
+              <p>⚡ Direct Sivakasi Factory Wholesale Price & Quality Guarantee</p>
             </div>
           </div>
 
         </form>
-
       </main>
 
       <Footer settings={settings} />
