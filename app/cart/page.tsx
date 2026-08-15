@@ -59,7 +59,6 @@ export default function CartPage() {
   const flatFee = settings.flatShippingFee;
   const freeThreshold = settings.freeShippingThreshold;
 
-  const isMinOrderMet = totalQuantity >= 2;
   const isFreeShipping = subtotal >= freeThreshold;
   const shippingFee = items.length === 0 ? 0 : isFreeShipping ? 0 : flatFee;
   const grandTotal = subtotal + shippingFee;
@@ -241,22 +240,10 @@ export default function CartPage() {
                 </div>
               </div>
 
-              {/* Minimum Order Warning */}
-              {!isMinOrderMet && (
-                <div className="bg-amber-50 border border-amber-200 text-amber-900 p-3.5 rounded-xl text-xs space-y-1">
-                  <span className="font-bold block">⚠️ Minimum Order Required</span>
-                  <p>Minimum purchase quantity is 2 items. Please add {2 - totalQuantity} more item{2 - totalQuantity > 1 ? 's' : ''} to proceed.</p>
-                </div>
-              )}
-
               {/* C. Proceed Button */}
               <Link
-                href={isMinOrderMet ? "/checkout" : "#"}
-                className={`block w-full py-4 rounded-2xl font-black text-sm text-center uppercase tracking-wider shadow-md transition-all ${
-                  isMinOrderMet
-                    ? "bg-[#6D3FD6] hover:bg-[#5B21B6] text-white shadow-purple-200"
-                    : "bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed"
-                }`}
+                href="/checkout"
+                className="block w-full py-4 rounded-2xl font-black text-sm text-center uppercase tracking-wider shadow-md transition-all bg-[#6D3FD6] hover:bg-[#5B21B6] text-white shadow-purple-200"
               >
                 PROCEED TO CHECKOUT →
               </Link>

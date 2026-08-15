@@ -20,7 +20,7 @@ export default async function ShippingPage() {
         <div className="bg-white rounded-3xl border border-slate-200 p-8 shadow-xl space-y-4">
           <h2 className="text-base font-extrabold text-slate-900 font-display border-b border-slate-200 pb-2">Dispatch & Transit Terms</h2>
           <p>1. All orders are packed in heavy-duty moisture-proof corrugated boxes from our Sivakasi main bazaar warehouse.</p>
-          <p>2. Flat shipping fee is ₹{settings.flatShippingFee} for orders below ₹{settings.freeShippingThreshold.toLocaleString('en-IN')}. Free shipping applies automatically above ₹{settings.freeShippingThreshold.toLocaleString('en-IN')}.</p>
+          <p>2. Flat shipping fee is ₹{settings.flatShippingFee} for orders below ₹{settings.freeShippingThreshold.toLocaleString('en-IN')}. Free shipping applies automatically for orders of ₹{settings.freeShippingThreshold.toLocaleString('en-IN')} or more.</p>
           <p>3. Dispatch occurs within 24–48 hours of order confirmation. Transit times range from 3 to 7 business days depending on delivery location.</p>
         </div>
       </main>

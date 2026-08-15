@@ -356,11 +356,6 @@ export default function CheckoutPage() {
       return false;
     }
 
-    if (totalQuantity < 2) {
-      setGlobalError("Minimum purchase quantity is 2 items.");
-      return false;
-    }
-
     return true;
   };
 
@@ -557,23 +552,6 @@ export default function CheckoutPage() {
           <div className="text-5xl">🛒</div>
           <h2 className="text-lg font-bold text-slate-900 font-display">Your cart is empty</h2>
           <p className="text-xs text-slate-500">Please add items to your cart before proceeding to checkout.</p>
-          <Link href="/products" className="inline-block bg-[#6D3FD6] text-white text-xs font-bold px-6 py-2.5 rounded-xl">
-            Browse Products
-          </Link>
-        </div>
-        <Footer settings={settings} />
-      </div>
-    );
-  }
-
-  if (totalQuantity < 2) {
-    return (
-      <div className="min-h-screen bg-[#F8FAFC] text-slate-900 flex flex-col justify-between">
-        <Header settings={settings} />
-        <div className="max-w-md mx-auto my-16 p-8 bg-white rounded-3xl border border-slate-200 text-center space-y-4 shadow-md">
-          <div className="text-5xl">⚠️</div>
-          <h2 className="text-lg font-bold text-slate-900 font-display">Minimum Order Not Met</h2>
-          <p className="text-xs text-slate-500">Minimum purchase quantity is 2 items.</p>
           <Link href="/products" className="inline-block bg-[#6D3FD6] text-white text-xs font-bold px-6 py-2.5 rounded-xl">
             Browse Products
           </Link>

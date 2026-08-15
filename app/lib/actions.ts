@@ -274,11 +274,6 @@ export async function createOrderAction(data: {
         });
       }
 
-      const totalQuantity = data.cartItems.reduce((acc, item) => acc + item.quantity, 0);
-      if (totalQuantity < 2) {
-        throw new Error("Minimum purchase quantity is 2 items.");
-      }
-
       const shippingFee = calculatedSubtotal >= freeThreshold ? 0 : flatFee;
       const grandTotal = calculatedSubtotal + shippingFee;
 
