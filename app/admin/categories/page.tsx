@@ -6,12 +6,7 @@ import AdminNav from "../AdminNav";
 import CategoryManager from "./CategoryManager";
 
 export default async function AdminCategoriesPage() {
-  let session;
-  try {
-    session = await requireAdmin();
-  } catch {
-    redirect("/admin/login");
-  }
+  const session = await requireAdmin();
 
   const categories = await prisma.category.findMany({
     include: {

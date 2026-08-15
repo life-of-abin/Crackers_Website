@@ -5,12 +5,7 @@ import { prisma } from "@/lib/prisma";
 import AdminNav from "../AdminNav";
 
 export default async function AdminCustomersPage() {
-  let session;
-  try {
-    session = await requireAdmin();
-  } catch {
-    redirect("/admin/login");
-  }
+  const session = await requireAdmin();
 
   const customers = await prisma.user.findMany({
     where: { role: "CUSTOMER" },

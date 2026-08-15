@@ -6,12 +6,7 @@ import { prisma } from "@/lib/prisma";
 import AdminNav from "../AdminNav";
 
 export default async function AdminDashboardPage() {
-  let session;
-  try {
-    session = await requireAdmin();
-  } catch {
-    redirect("/admin/login");
-  }
+  const session = await requireAdmin();
 
   // Fetch real-time dashboard metrics from PostgreSQL
   const [

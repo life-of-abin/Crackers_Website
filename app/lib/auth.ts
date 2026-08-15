@@ -1,4 +1,5 @@
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
 
@@ -158,7 +159,7 @@ export async function requireUser(): Promise<JWTPayload> {
 export async function requireAdmin(): Promise<JWTPayload> {
   const session = await getSession();
   if (!session || session.role !== "ADMIN") {
-    throw new Error("Forbidden access. Admin privileges required.");
+    redirect("/admin/login");
   }
   return session;
 }

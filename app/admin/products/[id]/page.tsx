@@ -11,12 +11,7 @@ interface EditPageProps {
 }
 
 export default async function AdminEditProductPage({ params }: EditPageProps) {
-  let session;
-  try {
-    session = await requireAdmin();
-  } catch {
-    redirect("/admin/login");
-  }
+  const session = await requireAdmin();
 
   const { id } = await params;
   const productId = parseInt(id);

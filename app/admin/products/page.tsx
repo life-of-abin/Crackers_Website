@@ -11,12 +11,7 @@ interface AdminProductsPageProps {
 }
 
 export default async function AdminProductsPage({ searchParams }: AdminProductsPageProps) {
-  let session;
-  try {
-    session = await requireAdmin();
-  } catch {
-    redirect("/admin/login");
-  }
+  const session = await requireAdmin();
 
   const { q = "", categoryId = "" } = await searchParams;
 

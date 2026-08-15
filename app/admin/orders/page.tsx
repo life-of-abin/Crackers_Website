@@ -10,12 +10,7 @@ interface AdminOrdersPageProps {
 }
 
 export default async function AdminOrdersPage({ searchParams }: AdminOrdersPageProps) {
-  let session;
-  try {
-    session = await requireAdmin();
-  } catch {
-    redirect("/admin/login");
-  }
+  const session = await requireAdmin();
 
   const { status = "ALL" } = await searchParams;
 

@@ -11,12 +11,7 @@ interface AdminOrderDetailProps {
 }
 
 export default async function AdminOrderDetailPage({ params }: AdminOrderDetailProps) {
-  let session;
-  try {
-    session = await requireAdmin();
-  } catch {
-    redirect("/admin/login");
-  }
+  const session = await requireAdmin();
 
   const { id } = await params;
   const orderId = parseInt(id);

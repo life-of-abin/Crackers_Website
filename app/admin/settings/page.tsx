@@ -6,12 +6,7 @@ import AdminNav from "../AdminNav";
 import AdminSettingsForm from "./AdminSettingsForm";
 
 export default async function AdminSettingsPage() {
-  let session;
-  try {
-    session = await requireAdmin();
-  } catch {
-    redirect("/admin/login");
-  }
+  const session = await requireAdmin();
 
   const settings = await getStoreSettings();
 
