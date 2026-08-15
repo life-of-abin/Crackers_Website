@@ -1,5 +1,4 @@
 import React from "react";
-import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import AdminNav from "../AdminNav";
@@ -23,11 +22,11 @@ export default async function AdminCustomersPage() {
 
   return (
     <AdminNav user={session}>
-      <div className="space-y-6 max-w-7xl mx-auto">
+      <div className="space-y-6 max-w-7xl mx-auto selection:bg-[#6D3FD6] selection:text-white">
         <div className="flex items-center justify-between">
           <div>
-            <span className="text-xs font-black text-red-600 uppercase tracking-widest block">
-              User Directory
+            <span className="text-xs font-black text-[#6D3FD6] uppercase tracking-widest block">
+              User Directory & Customer Analytics
             </span>
             <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
               Customer Accounts ({customers.length})
@@ -37,7 +36,7 @@ export default async function AdminCustomersPage() {
 
         <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6">
           {customers.length === 0 ? (
-            <p className="text-xs text-slate-400 py-8 text-center">No registered customers yet.</p>
+            <p className="text-xs text-slate-400 py-8 text-center font-medium">No registered customers yet.</p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
@@ -58,13 +57,19 @@ export default async function AdminCustomersPage() {
                       .reduce((acc, o) => acc + Number(o.totalAmount), 0);
 
                     return (
-                      <tr key={c.id} className="hover:bg-slate-50">
-                        <td className="py-3.5 font-extrabold text-slate-900">{c.name}</td>
+                      <tr key={c.id} className="hover:bg-slate-50 transition-colors">
+                        <td className="py-3.5 font-bold text-slate-900">{c.name}</td>
                         <td className="py-3.5 text-slate-600">{c.email}</td>
-                        <td className="py-3.5 text-slate-800 font-bold">{c.phone}</td>
-                        <td className="py-3.5 text-slate-500">{new Date(c.createdAt).toLocaleDateString("en-IN")}</td>
-                        <td className="py-3.5 font-bold text-slate-900">{c.orders.length} Orders</td>
-                        <td className="py-3.5 text-right font-black text-red-700">
+                        <td className="py-3.5 text-slate-600">{c.phone}</td>
+                        <td className="py-3.5 text-slate-500 text-[11px]">
+                          {new Date(c.createdAt).toLocaleDateString("en-IN", { month: "short", day: "numeric", year: "numeric" })}
+                        </td>
+                        <td className="py-3.5">
+                          <span className="bg-purple-50 text-[#6D3FD6] font-black px-2.5 py-1 rounded-lg text-[10px]">
+                            {c.orders.length} Orders
+                          </span>
+                        </td>
+                        <td className="py-3.5 text-right font-black text-slate-900">
                           ₹{totalSpent.toLocaleString("en-IN")}
                         </td>
                       </tr>
@@ -75,7 +80,6 @@ export default async function AdminCustomersPage() {
             </div>
           )}
         </div>
-
       </div>
     </AdminNav>
   );

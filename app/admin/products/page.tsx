@@ -1,6 +1,5 @@
 import React from "react";
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import AdminNav from "../AdminNav";
@@ -42,7 +41,7 @@ export default async function AdminProductsPage({ searchParams }: AdminProductsP
         {/* Title Bar */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <span className="text-xs font-black text-red-600 uppercase tracking-widest block">
+            <span className="text-xs font-black text-[#6D3FD6] uppercase tracking-widest block">
               Inventory & Catalog Management
             </span>
             <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
@@ -52,7 +51,7 @@ export default async function AdminProductsPage({ searchParams }: AdminProductsP
 
           <Link
             href="/admin/products/new"
-            className="bg-gradient-to-r from-red-600 to-amber-600 hover:from-red-700 hover:to-amber-700 text-white font-extrabold text-xs px-5 py-3 rounded-xl shadow transition-all inline-flex items-center gap-2"
+            className="bg-[#6D3FD6] hover:bg-[#5B21B6] text-white font-extrabold text-xs px-5 py-3 rounded-xl shadow-md shadow-purple-200 transition-all inline-flex items-center gap-2"
           >
             <span>➕ Add New Product</span>
           </Link>

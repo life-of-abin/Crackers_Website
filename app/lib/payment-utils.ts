@@ -11,12 +11,12 @@ export interface UpiParams {
 }
 
 /**
- * Generates standard UPI URI spec compliant link:
+ * Generates standard UPI URI spec compliant link with strict URL encoding:
  * upi://pay?pa=MERCHANT_UPI&pn=MERCHANT_NAME&am=AMOUNT&tn=NOTE&tr=ORDER_ID&cu=INR
  */
 export function generateUpiUri(params: UpiParams): string {
   const { upiId, storeName, amount, orderId, note } = params;
-  const encodedName = encodeURIComponent(storeName || "Sivakasi Crackers");
+  const encodedName = encodeURIComponent(storeName || "Sri Sivakasi Crackers");
   const formattedAmount = Number(amount).toFixed(2);
   const transactionNote = encodeURIComponent(note || `Order #${orderId} - Sivakasi Crackers`);
   const refId = `ORD${orderId}`;
@@ -25,12 +25,47 @@ export function generateUpiUri(params: UpiParams): string {
 }
 
 /**
- * Returns mobile app deep-link for Google Pay, PhonePe, Paytm, BHIM or generic UPI
+ * Returns package-specific Android intent for direct app launching (BHIM, Google Pay, PhonePe, Paytm)
+ * Format: intent://pay?...#Intent;scheme=upi;package=PACKAGE_NAME;end;
  */
-export function getAppPaymentLink(method: "GPAY" | "PHONEPE" | "PAYTM" | "BHIM" | "UPI" | "QR", upiUri: string): string {
+export function getAndroidPackageIntent(
+  method: "GPAY" | "PHONEPE" | "PAYTM" | "BHIM" | "UPI" | "QR",
+  upiUri: string
+): string {
   if (!upiUri) return "#";
   const queryParams = upiUri.replace("upi://pay?", "");
-  
+
+  const androidPackages: Record<string, string> = {
+    BHIM: "in.org.npci.upiapp",
+    GPAY: "com.google.android.apps.nbu.paisa.user",
+    PHONEPE: "com.phonepe.app",
+    PAYTM: "net.one97.paytm",
+  };
+
+  const pkg = androidPackages[method];
+  if (pkg) {
+    return `intent://pay?${queryParams}#Intent;scheme=upi;package=${pkg};end;`;
+  }
+
+  return upiUri;
+}
+
+/**
+ * Returns mobile app deep-link for Google Pay, PhonePe, Paytm, BHIM or generic UPI
+ */
+export function getAppPaymentLink(
+  method: "GPAY" | "PHONEPE" | "PAYTM" | "BHIM" | "UPI" | "QR",
+  upiUri: string,
+  isAndroid: boolean = false
+): string {
+  if (!upiUri) return "#";
+  const queryParams = upiUri.replace("upi://pay?", "");
+
+  if (isAndroid) {
+    return getAndroidPackageIntent(method, upiUri);
+  }
+
+  // iOS / Custom App Scheme Fallbacks
   switch (method) {
     case "GPAY":
       return `gpay://upi/pay?${queryParams}`;

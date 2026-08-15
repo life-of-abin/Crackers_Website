@@ -19,14 +19,14 @@ export default function AdminLoginPage() {
   const [globalError, setGlobalError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Email Input Handler with Instant Clearing of Error
+  // Email Input Handler with Instant Error Clearing
   const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setEmail(e.target.value);
     if (emailError) setEmailError("");
     if (globalError) setGlobalError("");
   };
 
-  // Password Input Handler with Instant Clearing of Error
+  // Password Input Handler with Instant Error Clearing
   const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setPassword(e.target.value);
     if (passwordError) setPasswordError("");
@@ -43,9 +43,9 @@ export default function AdminLoginPage() {
     const trimmedEmail = email.trim();
     let hasValidationError = false;
 
-    // Validate Required Email Field
+    // Validate Required Email / Identifier Field
     if (!trimmedEmail) {
-      setEmailError("Email is required.");
+      setEmailError("Admin email address is required.");
       hasValidationError = true;
     } else {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -78,7 +78,7 @@ export default function AdminLoginPage() {
         setGlobalError(res.error);
         setLoading(false);
       } else {
-        router.push("/admin");
+        router.push("/admin/dashboard");
       }
     } catch (err: any) {
       console.error("Admin login error:", err);
@@ -88,26 +88,26 @@ export default function AdminLoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-100 text-slate-900 flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 selection:bg-[#6D3FD6] selection:text-white">
+    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 selection:bg-[#6D3FD6] selection:text-white">
       
-      {/* Top Header Card */}
-      <div className="sm:mx-auto sm:w-full sm:max-w-md text-center space-y-3">
-        <div className="w-16 h-16 rounded-2xl bg-[#6D3FD6] text-white flex items-center justify-center text-3xl font-black shadow-xl mx-auto border border-purple-300/30">
-          🛡️
+      {/* Brand Header */}
+      <div className="sm:mx-auto sm:w-full sm:max-w-md text-center space-y-2">
+        <div className="w-16 h-16 rounded-2xl bg-[#6D3FD6] text-white flex items-center justify-center text-3xl font-black shadow-lg shadow-purple-200 mx-auto border border-purple-300/30">
+          🪔
         </div>
-        <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900 uppercase font-display">
-          SIVAKASI CRACKERS
+        <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900 uppercase font-display leading-tight">
+          SRI SIVAKASI CRACKERS
         </h1>
-        <p className="text-xs font-bold uppercase tracking-widest text-[#6D3FD6]">
-          ADMIN PORTAL • SECURE MANAGEMENT ACCESS
+        <p className="text-xs font-black uppercase tracking-widest text-[#6D3FD6]">
+          ADMIN LOGIN
         </p>
       </div>
 
-      {/* Admin Light Theme Login Form Container */}
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white border border-slate-200 text-slate-900 py-8 px-6 sm:px-10 shadow-2xl rounded-3xl space-y-6">
+      {/* Centered Light Theme Card */}
+      <div className="mt-6 sm:mx-auto sm:w-full sm:max-w-md">
+        <div className="bg-white border border-slate-200 text-slate-900 py-8 px-6 sm:px-10 shadow-xl rounded-3xl space-y-6">
 
-          {/* Global Authentication Error Alert */}
+          {/* Safe Authentication Error Banner */}
           {globalError && (
             <div className="p-3.5 bg-red-50 border border-red-200 text-red-700 text-xs font-bold rounded-xl flex items-center justify-between transition-all">
               <span className="flex items-center gap-1.5">
@@ -126,10 +126,10 @@ export default function AdminLoginPage() {
 
           <form onSubmit={handleSubmit} className="space-y-5" noValidate>
             
-            {/* Email Field */}
+            {/* Identifier / Email Field */}
             <div>
-              <label htmlFor="admin-email" className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
-                Admin Email *
+              <label htmlFor="admin-email" className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                ADMIN EMAIL / IDENTIFIER *
               </label>
               <input
                 id="admin-email"
@@ -137,7 +137,7 @@ export default function AdminLoginPage() {
                 name="email"
                 required
                 autoComplete="email"
-                placeholder="admin@example.com"
+                placeholder="admin@sivakasicrackers.com"
                 value={email}
                 onChange={handleEmailChange}
                 aria-invalid={emailError ? "true" : "false"}
@@ -149,17 +149,17 @@ export default function AdminLoginPage() {
                 }`}
               />
               {emailError && (
-                <span id="email-error" className="text-[11px] font-bold text-red-600 mt-1 block">
+                <span id="email-error" className="text-[11px] font-bold text-red-600 mt-1.5 block">
                   {emailError}
                 </span>
               )}
             </div>
 
-            {/* Password Field with Eye Toggle Button */}
+            {/* Password Field with Eye / Eye-Off Toggle Button */}
             <div>
-              <div className="flex items-center justify-between mb-1">
+              <div className="flex items-center justify-between mb-1.5">
                 <label htmlFor="admin-password" className="block text-xs font-bold uppercase tracking-wider text-slate-700">
-                  Password *
+                  PASSWORD *
                 </label>
                 <Link
                   href="/admin/forgot-password"
@@ -188,7 +188,7 @@ export default function AdminLoginPage() {
                   }`}
                 />
                 
-                {/* Eye / Eye-Off Password Visibility Button */}
+                {/* Eye Icon Password Toggle */}
                 <button
                   type="button"
                   onClick={() => setShowPassword((prev) => !prev)}
@@ -212,13 +212,13 @@ export default function AdminLoginPage() {
               </div>
 
               {passwordError && (
-                <span id="password-error" className="text-[11px] font-bold text-red-600 mt-1 block">
+                <span id="password-error" className="text-[11px] font-bold text-red-600 mt-1.5 block">
                   {passwordError}
                 </span>
               )}
             </div>
 
-            {/* Submit Button */}
+            {/* Primary Purple Submit Button */}
             <button
               type="submit"
               disabled={loading}
@@ -230,15 +230,15 @@ export default function AdminLoginPage() {
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                   </svg>
-                  Signing in...
+                  SIGNING IN...
                 </>
               ) : (
-                "Sign In →"
+                "SIGN IN"
               )}
             </button>
           </form>
 
-          {/* Footer Links */}
+          {/* Footer Navigation */}
           <div className="pt-4 border-t border-slate-200 flex items-center justify-between text-[11px] text-slate-500 font-semibold">
             <Link href="/admin/setup" className="text-[#6D3FD6] hover:underline">
               Owner Initial Setup →

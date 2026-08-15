@@ -43,16 +43,16 @@ export default function NewProductPage() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-4xl mx-auto space-y-6 selection:bg-[#6D3FD6] selection:text-white">
       
       <div className="flex items-center justify-between">
         <div>
-          <span className="text-xs font-black text-red-600 uppercase tracking-widest block">
+          <span className="text-xs font-black text-[#6D3FD6] uppercase tracking-widest block">
             Inventory Management
           </span>
           <h1 className="text-2xl font-black text-slate-900">Add New Cracker Product</h1>
         </div>
-        <Link href="/admin/products" className="text-xs font-bold text-slate-600 hover:text-slate-900">
+        <Link href="/admin/products" className="text-xs font-bold text-slate-600 hover:text-slate-900 bg-white border border-slate-200 px-3.5 py-2 rounded-xl">
           ← Back to Products List
         </Link>
       </div>
@@ -78,7 +78,7 @@ export default function NewProductPage() {
                 name="name"
                 required
                 placeholder="e.g. 10 cm Electric Sparklers B (10 Pcs)"
-                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-600"
+                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#6D3FD6]"
               />
             </div>
 
@@ -89,7 +89,7 @@ export default function NewProductPage() {
               <select
                 name="categoryId"
                 required
-                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none"
+                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#6D3FD6]"
               >
                 <option value="">Select Category</option>
                 {categories.map((c) => (
@@ -106,7 +106,7 @@ export default function NewProductPage() {
                 name="unitType"
                 required
                 defaultValue="BOX"
-                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none"
+                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#6D3FD6]"
               >
                 <option value="BOX">BOX</option>
                 <option value="PACK">PACK</option>
@@ -125,7 +125,7 @@ export default function NewProductPage() {
                 required
                 defaultValue="10 Pieces"
                 placeholder="e.g. 10 Pieces or 1 Pkt"
-                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none"
+                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#6D3FD6]"
               />
             </div>
 
@@ -141,7 +141,7 @@ export default function NewProductPage() {
                 placeholder="249.00"
                 value={price}
                 onChange={(e) => setPrice(e.target.value)}
-                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none"
+                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#6D3FD6]"
               />
             </div>
 
@@ -157,14 +157,14 @@ export default function NewProductPage() {
                 placeholder="499.00"
                 value={mrp}
                 onChange={(e) => setMrp(e.target.value)}
-                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none"
+                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#6D3FD6]"
               />
             </div>
 
             {/* Discount Preview */}
-            <div className="sm:col-span-2 bg-amber-50 p-3 rounded-xl border border-amber-200 flex items-center justify-between text-xs font-bold text-amber-900">
+            <div className="sm:col-span-2 bg-purple-50 p-3.5 rounded-xl border border-purple-200 flex items-center justify-between text-xs font-bold text-purple-900">
               <span>Automatically Calculated Discount:</span>
-              <span className="text-red-700 font-black text-sm">{discountPercent}% OFF</span>
+              <span className="text-[#6D3FD6] font-black text-sm">{discountPercent}% OFF</span>
             </div>
 
             <div>
@@ -176,7 +176,7 @@ export default function NewProductPage() {
                 name="stock"
                 required
                 defaultValue="100"
-                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none"
+                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#6D3FD6]"
               />
             </div>
 
@@ -188,7 +188,7 @@ export default function NewProductPage() {
                 type="text"
                 name="badge"
                 placeholder="Bestseller"
-                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none"
+                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#6D3FD6]"
               />
             </div>
 
@@ -200,7 +200,7 @@ export default function NewProductPage() {
                 type="url"
                 name="image"
                 placeholder="https://images.unsplash.com/..."
-                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none"
+                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#6D3FD6]"
               />
             </div>
 
@@ -212,18 +212,18 @@ export default function NewProductPage() {
                 name="description"
                 rows={3}
                 placeholder="Enter description, specifications or safety warnings..."
-                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none"
+                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#6D3FD6]"
               />
             </div>
 
             <div className="sm:col-span-2 flex items-center gap-6 pt-2">
               <label className="flex items-center gap-2 cursor-pointer font-bold text-slate-800">
-                <input type="checkbox" name="featured" value="true" className="rounded text-red-600 w-4 h-4" />
+                <input type="checkbox" name="featured" value="true" className="rounded text-[#6D3FD6] w-4 h-4" />
                 <span>Mark as Featured Product</span>
               </label>
 
               <label className="flex items-center gap-2 cursor-pointer font-bold text-slate-800">
-                <input type="checkbox" name="active" value="true" defaultChecked className="rounded text-red-600 w-4 h-4" />
+                <input type="checkbox" name="active" value="true" defaultChecked className="rounded text-[#6D3FD6] w-4 h-4" />
                 <span>Product Active on Customer Storefront</span>
               </label>
             </div>
@@ -231,13 +231,13 @@ export default function NewProductPage() {
           </div>
 
           <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-3">
-            <Link href="/admin/products" className="px-5 py-2.5 bg-slate-100 text-slate-700 font-bold rounded-xl">
+            <Link href="/admin/products" className="px-5 py-2.5 bg-slate-100 text-slate-700 font-bold rounded-xl hover:bg-slate-200">
               Cancel
             </Link>
             <button
               type="submit"
               disabled={loading}
-              className="px-6 py-2.5 bg-gradient-to-r from-red-600 to-amber-600 text-white font-extrabold rounded-xl shadow"
+              className="px-6 py-2.5 bg-[#6D3FD6] hover:bg-[#5B21B6] text-white font-extrabold text-xs rounded-xl shadow-md shadow-purple-200 cursor-pointer"
             >
               {loading ? "Creating..." : "Save & Add Product →"}
             </button>

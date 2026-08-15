@@ -1,6 +1,5 @@
 import React from "react";
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import AdminNav from "../AdminNav";
@@ -29,10 +28,10 @@ export default async function AdminOrdersPage({ searchParams }: AdminOrdersPageP
 
   return (
     <AdminNav user={session}>
-      <div className="space-y-6 max-w-7xl mx-auto">
+      <div className="space-y-6 max-w-7xl mx-auto selection:bg-[#6D3FD6] selection:text-white">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <span className="text-xs font-black text-red-600 uppercase tracking-widest block">
+            <span className="text-xs font-black text-[#6D3FD6] uppercase tracking-widest block">
               Fulfillment Operations
             </span>
             <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
@@ -47,9 +46,9 @@ export default async function AdminOrdersPage({ searchParams }: AdminOrdersPageP
             <Link
               key={st}
               href={`/admin/orders?status=${st}`}
-              className={`px-4 py-2 rounded-xl border transition-colors whitespace-nowrap ${
+              className={`px-4 py-2.5 rounded-xl border transition-all whitespace-nowrap ${
                 status === st
-                  ? "bg-slate-900 text-white border-slate-900"
+                  ? "bg-[#6D3FD6] text-white border-[#6D3FD6] shadow-sm shadow-purple-200"
                   : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
               }`}
             >
@@ -61,7 +60,7 @@ export default async function AdminOrdersPage({ searchParams }: AdminOrdersPageP
         {/* Orders Table */}
         <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6">
           {orders.length === 0 ? (
-            <p className="text-xs text-slate-400 py-8 text-center">No orders found matching status "{status}".</p>
+            <p className="text-xs text-slate-400 py-8 text-center font-medium">No orders found matching status "{status}".</p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
@@ -79,7 +78,7 @@ export default async function AdminOrdersPage({ searchParams }: AdminOrdersPageP
                 <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
                   {orders.map((ord) => (
                     <tr key={ord.id} className="hover:bg-slate-50">
-                      <td className="py-3.5 font-black text-slate-900">#{ord.id}</td>
+                      <td className="py-3.5 font-black text-[#6D3FD6]">#{ord.id}</td>
                       <td className="py-3.5">
                         <span className="font-bold text-slate-900 block">{ord.customerName}</span>
                         <span className="text-[10px] text-slate-500">{ord.phone}</span>
@@ -87,12 +86,12 @@ export default async function AdminOrdersPage({ searchParams }: AdminOrdersPageP
                       <td className="py-3.5 text-slate-600">
                         {ord.city}, {ord.pincode}
                       </td>
-                      <td className="py-3.5 font-black text-red-700">
+                      <td className="py-3.5 font-black text-slate-900">
                         ₹{Number(ord.totalAmount).toLocaleString("en-IN")}
                       </td>
                       <td className="py-3.5">
                         <div className="space-y-1">
-                          <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase ${
+                          <span className={`px-2.5 py-0.5 rounded text-[10px] font-black uppercase ${
                             ord.paymentStatus === "PAID" || ord.paymentStatus === "TEST_PAID"
                               ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
                               : ord.paymentStatus === "FAILED"
@@ -108,22 +107,17 @@ export default async function AdminOrdersPage({ searchParams }: AdminOrdersPageP
                               {ord.paymentMethod}
                             </span>
                           )}
-                          {ord.paymentId && (
-                            <span className="block text-[9px] font-mono text-slate-400 truncate max-w-[120px]">
-                              Ref: {ord.paymentId}
-                            </span>
-                          )}
                         </div>
                       </td>
                       <td className="py-3.5">
-                        <span className="px-2.5 py-0.5 rounded text-[10px] font-black uppercase bg-slate-100 text-slate-800">
+                        <span className="px-2.5 py-1 rounded-md text-[10px] font-black uppercase bg-slate-100 text-slate-800 border border-slate-200">
                           {ord.orderStatus}
                         </span>
                       </td>
                       <td className="py-3.5 text-right">
                         <Link
                           href={`/admin/orders/${ord.id}`}
-                          className="bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-[11px] px-3.5 py-1.5 rounded-lg transition-colors"
+                          className="bg-[#6D3FD6] hover:bg-[#5B21B6] text-white font-extrabold text-[11px] px-3.5 py-1.5 rounded-xl transition-all shadow-xs inline-block"
                         >
                           Manage & Update →
                         </Link>

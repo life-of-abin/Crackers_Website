@@ -1,6 +1,6 @@
 import React from "react";
 import Link from "next/link";
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import { requireAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import AdminNav from "../../AdminNav";
@@ -26,16 +26,16 @@ export default async function AdminOrderDetailPage({ params }: AdminOrderDetailP
 
   return (
     <AdminNav user={session}>
-      <div className="max-w-4xl mx-auto space-y-6">
+      <div className="max-w-4xl mx-auto space-y-6 selection:bg-[#6D3FD6] selection:text-white">
         
         <div className="flex items-center justify-between">
           <div>
-            <span className="text-xs font-black text-red-600 uppercase tracking-widest block">
+            <span className="text-xs font-black text-[#6D3FD6] uppercase tracking-widest block">
               Fulfillment Operations
             </span>
             <h1 className="text-2xl font-black text-slate-900">Manage Order #{order.id}</h1>
           </div>
-          <Link href="/admin/orders" className="text-xs font-bold text-slate-600 hover:text-slate-900">
+          <Link href="/admin/orders" className="text-xs font-bold text-slate-600 hover:text-slate-900 bg-white border border-slate-200 px-3.5 py-2 rounded-xl">
             ← Back to Orders
           </Link>
         </div>

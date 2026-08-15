@@ -15,40 +15,40 @@ export default function AdminForgotPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md text-center space-y-3">
-        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-red-600 via-amber-500 to-red-800 flex items-center justify-center text-white text-3xl font-black shadow-2xl mx-auto border border-amber-500/30">
+    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 selection:bg-[#6D3FD6] selection:text-white">
+      <div className="sm:mx-auto sm:w-full sm:max-w-md text-center space-y-2">
+        <div className="w-16 h-16 rounded-2xl bg-[#6D3FD6] text-white flex items-center justify-center text-3xl font-black shadow-lg shadow-purple-200 mx-auto border border-purple-300/30">
           🔑
         </div>
-        <h2 className="text-2xl font-black tracking-tight text-white uppercase">
-          SIVAKASI CRACKERS
-        </h2>
-        <p className="text-xs text-amber-400 font-bold uppercase tracking-widest">
+        <h1 className="text-2xl font-black tracking-tight text-slate-900 uppercase leading-tight font-display">
+          SRI SIVAKASI CRACKERS
+        </h1>
+        <p className="text-xs font-black uppercase tracking-widest text-[#6D3FD6]">
           ADMIN PASSWORD RECOVERY
         </p>
       </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md px-4">
-        <div className="bg-slate-900 border border-slate-800 text-slate-100 py-8 px-6 sm:px-10 shadow-2xl rounded-3xl space-y-6">
+      <div className="mt-6 sm:mx-auto sm:w-full sm:max-w-md">
+        <div className="bg-white border border-slate-200 text-slate-900 py-8 px-6 sm:px-10 shadow-xl rounded-3xl space-y-6">
 
           {infoMsg ? (
             <div className="space-y-4">
-              <div className="p-4 bg-slate-950 border border-amber-500/40 text-amber-200 text-xs font-medium rounded-2xl leading-relaxed space-y-2">
-                <span className="font-extrabold text-amber-400 block text-sm">ℹ️ Security Recovery Protocol</span>
+              <div className="p-4 bg-purple-50 border border-purple-200 text-purple-900 text-xs font-medium rounded-2xl leading-relaxed space-y-2">
+                <span className="font-extrabold text-[#6D3FD6] block text-sm">ℹ️ Security Recovery Protocol</span>
                 <p>{infoMsg}</p>
               </div>
 
               <div className="flex flex-col gap-2">
                 <Link
                   href="/admin/setup"
-                  className="w-full py-3.5 bg-gradient-to-r from-red-600 to-amber-600 text-white text-center font-extrabold text-xs uppercase tracking-wider rounded-xl shadow-lg block"
+                  className="w-full py-3.5 bg-[#6D3FD6] hover:bg-[#5B21B6] text-white text-center font-black text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-purple-200 block"
                 >
                   Go to Secure Admin Setup (/admin/setup) →
                 </Link>
 
                 <Link
                   href="/admin/login"
-                  className="w-full py-3 bg-slate-800 text-slate-300 text-center font-bold text-xs uppercase tracking-wider rounded-xl block hover:bg-slate-700"
+                  className="w-full py-3 bg-slate-100 text-slate-700 text-center font-bold text-xs uppercase tracking-wider rounded-xl block hover:bg-slate-200"
                 >
                   Return to Admin Login
                 </Link>
@@ -57,30 +57,31 @@ export default function AdminForgotPasswordPage() {
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1">
-                  Registered Admin Email Address *
+                <label htmlFor="recovery-email" className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                  Admin Account Email *
                 </label>
                 <input
+                  id="recovery-email"
                   type="email"
                   required
+                  placeholder="admin@sivakasicrackers.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="abinesh.ece200@gmail.com"
-                  className="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-xs font-semibold text-white focus:outline-none focus:ring-2 focus:ring-red-600"
+                  className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#6D3FD6] focus:border-[#6D3FD6]"
                 />
               </div>
 
               <button
                 type="submit"
-                className="w-full py-3.5 bg-gradient-to-r from-red-600 via-red-700 to-amber-600 hover:from-red-700 hover:to-amber-700 text-white font-black text-xs uppercase tracking-wider rounded-xl shadow-lg transition-all"
+                className="w-full py-3.5 bg-[#6D3FD6] hover:bg-[#5B21B6] text-white font-black text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-purple-200 transition-all cursor-pointer"
               >
-                Submit Password Recovery Request →
+                Request Password Reset →
               </button>
             </form>
           )}
 
-          <div className="pt-4 border-t border-slate-800 text-center">
-            <Link href="/admin/login" className="text-xs font-bold text-slate-400 hover:text-white uppercase tracking-wider">
+          <div className="pt-4 border-t border-slate-200 text-center">
+            <Link href="/admin/login" className="text-xs font-bold text-slate-500 hover:text-slate-900 uppercase tracking-wider">
               ← Return to Admin Login
             </Link>
           </div>

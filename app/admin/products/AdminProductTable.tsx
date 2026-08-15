@@ -81,7 +81,7 @@ export default function AdminProductTable({ initialProducts, categories, initial
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleFilter()}
-            className="flex-1 px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-red-600"
+            className="flex-1 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#6D3FD6]"
           />
 
           <select
@@ -93,7 +93,7 @@ export default function AdminProductTable({ initialProducts, categories, initial
               if (e.target.value) params.set("categoryId", e.target.value);
               router.push(`/admin/products?${params.toString()}`);
             }}
-            className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none"
+            className="px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#6D3FD6] cursor-pointer"
           >
             <option value="">All Categories</option>
             {categories.map((c) => (
@@ -103,7 +103,7 @@ export default function AdminProductTable({ initialProducts, categories, initial
 
           <button
             onClick={handleFilter}
-            className="px-4 py-2 bg-slate-900 text-white font-bold text-xs rounded-xl"
+            className="px-5 py-2.5 bg-[#6D3FD6] hover:bg-[#5B21B6] text-white font-extrabold text-xs rounded-xl shadow-xs transition-all cursor-pointer"
           >
             Filter
           </button>
@@ -142,19 +142,19 @@ export default function AdminProductTable({ initialProducts, categories, initial
                   </td>
 
                   <td className="py-3">
-                    <span className="bg-slate-100 text-slate-700 font-bold px-2 py-0.5 rounded text-[10px]">
+                    <span className="bg-slate-100 text-slate-700 font-bold px-2.5 py-1 rounded-lg text-[10px]">
                       {p.categoryName}
                     </span>
                   </td>
 
                   <td className="py-3">
-                    <span className="font-extrabold text-red-700 block">₹{p.price.toLocaleString("en-IN")}</span>
+                    <span className="font-extrabold text-slate-900 block">₹{p.price.toLocaleString("en-IN")}</span>
                     <span className="line-through text-slate-400 text-[10px]">₹{p.mrp.toLocaleString("en-IN")}</span>
                   </td>
 
                   <td className="py-3">
                     {p.discount ? (
-                      <span className="bg-red-50 text-red-700 font-black text-[10px] px-2 py-0.5 rounded">
+                      <span className="bg-purple-50 text-[#6D3FD6] font-black text-[10px] px-2 py-0.5 rounded">
                         {p.discount}
                       </span>
                     ) : "-"}
@@ -164,7 +164,7 @@ export default function AdminProductTable({ initialProducts, categories, initial
                     <div className="flex items-center gap-1">
                       <button
                         onClick={() => handleStockUpdate(p.id, Math.max(0, p.stock - 10))}
-                        className="w-5 h-5 bg-slate-200 text-slate-700 rounded font-bold hover:bg-slate-300"
+                        className="w-5 h-5 bg-slate-100 border border-slate-200 text-slate-700 rounded font-bold hover:bg-slate-200 cursor-pointer"
                         title="-10 Stock"
                       >
                         -
@@ -174,7 +174,7 @@ export default function AdminProductTable({ initialProducts, categories, initial
                       </span>
                       <button
                         onClick={() => handleStockUpdate(p.id, p.stock + 10)}
-                        className="w-5 h-5 bg-slate-200 text-slate-700 rounded font-bold hover:bg-slate-300"
+                        className="w-5 h-5 bg-slate-100 border border-slate-200 text-slate-700 rounded font-bold hover:bg-slate-200 cursor-pointer"
                         title="+10 Stock"
                       >
                         +
@@ -186,8 +186,8 @@ export default function AdminProductTable({ initialProducts, categories, initial
                     <button
                       onClick={() => handleToggleActive(p.id, p.active)}
                       disabled={loadingId === p.id}
-                      className={`px-2.5 py-1 rounded text-[10px] font-black uppercase ${
-                        p.active ? "bg-emerald-100 text-emerald-800" : "bg-slate-200 text-slate-500"
+                      className={`px-2.5 py-1 rounded text-[10px] font-black uppercase cursor-pointer ${
+                        p.active ? "bg-emerald-100 text-emerald-800" : "bg-slate-200 text-slate-600"
                       }`}
                     >
                       {p.active ? "Active" : "Disabled"}
@@ -197,14 +197,14 @@ export default function AdminProductTable({ initialProducts, categories, initial
                   <td className="py-3 text-right space-x-2">
                     <Link
                       href={`/admin/products/${p.id}`}
-                      className="font-extrabold text-amber-700 hover:text-amber-800 bg-amber-50 px-2.5 py-1 rounded text-[11px]"
+                      className="font-extrabold text-[#6D3FD6] hover:text-[#5B21B6] bg-purple-50 px-2.5 py-1 rounded text-[11px]"
                     >
                       Edit
                     </Link>
                     <button
                       onClick={() => handleDelete(p.id, p.name)}
                       disabled={loadingId === p.id}
-                      className="font-extrabold text-red-600 hover:text-red-800 bg-red-50 px-2.5 py-1 rounded text-[11px]"
+                      className="font-extrabold text-red-600 hover:text-red-800 bg-red-50 px-2.5 py-1 rounded text-[11px] cursor-pointer"
                     >
                       Delete
                     </button>

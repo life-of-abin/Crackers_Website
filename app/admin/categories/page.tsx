@@ -1,5 +1,4 @@
 import React from "react";
-import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import AdminNav from "../AdminNav";
@@ -22,8 +21,8 @@ export default async function AdminCategoriesPage() {
       <div className="space-y-6 max-w-5xl mx-auto">
         <div className="flex items-center justify-between">
           <div>
-            <span className="text-xs font-black text-red-600 uppercase tracking-widest block">
-              Store Structure
+            <span className="text-xs font-black text-[#6D3FD6] uppercase tracking-widest block">
+              Store Structure & Catalog Organization
             </span>
             <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
               Manage Product Categories ({categories.length})

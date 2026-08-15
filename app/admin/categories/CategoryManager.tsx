@@ -73,7 +73,7 @@ export default function CategoryManager({ categories }: { categories: CategoryRo
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 selection:bg-[#6D3FD6] selection:text-white">
       
       {error && (
         <div className="p-4 bg-red-50 border border-red-200 text-red-700 text-xs font-bold rounded-2xl">
@@ -84,7 +84,7 @@ export default function CategoryManager({ categories }: { categories: CategoryRo
       <div className="flex justify-end">
         <button
           onClick={() => setShowAddForm(!showAddForm)}
-          className="bg-red-600 hover:bg-red-700 text-white font-extrabold text-xs px-4 py-2.5 rounded-xl shadow"
+          className="bg-[#6D3FD6] hover:bg-[#5B21B6] text-white font-black text-xs px-4 py-2.5 rounded-xl shadow-md shadow-purple-200 transition-all cursor-pointer"
         >
           {showAddForm ? "✕ Cancel" : "➕ Add Category"}
         </button>
@@ -96,18 +96,18 @@ export default function CategoryManager({ categories }: { categories: CategoryRo
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
               <label className="block font-bold text-slate-700 mb-1">Category Name *</label>
-              <input type="text" name="name" required placeholder="e.g. Ground Spinners" className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl" />
+              <input type="text" name="name" required placeholder="e.g. Ground Spinners" className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#6D3FD6] outline-none" />
             </div>
             <div>
               <label className="block font-bold text-slate-700 mb-1">Emoji / Icon</label>
-              <input type="text" name="icon" placeholder="🎆" className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl" />
+              <input type="text" name="icon" placeholder="🎆" className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#6D3FD6] outline-none" />
             </div>
             <div>
               <label className="block font-bold text-slate-700 mb-1">Description</label>
-              <input type="text" name="description" placeholder="Short description..." className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl" />
+              <input type="text" name="description" placeholder="Short description..." className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#6D3FD6] outline-none" />
             </div>
           </div>
-          <button type="submit" disabled={loading} className="px-5 py-2 bg-slate-900 text-white font-extrabold text-xs rounded-xl">
+          <button type="submit" disabled={loading} className="px-5 py-2.5 bg-[#6D3FD6] hover:bg-[#5B21B6] text-white font-black text-xs rounded-xl shadow-md shadow-purple-200 cursor-pointer">
             Save Category
           </button>
         </form>
@@ -149,10 +149,10 @@ export default function CategoryManager({ categories }: { categories: CategoryRo
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <button onClick={() => setEditingId(c.id)} className="px-3 py-1.5 bg-amber-50 text-amber-900 font-bold rounded-lg">
+                  <button onClick={() => setEditingId(c.id)} className="px-3 py-1.5 bg-purple-50 text-[#6D3FD6] font-bold rounded-lg hover:bg-purple-100 cursor-pointer">
                     Edit
                   </button>
-                  <button onClick={() => handleDelete(c.id, c.name, c.productCount)} className="px-3 py-1.5 bg-red-50 text-red-700 font-bold rounded-lg">
+                  <button onClick={() => handleDelete(c.id, c.name, c.productCount)} className="px-3 py-1.5 bg-red-50 text-red-700 font-bold rounded-lg hover:bg-red-100 cursor-pointer">
                     Delete
                   </button>
                 </div>
