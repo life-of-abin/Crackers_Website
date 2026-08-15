@@ -70,37 +70,37 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
   ]);
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#080B1A] text-[#FFF9EA]">
+    <div className="min-h-screen flex flex-col bg-[#F8FAFC] text-slate-900">
       <Header settings={settings} user={session} />
 
       {/* Page Header Banner */}
-      <div className="bg-[#11152E] text-[#FFF9EA] py-10 border-b border-[#292E4D]">
+      <div className="bg-white text-slate-900 py-10 border-b border-slate-200 shadow-xs">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
-              <div className="flex items-center gap-2 text-[#F5C451] text-xs font-semibold uppercase tracking-wider mb-1">
+              <div className="flex items-center gap-2 text-[#6D3FD6] text-xs font-bold uppercase tracking-wider mb-1">
                 <Link href="/" className="hover:underline">Home</Link>
                 <span>/</span>
                 <span>Products Catalogue</span>
               </div>
-              <h1 className="text-2xl sm:text-4xl font-black tracking-tight text-[#FFF9EA] font-display">
+              <h1 className="text-2xl sm:text-4xl font-black tracking-tight text-slate-900 font-display">
                 Complete Fireworks Catalogue
               </h1>
-              <p className="text-xs sm:text-sm text-[#B9B8C7] mt-1">
+              <p className="text-xs sm:text-sm text-slate-500 mt-1">
                 Showing {products.length} genuine Sivakasi crackers available for wholesale order
               </p>
             </div>
 
             {/* Quick Stats */}
-            <div className="bg-[#151A35] border border-[#292E4D] px-4 py-2.5 rounded-xl flex items-center gap-4 text-xs">
+            <div className="bg-slate-50 border border-slate-200 px-4 py-2.5 rounded-xl flex items-center gap-4 text-xs">
               <div>
-                <span className="block text-[#F5C451] font-extrabold">{categories.length}</span>
-                <span className="text-[#B9B8C7]">Categories</span>
+                <span className="block text-[#6D3FD6] font-extrabold">{categories.length}</span>
+                <span className="text-slate-500">Categories</span>
               </div>
-              <div className="h-6 w-px bg-[#292E4D]" />
+              <div className="h-6 w-px bg-slate-200" />
               <div>
-                <span className="block text-[#4ADE80] font-extrabold">Min. 2 Items</span>
-                <span className="text-[#B9B8C7]">Order Requirement</span>
+                <span className="block text-emerald-600 font-extrabold">Min. 2 Items</span>
+                <span className="text-slate-500">Order Requirement</span>
               </div>
             </div>
           </div>
@@ -113,15 +113,15 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
           
           {/* Filter Sidebar */}
           <aside className="w-full lg:w-64 space-y-6">
-            <div className="bg-[#151A35] p-5 rounded-2xl border border-[#292E4D] shadow-xl space-y-6">
+            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-6">
               
-              <div className="flex items-center justify-between border-b border-[#292E4D] pb-3">
-                <h3 className="font-extrabold text-sm text-[#FFF9EA] uppercase tracking-wider font-display">
+              <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+                <h3 className="font-extrabold text-sm text-slate-900 uppercase tracking-wider font-display">
                   Filters
                 </h3>
                 <Link
                   href="/products"
-                  className="text-[11px] font-bold text-[#F5C451] hover:underline"
+                  className="text-[11px] font-bold text-[#6D3FD6] hover:underline"
                 >
                   Reset All
                 </Link>
@@ -129,7 +129,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
 
               {/* Category Filter */}
               <div>
-                <label className="block text-xs font-bold text-[#B9B8C7] uppercase tracking-wider mb-2">
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
                   Category
                 </label>
                 <div className="space-y-1 max-h-60 overflow-y-auto pr-1">
@@ -137,8 +137,8 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
                     href="/products"
                     className={`block px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
                       selectedCategory === ""
-                        ? "bg-[#6D3FD6]/30 text-[#F5C451] font-bold border border-[#6D3FD6]/40"
-                        : "text-[#B9B8C7] hover:bg-[#11152E] hover:text-[#FFF9EA]"
+                        ? "bg-purple-50 text-[#6D3FD6] font-bold border border-purple-200"
+                        : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
                     }`}
                   >
                     All Categories
@@ -149,8 +149,8 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
                       href={`/products?category=${cat.slug}&sort=${sortOption}`}
                       className={`block px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
                         selectedCategory === cat.slug
-                          ? "bg-[#6D3FD6]/30 text-[#F5C451] font-bold border border-[#6D3FD6]/40"
-                          : "text-[#B9B8C7] hover:bg-[#11152E] hover:text-[#FFF9EA]"
+                          ? "bg-purple-50 text-[#6D3FD6] font-bold border border-purple-200"
+                          : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
                       }`}
                     >
                       {cat.name}
@@ -160,7 +160,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
               </div>
 
               {/* In Stock Filter */}
-              <div className="pt-3 border-t border-[#292E4D]">
+              <div className="pt-3 border-t border-slate-200">
                 <InStockFilter inStockOnly={inStockOnly} />
               </div>
 
@@ -171,29 +171,29 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
           <div className="flex-1 space-y-6">
             
             {/* Top Controls & Sort Bar */}
-            <div className="bg-[#151A35] p-4 rounded-2xl border border-[#292E4D] shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4 text-xs">
-              <span className="font-semibold text-[#B9B8C7]">
-                Showing <strong className="text-[#FFF9EA]">{products.length}</strong> products
+            <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4 text-xs">
+              <span className="font-semibold text-slate-500">
+                Showing <strong className="text-slate-900">{products.length}</strong> products
               </span>
 
               {/* Sort Selector */}
               <div className="flex items-center gap-2 w-full sm:w-auto">
-                <span className="text-[#B9B8C7] font-medium">Sort by:</span>
+                <span className="text-slate-500 font-medium">Sort by:</span>
                 <SortSelect currentSort={sortOption} />
               </div>
             </div>
 
             {/* Products Grid */}
             {products.length === 0 ? (
-              <div className="bg-[#151A35] rounded-2xl border border-[#292E4D] p-12 text-center space-y-4 shadow-xl">
+              <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center space-y-4 shadow-sm">
                 <div className="text-5xl">🔍</div>
-                <h3 className="text-lg font-bold text-[#FFF9EA] font-display">No products found</h3>
-                <p className="text-xs text-[#B9B8C7] max-w-sm mx-auto">
+                <h3 className="text-lg font-bold text-slate-900 font-display">No products found</h3>
+                <p className="text-xs text-slate-500 max-w-sm mx-auto">
                   We couldn't find any products matching your current filters. Try resetting the category or search criteria.
                 </p>
                 <Link
                   href="/products"
-                  className="inline-block bg-[#F5C451] text-[#080B1A] font-bold text-xs px-6 py-2.5 rounded-xl hover:bg-[#FFE29A] transition-colors shadow-lg"
+                  className="inline-block bg-[#6D3FD6] text-white font-bold text-xs px-6 py-2.5 rounded-xl hover:bg-[#5B21B6] transition-colors shadow-xs"
                 >
                   View All Products
                 </Link>

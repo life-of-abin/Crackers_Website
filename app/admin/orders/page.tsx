@@ -96,11 +96,29 @@ export default async function AdminOrdersPage({ searchParams }: AdminOrdersPageP
                         ₹{Number(ord.totalAmount).toLocaleString("en-IN")}
                       </td>
                       <td className="py-3.5">
-                        <span className={`px-2.5 py-0.5 rounded text-[10px] font-black uppercase ${
-                          ord.paymentStatus === "PAID" ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-900"
-                        }`}>
-                          {ord.paymentStatus}
-                        </span>
+                        <div className="space-y-1">
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase ${
+                            ord.paymentStatus === "PAID" || ord.paymentStatus === "TEST_PAID"
+                              ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
+                              : ord.paymentStatus === "FAILED"
+                              ? "bg-red-100 text-red-800 border border-red-300"
+                              : ord.paymentStatus === "CANCELLED"
+                              ? "bg-slate-100 text-slate-600 border border-slate-300"
+                              : "bg-amber-100 text-amber-900 border border-amber-300"
+                          }`}>
+                            {ord.paymentStatus === "TEST_PAID" ? "PAID" : ord.paymentStatus}
+                          </span>
+                          {ord.paymentMethod && (
+                            <span className="block text-[10px] font-bold text-slate-500">
+                              {ord.paymentMethod}
+                            </span>
+                          )}
+                          {ord.paymentId && (
+                            <span className="block text-[9px] font-mono text-slate-400 truncate max-w-[120px]">
+                              Ref: {ord.paymentId}
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="py-3.5">
                         <span className="px-2.5 py-0.5 rounded text-[10px] font-black uppercase bg-slate-100 text-slate-800">

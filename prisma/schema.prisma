@@ -114,8 +114,10 @@ model Order {
   shipping      Decimal     @default(0)
   totalAmount   Decimal
   paymentStatus String      @default("PENDING_PAYMENT")
+  paymentMethod String?
   orderStatus   String      @default("PLACED") // PLACED, CONFIRMED, PROCESSING, PACKED, SHIPPED, OUT_FOR_DELIVERY, DELIVERED, CANCELLED
   paymentId     String?
+  paidAt        DateTime?
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
 

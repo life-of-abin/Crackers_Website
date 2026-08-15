@@ -23,9 +23,9 @@ export default function InStockFilter({ inStockOnly }: InStockFilterProps) {
         type="checkbox"
         checked={inStockOnly}
         onChange={handleChange}
-        className="rounded text-[#6D3FD6] focus:ring-[#F5C451] border-[#292E4D] bg-[#11152E] w-4 h-4 cursor-pointer"
+        className="rounded text-[#6D3FD6] focus:ring-[#6D3FD6] border-slate-300 bg-slate-50 w-4 h-4 cursor-pointer"
       />
-      <span className="text-xs font-semibold text-[#B9B8C7]">In Stock Only</span>
+      <span className="text-xs font-bold text-slate-700">In Stock Only</span>
     </label>
   );
 }

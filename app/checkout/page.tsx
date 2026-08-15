@@ -4,15 +4,20 @@ import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/lib/cart-context";
-import {
-  createOrderAction,
-  confirmPaymentAction,
-  getPaymentAccountsAction,
-} from "@/lib/actions";
-import { isValidGmailFormat } from "@/lib/pincode";
 import Header from "@/components/ui/Header";
 import Footer from "@/components/ui/Footer";
 import FireworksCanvas from "@/components/ui/FireworksCanvas";
+import {
+  validateTransactionRef,
+  generateUpiUri,
+  getAppPaymentLink,
+} from "@/lib/payment-utils";
+import {
+  createOrderAction,
+  verifyAndConfirmPaymentAction,
+  handlePaymentFailureAction,
+  getPaymentAccountsAction,
+} from "@/lib/actions";
 
 export interface StoreSettings {
   id: number;
@@ -41,56 +46,64 @@ const DEFAULT_SETTINGS: StoreSettings = {
 };
 
 const INDIAN_STATES = [
+  "Tamil Nadu",
   "Andhra Pradesh",
-  "Arunachal Pradesh",
-  "Assam",
-  "Bihar",
-  "Chhattisgarh",
-  "Delhi",
-  "Goa",
-  "Gujarat",
-  "Haryana",
-  "Himachal Pradesh",
-  "Jharkhand",
   "Karnataka",
   "Kerala",
-  "Madhya Pradesh",
-  "Maharashtra",
-  "Manipur",
-  "Meghalaya",
-  "Mizoram",
-  "Nagaland",
-  "Odisha",
-  "Puducherry",
-  "Punjab",
-  "Rajasthan",
-  "Sikkim",
-  "Tamil Nadu",
   "Telangana",
-  "Tripura",
-  "Uttar Pradesh",
-  "Uttarakhand",
+  "Puducherry",
+  "Maharashtra",
+  "Gujarat",
+  "Goa",
+  "Delhi",
   "West Bengal",
+  "Other State",
 ];
+
+// Helper: Basic Gmail / Email format check
+function isValidGmailFormat(val: string): boolean {
+  const trimmed = val.trim();
+  if (!trimmed.includes("@") || !trimmed.includes(".")) return false;
+  const parts = trimmed.split("@");
+  if (parts.length !== 2) return false;
+  const domain = parts[1];
+  return domain.includes(".") && domain.split(".")[1].length >= 2;
+}
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { items, subtotal, clearCart, isMounted, totalQuantity } = useCart();
+  const { items, subtotal, totalQuantity, clearCart, isMounted } = useCart();
   const [settings, setSettings] = useState<StoreSettings>(DEFAULT_SETTINGS);
 
-  // Customer Input Fields
+  // Form Fields
   const [customerName, setCustomerName] = useState("");
-  const [phone, setPhone] = useState(""); // Strictly 10 digits
+  const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [address, setAddress] = useState("");
   const [landmark, setLandmark] = useState("");
+  const [pincode, setPincode] = useState("");
   const [city, setCity] = useState("");
   const [district, setDistrict] = useState("");
   const [state, setState] = useState("Tamil Nadu");
-  const [pincode, setPincode] = useState("");
+
+  // Payment Selection & Reference State
+  const [paymentMethod, setPaymentMethod] = useState<"GPAY" | "PHONEPE" | "PAYTM" | "QR">("QR");
+  const [paymentRef, setPaymentRef] = useState("");
+  const [paymentAccounts, setPaymentAccounts] = useState<any[]>([]);
+
+  // Pincode Lookup & Error States
+  const [pinLoading, setPinLoading] = useState(false);
+  const [pinVerifiedInfo, setPinVerifiedInfo] = useState<{
+    valid: boolean;
+    city?: string;
+    district?: string;
+    state?: string;
+  } | null>(null);
+
+  const [pinError, setPinError] = useState("");
   const [autoFilledPin, setAutoFilledPin] = useState<string | null>(null);
 
-  // Field DOM References for Focus/Scroll
+  // Input Field References for Scrolling
   const nameRef = useRef<HTMLInputElement | null>(null);
   const phoneRef = useRef<HTMLInputElement | null>(null);
   const emailRef = useRef<HTMLInputElement | null>(null);
@@ -100,47 +113,13 @@ export default function CheckoutPage() {
   const districtRef = useRef<HTMLInputElement | null>(null);
   const upiRef = useRef<HTMLInputElement | null>(null);
 
-  // Validation States
+  // Validation & Processing States
   const [errors, setErrors] = useState<Record<string, string>>({});
-
-  // PIN Code States
-  const [pinLoading, setPinLoading] = useState(false);
-  const [pinError, setPinError] = useState("");
-  const [pinVerifiedInfo, setPinVerifiedInfo] = useState<{
-    valid: boolean;
-    city?: string;
-    district?: string;
-    state?: string;
-    country?: string;
-  } | null>(null);
-
-  // Payment Selection States
-  const [paymentMethod, setPaymentMethod] = useState<"UPI" | "QR" | "GPAY" | "PHONEPE" | "PAYTM">("QR");
-  const [dummyUpiId, setDummyUpiId] = useState("");
-  const [paymentRef, setPaymentRef] = useState("");
-  const [paymentAccounts, setPaymentAccounts] = useState<any[]>([]);
-  const [copiedToast, setCopiedToast] = useState(false);
-
-  // Submit & Order State
   const [loading, setLoading] = useState(false);
+  const [paymentState, setPaymentState] = useState<"IDLE" | "PROCESSING" | "SUCCESS" | "FAILED">("IDLE");
+  const [copiedToast, setCopiedToast] = useState(false);
   const [globalError, setGlobalError] = useState("");
-  const [confirmedOrder, setConfirmedOrder] = useState<{
-    id: number;
-    formattedId: string;
-    totalAmount: number;
-    customerName: string;
-    phone: string;
-    email: string;
-    address: string;
-    landmark?: string;
-    city: string;
-    district: string;
-    state: string;
-    pincode: string;
-    paymentStatus: string;
-    paymentMethod: string;
-    items: any[];
-  } | null>(null);
+  const [confirmedOrder, setConfirmedOrder] = useState<any>(null);
 
   // Fetch Store Settings & Payment Accounts on Mount
   useEffect(() => {
@@ -159,9 +138,6 @@ export default function CheckoutPage() {
       })
       .catch(console.error);
   }, []);
-
-  const qrAccount = paymentAccounts.find((a) => a.isPrimary) || paymentAccounts[0];
-  const upiIdToUse = qrAccount?.upiId || "9629525907@upi";
 
   // Reactive PIN Code Lookup Effect (6 Digits Only)
   useEffect(() => {
@@ -216,14 +192,13 @@ export default function CheckoutPage() {
       isCurrent = false;
       controller.abort();
     };
-  }, [pincode]); // Only run when pincode changes!
+  }, [pincode]);
 
-  // PIN Code Input Handler with immediate clearing of old location data
+  // PIN Code Input Handler
   const handlePincodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const cleaned = e.target.value.replace(/[^0-9]/g, "").slice(0, 6);
     setPincode(cleaned);
 
-    // Clear error immediately on change
     setErrors((prev) => {
       const copy = { ...prev };
       delete copy.pincode;
@@ -231,7 +206,6 @@ export default function CheckoutPage() {
     });
     setPinError("");
 
-    // If pincode is modified or invalidated, immediately clear old location data
     if (cleaned.length !== 6 || cleaned !== autoFilledPin) {
       setCity("");
       setDistrict("");
@@ -321,19 +295,6 @@ export default function CheckoutPage() {
     }
   };
 
-  // UPI Input Handler
-  const handleUpiInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value;
-    setDummyUpiId(val);
-    if (val.includes("@")) {
-      setErrors((prev) => {
-        const copy = { ...prev };
-        delete copy.upiId;
-        return copy;
-      });
-    }
-  };
-
   // Form Validation Checklist
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -368,8 +329,10 @@ export default function CheckoutPage() {
       newErrors.district = "Please enter a valid District.";
     }
 
-    if (paymentMethod === "UPI" && (!dummyUpiId || !dummyUpiId.includes("@"))) {
-      newErrors.upiId = "Please enter a valid dummy UPI ID (e.g. test@upi).";
+    // UTR / Transaction Reference Validation
+    const refCheck = validateTransactionRef(paymentRef);
+    if (!refCheck.valid) {
+      newErrors.paymentRef = refCheck.error || "Please enter your valid 12-digit UTR or Transaction Reference ID.";
     }
 
     setErrors(newErrors);
@@ -384,7 +347,7 @@ export default function CheckoutPage() {
       else if (firstInvalidField === "pincode") ref = pinRef;
       else if (firstInvalidField === "city") ref = cityRef;
       else if (firstInvalidField === "district") ref = districtRef;
-      else if (firstInvalidField === "upiId") ref = upiRef;
+      else if (firstInvalidField === "paymentRef") ref = upiRef;
 
       if (ref && ref.current) {
         ref.current.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -403,16 +366,30 @@ export default function CheckoutPage() {
 
   const grandTotalAmount = subtotal >= settings.freeShippingThreshold ? subtotal : subtotal + settings.flatShippingFee;
 
+  const qrAccount = paymentAccounts.find((a) => a.isActive || a.isPrimary) || paymentAccounts[0];
+  const upiIdToUse = qrAccount?.upiId || "9629525907@upi";
+
+  const dynamicUpiUri = generateUpiUri({
+    upiId: upiIdToUse,
+    storeName: settings.storeName,
+    amount: grandTotalAmount,
+    orderId: "TEMP",
+    note: "Sivakasi Crackers Festive Purchase",
+  });
+
   // SUBMIT ORDER HANDLER
   const handleSubmitOrder = async (e: React.FormEvent) => {
     e.preventDefault();
     setGlobalError("");
+    setPaymentState("IDLE");
 
     if (!validateForm()) return;
 
     setLoading(true);
+    setPaymentState("PROCESSING");
 
     try {
+      // 1. Create Pending Order
       const result = await createOrderAction({
         customerName: customerName.trim(),
         phone: `+91${phone}`,
@@ -432,38 +409,45 @@ export default function CheckoutPage() {
       if (result.error) {
         setGlobalError(result.error);
         setLoading(false);
+        setPaymentState("FAILED");
         return;
       }
 
       if (result.success && result.orderId) {
-        const paymentRes = await confirmPaymentAction(
+        // 2. Server-Side Payment Verification
+        const paymentRes = await verifyAndConfirmPaymentAction(
           result.orderId,
-          paymentMethod === "UPI" ? dummyUpiId : (paymentRef.trim() || `PAY_TEST_${Date.now()}`),
+          paymentRef.trim(),
           paymentMethod
-         );
+        );
 
         if (paymentRes.success) {
           clearCart();
           setLoading(false);
           router.push(`/order-confirmation/${result.orderId}`);
         } else {
-          setGlobalError(paymentRes.error || "Order creation succeeded but payment status update failed.");
+          // Handle payment verification failure cleanly without losing cart
+          await handlePaymentFailureAction(result.orderId, "FAILED");
+          setGlobalError(paymentRes.error || "Payment could not be verified. Please check your 12-digit UTR/Transaction ID.");
           setLoading(false);
+          setPaymentState("FAILED");
         }
       } else {
-        setGlobalError("Failed to create order. Please try again.");
+        setGlobalError("Failed to initialize payment session. Please try again.");
         setLoading(false);
+        setPaymentState("FAILED");
       }
     } catch (err: any) {
       console.error("Submit order error:", err);
-      setGlobalError("An unexpected error occurred during order submission.");
+      setGlobalError("An unexpected error occurred during payment processing.");
       setLoading(false);
+      setPaymentState("FAILED");
     }
   };
 
   if (!isMounted) {
     return (
-      <div className="min-h-screen bg-[#080B1A] text-[#FFF9EA] flex items-center justify-center">
+      <div className="min-h-screen bg-[#F8FAFC] text-slate-900 flex items-center justify-center">
         <div className="animate-spin text-4xl">🎆</div>
       </div>
     );
@@ -472,84 +456,84 @@ export default function CheckoutPage() {
   // SAME-PAGE ORDER CONFIRMATION SCREEN
   if (confirmedOrder) {
     return (
-      <div className="min-h-screen bg-[#080B1A] text-[#FFF9EA] flex flex-col justify-between relative overflow-hidden">
+      <div className="min-h-screen bg-[#F8FAFC] text-slate-900 flex flex-col justify-between relative overflow-hidden">
         <Header settings={settings} />
         <FireworksCanvas durationSeconds={7} />
 
         <main className="max-w-3xl mx-auto px-4 py-12 flex-1 w-full text-center z-10 space-y-8">
           
-          <div className="bg-[#151A35]/90 backdrop-blur-xl border border-[#6D3FD6]/50 p-6 sm:p-10 rounded-3xl shadow-2xl space-y-6">
+          <div className="bg-white border border-purple-200 p-6 sm:p-10 rounded-3xl shadow-xl space-y-6">
             
-            <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-[#F5C451] to-[#6D3FD6] rounded-full text-4xl shadow-lg animate-bounce">
+            <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-[#6D3FD6] to-[#8B5CF6] rounded-full text-4xl shadow-lg animate-bounce text-white">
               🎉
             </div>
 
-            <h1 className="text-3xl sm:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-[#FFE29A] via-[#F5C451] to-[#FFE29A] tracking-tight font-display">
+            <h1 className="text-3xl sm:text-4xl font-black text-[#6D3FD6] tracking-tight font-display">
               ORDER CONFIRMED!
             </h1>
             
-            <p className="text-[#B9B8C7] text-xs sm:text-sm max-w-md mx-auto">
-              Thank you for ordering with <strong className="text-[#F5C451]">{settings.storeName}</strong>! Your cracker order has been successfully placed.
+            <p className="text-slate-600 text-xs sm:text-sm max-w-md mx-auto">
+              Thank you for ordering with <strong className="text-[#6D3FD6]">{settings.storeName}</strong>! Your cracker order has been successfully placed.
             </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-left">
-              <div className="bg-[#11152E] p-4 rounded-2xl border border-[#292E4D] space-y-1">
-                <span className="text-[10px] text-[#F5C451] font-extrabold uppercase tracking-wider block">
+              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-1">
+                <span className="text-[10px] text-[#6D3FD6] font-extrabold uppercase tracking-wider block">
                   Order Number
                 </span>
-                <span className="text-xl font-black text-[#FFF9EA] font-mono">{confirmedOrder.formattedId}</span>
+                <span className="text-xl font-black text-slate-900 font-mono">{confirmedOrder.formattedId}</span>
               </div>
 
-              <div className="bg-[#11152E] p-4 rounded-2xl border border-[#292E4D] space-y-1">
-                <span className="text-[10px] text-[#F5C451] font-extrabold uppercase tracking-wider block">
+              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-1">
+                <span className="text-[10px] text-[#6D3FD6] font-extrabold uppercase tracking-wider block">
                   Total Amount
                 </span>
-                <span className="text-xl font-black text-[#F5C451]">₹{Number(confirmedOrder.totalAmount).toLocaleString("en-IN")}</span>
+                <span className="text-xl font-black text-[#6D3FD6]">₹{Number(confirmedOrder.totalAmount).toLocaleString("en-IN")}</span>
               </div>
 
-              <div className="bg-[#11152E] p-4 rounded-2xl border border-[#292E4D] space-y-1 sm:col-span-2">
-                <span className="text-[10px] text-[#F5C451] font-extrabold uppercase tracking-wider block">
+              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-1 sm:col-span-2">
+                <span className="text-[10px] text-[#6D3FD6] font-extrabold uppercase tracking-wider block">
                   Delivery Address
                 </span>
-                <p className="font-extrabold text-[#FFF9EA] text-xs">{confirmedOrder.customerName}</p>
-                <p className="text-[#B9B8C7] text-xs leading-relaxed">
-                  {confirmedOrder.address}{confirmedOrder.landmark ? `, Near ${confirmedOrder.landmark}` : ""}, {confirmedOrder.city}, {confirmedOrder.district}, {confirmedOrder.state} - <strong className="text-[#FFF9EA]">{confirmedOrder.pincode}</strong>
+                <p className="font-extrabold text-slate-900 text-xs">{confirmedOrder.customerName}</p>
+                <p className="text-slate-600 text-xs leading-relaxed">
+                  {confirmedOrder.address}{confirmedOrder.landmark ? `, Near ${confirmedOrder.landmark}` : ""}, {confirmedOrder.city}, {confirmedOrder.district}, {confirmedOrder.state} - <strong className="text-slate-900">{confirmedOrder.pincode}</strong>
                 </p>
               </div>
 
-              <div className="bg-[#11152E] p-4 rounded-2xl border border-[#292E4D] space-y-1 sm:col-span-2">
-                <span className="text-[10px] text-[#F5C451] font-extrabold uppercase tracking-wider block">
+              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-1 sm:col-span-2">
+                <span className="text-[10px] text-[#6D3FD6] font-extrabold uppercase tracking-wider block">
                   Contact Information
                 </span>
-                <p className="text-xs text-[#B9B8C7]">
-                  Mobile: <strong className="text-[#FFE29A] font-mono text-sm">{confirmedOrder.phone}</strong>
+                <p className="text-xs text-slate-600">
+                  Mobile: <strong className="text-slate-900 font-mono text-sm">{confirmedOrder.phone}</strong>
                 </p>
-                <p className="text-xs text-[#B9B8C7]">
-                  Email: <span className="text-[#FFF9EA]">{confirmedOrder.email}</span>
+                <p className="text-xs text-slate-600">
+                  Email: <span className="text-slate-900">{confirmedOrder.email}</span>
                 </p>
               </div>
             </div>
 
-            <div className="pt-4 border-t border-[#292E4D] flex flex-wrap items-center justify-center gap-4">
+            <div className="pt-4 border-t border-slate-200 flex flex-wrap items-center justify-center gap-4">
               <a
                 href={`/api/orders/${confirmedOrder.id}/invoice`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full sm:w-auto px-6 py-3.5 bg-[#F5C451] hover:bg-[#FFE29A] text-[#080B1A] font-extrabold text-xs uppercase tracking-wider rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 gold-glow"
+                className="w-full sm:w-auto px-6 py-3.5 bg-[#6D3FD6] hover:bg-[#5B21B6] text-white font-extrabold text-xs uppercase tracking-wider rounded-xl shadow-md transition-all flex items-center justify-center gap-2"
               >
                 <span>📄 Download Invoice PDF</span>
               </a>
 
               <Link
                 href={`/orders?query=${encodeURIComponent(confirmedOrder.phone)}`}
-                className="w-full sm:w-auto px-6 py-3.5 bg-[#11152E] hover:bg-[#151A35] text-[#F5C451] border border-[#292E4D] font-extrabold text-xs uppercase tracking-wider rounded-xl transition-all flex items-center justify-center gap-2"
+                className="w-full sm:w-auto px-6 py-3.5 bg-slate-100 hover:bg-slate-200 text-[#6D3FD6] border border-slate-200 font-extrabold text-xs uppercase tracking-wider rounded-xl transition-all flex items-center justify-center gap-2"
               >
                 <span>📦 View Order History</span>
               </Link>
 
               <Link
                 href="/products"
-                className="w-full sm:w-auto px-6 py-3.5 bg-[#11152E] hover:bg-[#151A35] text-[#FFF9EA] border border-[#292E4D] font-extrabold text-xs uppercase tracking-wider rounded-xl transition-all flex items-center justify-center gap-2"
+                className="w-full sm:w-auto px-6 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-200 font-extrabold text-xs uppercase tracking-wider rounded-xl transition-all flex items-center justify-center gap-2"
               >
                 <span>Continue Shopping →</span>
               </Link>
@@ -567,13 +551,13 @@ export default function CheckoutPage() {
   // EMPTY CART SCREEN
   if (items.length === 0) {
     return (
-      <div className="min-h-screen bg-[#080B1A] text-[#FFF9EA] flex flex-col justify-between">
+      <div className="min-h-screen bg-[#F8FAFC] text-slate-900 flex flex-col justify-between">
         <Header settings={settings} />
-        <div className="max-w-md mx-auto my-16 p-8 bg-[#151A35] rounded-3xl border border-[#292E4D] text-center space-y-4 shadow-xl">
+        <div className="max-w-md mx-auto my-16 p-8 bg-white rounded-3xl border border-slate-200 text-center space-y-4 shadow-md">
           <div className="text-5xl">🛒</div>
-          <h2 className="text-lg font-bold text-[#FFF9EA] font-display">Your cart is empty</h2>
-          <p className="text-xs text-[#B9B8C7]">Please add items to your cart before proceeding to checkout.</p>
-          <Link href="/products" className="inline-block bg-[#F5C451] text-[#080B1A] text-xs font-bold px-6 py-2.5 rounded-xl">
+          <h2 className="text-lg font-bold text-slate-900 font-display">Your cart is empty</h2>
+          <p className="text-xs text-slate-500">Please add items to your cart before proceeding to checkout.</p>
+          <Link href="/products" className="inline-block bg-[#6D3FD6] text-white text-xs font-bold px-6 py-2.5 rounded-xl">
             Browse Products
           </Link>
         </div>
@@ -584,13 +568,13 @@ export default function CheckoutPage() {
 
   if (totalQuantity < 2) {
     return (
-      <div className="min-h-screen bg-[#080B1A] text-[#FFF9EA] flex flex-col justify-between">
+      <div className="min-h-screen bg-[#F8FAFC] text-slate-900 flex flex-col justify-between">
         <Header settings={settings} />
-        <div className="max-w-md mx-auto my-16 p-8 bg-[#151A35] rounded-3xl border border-[#292E4D] text-center space-y-4 shadow-xl">
+        <div className="max-w-md mx-auto my-16 p-8 bg-white rounded-3xl border border-slate-200 text-center space-y-4 shadow-md">
           <div className="text-5xl">⚠️</div>
-          <h2 className="text-lg font-bold text-[#FFF9EA] font-display">Minimum Order Not Met</h2>
-          <p className="text-xs text-[#B9B8C7]">Minimum purchase quantity is 2 items.</p>
-          <Link href="/products" className="inline-block bg-[#F5C451] text-[#080B1A] text-xs font-bold px-6 py-2.5 rounded-xl">
+          <h2 className="text-lg font-bold text-slate-900 font-display">Minimum Order Not Met</h2>
+          <p className="text-xs text-slate-500">Minimum purchase quantity is 2 items.</p>
+          <Link href="/products" className="inline-block bg-[#6D3FD6] text-white text-xs font-bold px-6 py-2.5 rounded-xl">
             Browse Products
           </Link>
         </div>
@@ -603,24 +587,24 @@ export default function CheckoutPage() {
   const grandTotal = subtotal + shippingFee;
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#080B1A] text-[#FFF9EA]">
+    <div className="min-h-screen flex flex-col bg-[#F8FAFC] text-slate-900">
       <Header settings={settings} />
 
       {/* Copy Toast */}
       {copiedToast && (
-        <div className="fixed top-20 right-5 z-50 bg-[#11152E] text-[#F5C451] border border-[#F5C451]/40 text-xs font-extrabold px-4 py-3 rounded-2xl shadow-2xl animate-bounce flex items-center gap-2">
+        <div className="fixed top-20 right-5 z-50 bg-slate-900 text-amber-300 border border-amber-400 text-xs font-extrabold px-4 py-3 rounded-2xl shadow-2xl animate-bounce flex items-center gap-2">
           <span>✓ UPI ID copied to clipboard</span>
         </div>
       )}
 
-      <div className="bg-[#11152E] text-[#FFF9EA] py-8 border-b border-[#292E4D]">
+      <div className="bg-white text-slate-900 py-8 border-b border-slate-200 shadow-xs">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-2 text-[#F5C451] text-xs font-semibold uppercase tracking-wider mb-1">
+          <div className="flex items-center gap-2 text-[#6D3FD6] text-xs font-bold uppercase tracking-wider mb-1">
             <Link href="/cart" className="hover:underline">Cart</Link>
             <span>/</span>
             <span>Guest Checkout</span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-black text-[#FFF9EA] font-display">
+          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 font-display">
             Delivery Details & Order Checkout
           </h1>
         </div>
@@ -629,17 +613,17 @@ export default function CheckoutPage() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full">
         
         {globalError && (
-          <div className="mb-6 p-4 bg-[#11152E] border border-[#6D3FD6] text-[#FFE29A] text-xs font-bold rounded-2xl flex items-center justify-between shadow-md">
+          <div className="mb-6 p-4 bg-amber-50 border border-amber-300 text-amber-900 text-xs font-bold rounded-2xl flex items-center justify-between shadow-xs">
             <span className="flex items-center gap-2">⚠️ {globalError}</span>
-            <button onClick={() => setGlobalError("")} className="text-[#F5C451] hover:text-white font-extrabold text-sm">✕</button>
+            <button onClick={() => setGlobalError("")} className="text-amber-900 hover:text-black font-extrabold text-sm cursor-pointer">✕</button>
           </div>
         )}
 
         <form onSubmit={handleSubmitOrder} className="max-w-3xl mx-auto space-y-6" noValidate>
           
           {/* Section 1: Customer Contact Information */}
-          <div className="bg-[#151A35] rounded-3xl border border-[#292E4D] p-6 sm:p-8 shadow-xl space-y-5">
-            <h2 className="text-sm font-black text-[#FFF9EA] border-b border-[#292E4D] pb-3 uppercase tracking-wider flex items-center gap-2 font-display">
+          <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-xl space-y-5">
+            <h2 className="text-sm font-black text-slate-900 border-b border-slate-200 pb-3 uppercase tracking-wider flex items-center gap-2 font-display">
               <span className="w-6 h-6 rounded-full bg-[#6D3FD6] text-white text-xs flex items-center justify-center font-bold">1</span>
               Customer Contact Information
             </h2>
@@ -648,7 +632,7 @@ export default function CheckoutPage() {
               
               {/* Full Name */}
               <div className="sm:col-span-2">
-                <label className="block text-xs font-bold text-[#B9B8C7] uppercase tracking-wider mb-1">
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
                   Full Name *
                 </label>
                 <input
@@ -660,12 +644,12 @@ export default function CheckoutPage() {
                   onChange={handleNameInput}
                   aria-invalid={errors.name ? "true" : "false"}
                   aria-describedby={errors.name ? "name-error" : undefined}
-                  className={`w-full px-4 py-2.5 bg-[#11152E] border rounded-xl text-xs font-semibold text-[#FFF9EA] placeholder-[#B9B8C7]/50 focus:outline-none focus:ring-2 transition-all ${
-                    errors.name ? "border-red-500 ring-1 ring-red-500 bg-red-500/5 shadow-[0_0_8px_rgba(239,68,68,0.2)]" : "border-[#292E4D] focus:ring-[#F5C451] focus:border-[#F5C451]"
+                  className={`w-full px-4 py-2.5 bg-slate-50 border rounded-xl text-xs font-semibold text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 transition-all ${
+                    errors.name ? "border-red-500 ring-1 ring-red-500 bg-red-50" : "border-slate-200 focus:ring-[#6D3FD6] focus:border-[#6D3FD6]"
                   }`}
                 />
                 {errors.name && (
-                  <span id="name-error" className="text-[11px] font-bold text-red-500 mt-1 block">
+                  <span id="name-error" className="text-[11px] font-bold text-red-600 mt-1 block">
                     {errors.name}
                   </span>
                 )}
@@ -673,7 +657,7 @@ export default function CheckoutPage() {
 
               {/* Mobile Input */}
               <div>
-                <label className="block text-xs font-bold text-[#B9B8C7] uppercase tracking-wider mb-1">
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
                   Mobile Number *
                 </label>
                 <div className="relative">
@@ -687,15 +671,15 @@ export default function CheckoutPage() {
                     onChange={handlePhoneInput}
                     aria-invalid={errors.phone ? "true" : "false"}
                     aria-describedby={errors.phone ? "phone-error" : undefined}
-                    className={`w-full px-4 py-2.5 bg-[#11152E] border rounded-xl text-xs font-semibold text-[#FFF9EA] font-mono placeholder-[#B9B8C7]/50 focus:outline-none focus:ring-2 transition-all ${
-                      errors.phone ? "border-red-500 ring-1 ring-red-500 bg-red-500/5 shadow-[0_0_8px_rgba(239,68,68,0.2)]" : "border-[#292E4D] focus:ring-[#F5C451] focus:border-[#F5C451]"
+                    className={`w-full px-4 py-2.5 bg-slate-50 border rounded-xl text-xs font-semibold text-slate-900 font-mono placeholder-slate-400 focus:outline-none focus:ring-2 transition-all ${
+                      errors.phone ? "border-red-500 ring-1 ring-red-500 bg-red-50" : "border-slate-200 focus:ring-[#6D3FD6] focus:border-[#6D3FD6]"
                     }`}
                   />
                 </div>
-                <span className="text-[10px] text-[#B9B8C7] mt-1 block">Enter 10-digit Indian mobile number</span>
+                <span className="text-[10px] text-slate-400 mt-1 block">Enter 10-digit Indian mobile number</span>
 
                 {errors.phone && (
-                  <span id="phone-error" className="text-[11px] font-bold text-red-500 mt-1 block">
+                  <span id="phone-error" className="text-[11px] font-bold text-red-600 mt-1 block">
                     {errors.phone}
                   </span>
                 )}
@@ -703,7 +687,7 @@ export default function CheckoutPage() {
 
               {/* Email Address Input */}
               <div>
-                <label className="block text-xs font-bold text-[#B9B8C7] uppercase tracking-wider mb-1">
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
                   Email Address *
                 </label>
                 <input
@@ -715,14 +699,14 @@ export default function CheckoutPage() {
                   onChange={handleEmailInput}
                   aria-invalid={errors.email ? "true" : "false"}
                   aria-describedby={errors.email ? "email-error" : undefined}
-                  className={`w-full px-4 py-2.5 bg-[#11152E] border rounded-xl text-xs font-semibold text-[#FFF9EA] placeholder-[#B9B8C7]/50 focus:outline-none focus:ring-2 transition-all ${
-                    errors.email ? "border-red-500 ring-1 ring-red-500 bg-red-500/5 shadow-[0_0_8px_rgba(239,68,68,0.2)]" : "border-[#292E4D] focus:ring-[#F5C451] focus:border-[#F5C451]"
+                  className={`w-full px-4 py-2.5 bg-slate-50 border rounded-xl text-xs font-semibold text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 transition-all ${
+                    errors.email ? "border-red-500 ring-1 ring-red-500 bg-red-50" : "border-slate-200 focus:ring-[#6D3FD6] focus:border-[#6D3FD6]"
                   }`}
                 />
-                <span className="text-[10px] text-[#B9B8C7] mt-1 block">Order updates & receipt sent here</span>
+                <span className="text-[10px] text-slate-400 mt-1 block">Order updates & receipt sent here</span>
 
                 {errors.email && (
-                  <span id="email-error" className="text-[11px] font-bold text-red-500 mt-1 block">
+                  <span id="email-error" className="text-[11px] font-bold text-red-600 mt-1 block">
                     {errors.email}
                   </span>
                 )}
@@ -732,8 +716,8 @@ export default function CheckoutPage() {
           </div>
 
           {/* Section 2: Address & PIN Code */}
-          <div className="bg-[#151A35] rounded-3xl border border-[#292E4D] p-6 sm:p-8 shadow-xl space-y-5">
-            <h2 className="text-sm font-black text-[#FFF9EA] border-b border-[#292E4D] pb-3 uppercase tracking-wider flex items-center gap-2 font-display">
+          <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-xl space-y-5">
+            <h2 className="text-sm font-black text-slate-900 border-b border-slate-200 pb-3 uppercase tracking-wider flex items-center gap-2 font-display">
               <span className="w-6 h-6 rounded-full bg-[#6D3FD6] text-white text-xs flex items-center justify-center font-bold">2</span>
               Delivery Address & Smart Postal Auto-Fill
             </h2>
@@ -741,7 +725,7 @@ export default function CheckoutPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               
               <div className="sm:col-span-2">
-                <label className="block text-xs font-bold text-[#B9B8C7] uppercase tracking-wider mb-1">
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
                   Address Line 1 (House No., Building, Street Name) *
                 </label>
                 <textarea
@@ -753,19 +737,19 @@ export default function CheckoutPage() {
                   onChange={handleAddressInput}
                   aria-invalid={errors.address ? "true" : "false"}
                   aria-describedby={errors.address ? "address-error" : undefined}
-                  className={`w-full px-4 py-2.5 bg-[#11152E] border rounded-xl text-xs font-semibold text-[#FFF9EA] placeholder-[#B9B8C7]/50 focus:outline-none focus:ring-2 transition-all ${
-                    errors.address ? "border-red-500 ring-1 ring-red-500 bg-red-500/5 shadow-[0_0_8px_rgba(239,68,68,0.2)]" : "border-[#292E4D] focus:ring-[#F5C451] focus:border-[#F5C451]"
+                  className={`w-full px-4 py-2.5 bg-slate-50 border rounded-xl text-xs font-semibold text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 transition-all ${
+                    errors.address ? "border-red-500 ring-1 ring-red-500 bg-red-50" : "border-slate-200 focus:ring-[#6D3FD6] focus:border-[#6D3FD6]"
                   }`}
                 />
                 {errors.address && (
-                  <span id="address-error" className="text-[11px] font-bold text-red-500 mt-1 block">
+                  <span id="address-error" className="text-[11px] font-bold text-red-600 mt-1 block">
                     {errors.address}
                   </span>
                 )}
               </div>
 
               <div className="sm:col-span-2">
-                <label className="block text-xs font-bold text-[#B9B8C7] uppercase tracking-wider mb-1">
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
                   Address Line 2 / Landmark (Optional)
                 </label>
                 <input
@@ -773,27 +757,27 @@ export default function CheckoutPage() {
                   placeholder="Near Bus Stand / Opposite SBI Bank"
                   value={landmark}
                   onChange={(e) => setLandmark(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-[#11152E] border border-[#292E4D] rounded-xl text-xs font-semibold text-[#FFF9EA] placeholder-[#B9B8C7]/50 focus:outline-none focus:ring-2 focus:ring-[#F5C451]"
+                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#6D3FD6]"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-[#B9B8C7] uppercase tracking-wider mb-1">
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
                   State *
                 </label>
                 <select
                   value={state}
                   onChange={(e) => setState(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-[#11152E] border border-[#292E4D] rounded-xl text-xs font-semibold text-[#FFF9EA] focus:outline-none focus:ring-2 focus:ring-[#F5C451]"
+                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#6D3FD6]"
                 >
                   {INDIAN_STATES.map((st) => (
-                    <option key={st} value={st} className="bg-[#11152E] text-[#FFF9EA]">{st}</option>
+                    <option key={st} value={st} className="bg-white text-slate-900">{st}</option>
                   ))}
                 </select>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-[#B9B8C7] uppercase tracking-wider mb-1">
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
                   PIN Code (6 Digits) *
                 </label>
                 <input
@@ -806,30 +790,30 @@ export default function CheckoutPage() {
                   onChange={handlePincodeChange}
                   aria-invalid={errors.pincode ? "true" : "false"}
                   aria-describedby={errors.pincode ? "pincode-error" : undefined}
-                  className={`w-full px-4 py-2.5 bg-[#11152E] border rounded-xl text-xs font-semibold text-[#FFF9EA] font-mono focus:outline-none focus:ring-2 transition-all ${
-                    errors.pincode ? "border-red-500 ring-1 ring-red-500 bg-red-500/5 shadow-[0_0_8px_rgba(239,68,68,0.2)]" : "border-[#292E4D] focus:ring-[#F5C451] focus:border-[#F5C451]"
+                  className={`w-full px-4 py-2.5 bg-slate-50 border rounded-xl text-xs font-semibold text-slate-900 font-mono focus:outline-none focus:ring-2 transition-all ${
+                    errors.pincode ? "border-red-500 ring-1 ring-red-500 bg-red-50" : "border-slate-200 focus:ring-[#6D3FD6] focus:border-[#6D3FD6]"
                   }`}
                 />
                 
                 <div className="mt-1.5 text-xs font-bold">
                   {pinLoading && (
-                    <span className="text-[#F5C451] animate-pulse flex items-center gap-1 text-[11px] mt-1">
-                      <span className="w-2 h-2 rounded-full bg-[#F5C451] animate-ping" />
+                    <span className="text-[#6D3FD6] animate-pulse flex items-center gap-1 text-[11px] mt-1">
+                      <span className="w-2 h-2 rounded-full bg-[#6D3FD6] animate-ping" />
                       Detecting location...
                     </span>
                   )}
                   {pinError && (
-                    <span className="text-red-500 block bg-[#11152E] p-2 rounded-lg border border-red-500/40 text-[11px] mt-1">
+                    <span className="text-red-600 block bg-red-50 p-2 rounded-lg border border-red-200 text-[11px] mt-1">
                       {pinError}
                     </span>
                   )}
                   {errors.pincode && !pinError && (
-                    <span id="pincode-error" className="text-red-500 block text-[11px] mt-1">
+                    <span id="pincode-error" className="text-red-600 block text-[11px] mt-1">
                       {errors.pincode}
                     </span>
                   )}
                   {pinVerifiedInfo && pinVerifiedInfo.valid && (
-                    <div className="text-[#4ADE80] bg-[#11152E] p-2.5 rounded-lg border border-[#4ADE80]/40 text-[11px] space-y-0.5 mt-1">
+                    <div className="text-emerald-700 bg-emerald-50 p-2.5 rounded-lg border border-emerald-200 text-[11px] space-y-0.5 mt-1">
                       <span className="font-extrabold flex items-center gap-1">
                         ✓ Pincode verified
                       </span>
@@ -842,7 +826,7 @@ export default function CheckoutPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-[#B9B8C7] uppercase tracking-wider mb-1">
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
                   City / Town *
                 </label>
                 <input
@@ -855,19 +839,19 @@ export default function CheckoutPage() {
                   onChange={handleCityInput}
                   aria-invalid={errors.city ? "true" : "false"}
                   aria-describedby={errors.city ? "city-error" : undefined}
-                  className={`w-full px-4 py-2.5 bg-[#11152E] border rounded-xl text-xs font-semibold text-[#FFF9EA] focus:outline-none focus:ring-2 transition-all ${
-                    errors.city ? "border-red-500 ring-1 ring-red-500 bg-red-500/5 shadow-[0_0_8px_rgba(239,68,68,0.2)]" : "border-[#292E4D] focus:ring-[#F5C451] focus:border-[#F5C451]"
+                  className={`w-full px-4 py-2.5 bg-slate-50 border rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 transition-all ${
+                    errors.city ? "border-red-500 ring-1 ring-red-500 bg-red-50" : "border-slate-200 focus:ring-[#6D3FD6] focus:border-[#6D3FD6]"
                   } disabled:opacity-50 disabled:cursor-not-allowed`}
                 />
                 {errors.city && (
-                  <span id="city-error" className="text-[11px] font-bold text-red-500 mt-1 block">
+                  <span id="city-error" className="text-[11px] font-bold text-red-600 mt-1 block">
                     {errors.city}
                   </span>
                 )}
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-[#B9B8C7] uppercase tracking-wider mb-1">
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
                   District *
                 </label>
                 <input
@@ -880,12 +864,12 @@ export default function CheckoutPage() {
                   onChange={handleDistrictInput}
                   aria-invalid={errors.district ? "true" : "false"}
                   aria-describedby={errors.district ? "district-error" : undefined}
-                  className={`w-full px-4 py-2.5 bg-[#11152E] border rounded-xl text-xs font-semibold text-[#FFF9EA] focus:outline-none focus:ring-2 transition-all ${
-                    errors.district ? "border-red-500 ring-1 ring-red-500 bg-red-500/5 shadow-[0_0_8px_rgba(239,68,68,0.2)]" : "border-[#292E4D] focus:ring-[#F5C451] focus:border-[#F5C451]"
+                  className={`w-full px-4 py-2.5 bg-slate-50 border rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 transition-all ${
+                    errors.district ? "border-red-500 ring-1 ring-red-500 bg-red-50" : "border-slate-200 focus:ring-[#6D3FD6] focus:border-[#6D3FD6]"
                   } disabled:opacity-50 disabled:cursor-not-allowed`}
                 />
                 {errors.district && (
-                  <span id="district-error" className="text-[11px] font-bold text-red-500 mt-1 block">
+                  <span id="district-error" className="text-[11px] font-bold text-red-600 mt-1 block">
                     {errors.district}
                   </span>
                 )}
@@ -895,147 +879,218 @@ export default function CheckoutPage() {
           </div>
 
           {/* Section 3: Payment Options */}
-          <div className="bg-[#151A35] rounded-3xl border border-[#292E4D] p-6 sm:p-8 shadow-xl space-y-6">
-            <h2 className="text-sm font-black text-[#FFF9EA] border-b border-[#292E4D] pb-3 uppercase tracking-wider flex items-center gap-2 font-display">
+          <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-xl space-y-6">
+            <h2 className="text-sm font-black text-slate-900 border-b border-slate-200 pb-3 uppercase tracking-wider flex items-center gap-2 font-display">
               <span className="w-6 h-6 rounded-full bg-[#6D3FD6] text-white text-xs flex items-center justify-center font-bold">3</span>
-              Payment Options
+              Choose Payment Method
             </h2>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-              <button
-                type="button"
-                onClick={() => setPaymentMethod("QR")}
-                className={`p-3 rounded-2xl border text-center transition-all flex flex-col items-center justify-center ${
-                  paymentMethod === "QR"
-                    ? "border-[#6D3FD6] bg-[#6D3FD6]/20 ring-2 ring-[#6D3FD6]"
-                    : "border-[#292E4D] hover:border-[#6D3FD6]/60 bg-[#11152E]"
-                }`}
-              >
-                <span className="text-xl block mb-1">📱</span>
-                <span className="font-extrabold text-[11px] text-[#FFF9EA] block">QR Code</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setPaymentMethod("UPI")}
-                className={`p-3 rounded-2xl border text-center transition-all flex flex-col items-center justify-center ${
-                  paymentMethod === "UPI"
-                    ? "border-[#6D3FD6] bg-[#6D3FD6]/20 ring-2 ring-[#6D3FD6]"
-                    : "border-[#292E4D] hover:border-[#6D3FD6]/60 bg-[#11152E]"
-                }`}
-              >
-                <span className="text-xl block mb-1">💳</span>
-                <span className="font-extrabold text-[11px] text-[#FFF9EA] block">UPI ID</span>
-              </button>
-
+            {/* Payment Method Selector Grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {/* Option 1: Google Pay */}
               <button
                 type="button"
                 onClick={() => setPaymentMethod("GPAY")}
-                className={`p-3 rounded-2xl border text-center transition-all flex flex-col items-center justify-center ${
+                className={`p-4 rounded-2xl border text-center transition-all flex flex-col items-center justify-center space-y-2 cursor-pointer ${
                   paymentMethod === "GPAY"
-                    ? "border-[#6D3FD6] bg-[#6D3FD6]/20 ring-2 ring-[#6D3FD6]"
-                    : "border-[#292E4D] hover:border-[#6D3FD6]/60 bg-[#11152E]"
+                    ? "border-[#6D3FD6] bg-purple-50 ring-2 ring-[#6D3FD6]"
+                    : "border-slate-200 hover:border-purple-300 bg-slate-50"
                 }`}
               >
-                <img src="https://cdn.simpleicons.org/googlepay/white" alt="Google Pay" className="w-8 h-8 mb-1 object-contain" />
-                <span className="font-extrabold text-[11px] text-[#FFF9EA] block">Google Pay</span>
+                <div className="w-10 h-10 rounded-full bg-[#4285F4]/10 border border-[#4285F4]/30 flex items-center justify-center text-xl font-bold text-[#4285F4]">
+                  G
+                </div>
+                <span className="font-extrabold text-xs text-slate-900 block">Google Pay</span>
+                <span className="text-[10px] text-slate-500">Direct App / UPI</span>
               </button>
 
+              {/* Option 2: PhonePe */}
               <button
                 type="button"
                 onClick={() => setPaymentMethod("PHONEPE")}
-                className={`p-3 rounded-2xl border text-center transition-all flex flex-col items-center justify-center ${
+                className={`p-4 rounded-2xl border text-center transition-all flex flex-col items-center justify-center space-y-2 cursor-pointer ${
                   paymentMethod === "PHONEPE"
-                    ? "border-[#6D3FD6] bg-[#6D3FD6]/20 ring-2 ring-[#6D3FD6]"
-                    : "border-[#292E4D] hover:border-[#6D3FD6]/60 bg-[#11152E]"
+                    ? "border-[#6D3FD6] bg-purple-50 ring-2 ring-[#6D3FD6]"
+                    : "border-slate-200 hover:border-purple-300 bg-slate-50"
                 }`}
               >
-                <img src="https://cdn.simpleicons.org/phonepe/white" alt="PhonePe" className="w-8 h-8 mb-1 object-contain" />
-                <span className="font-extrabold text-[11px] text-[#FFF9EA] block">PhonePe</span>
+                <div className="w-10 h-10 rounded-full bg-[#5f259f]/10 border border-[#5f259f]/30 flex items-center justify-center text-xl font-bold text-[#5f259f]">
+                  P
+                </div>
+                <span className="font-extrabold text-xs text-slate-900 block">PhonePe</span>
+                <span className="text-[10px] text-slate-500">Instant Transfer</span>
               </button>
 
+              {/* Option 3: Paytm */}
               <button
                 type="button"
                 onClick={() => setPaymentMethod("PAYTM")}
-                className={`p-3 rounded-2xl border text-center transition-all flex flex-col items-center justify-center ${
+                className={`p-4 rounded-2xl border text-center transition-all flex flex-col items-center justify-center space-y-2 cursor-pointer ${
                   paymentMethod === "PAYTM"
-                    ? "border-[#6D3FD6] bg-[#6D3FD6]/20 ring-2 ring-[#6D3FD6]"
-                    : "border-[#292E4D] hover:border-[#6D3FD6]/60 bg-[#11152E]"
+                    ? "border-[#6D3FD6] bg-purple-50 ring-2 ring-[#6D3FD6]"
+                    : "border-slate-200 hover:border-purple-300 bg-slate-50"
                 }`}
               >
-                <img src="https://cdn.simpleicons.org/paytm/white" alt="Paytm" className="w-10 h-8 mb-1 object-contain" />
-                <span className="font-extrabold text-[11px] text-[#FFF9EA] block">Paytm</span>
+                <div className="w-10 h-10 rounded-full bg-[#00baf2]/10 border border-[#00baf2]/30 flex items-center justify-center text-xl font-bold text-[#00baf2]">
+                  Paytm
+                </div>
+                <span className="font-extrabold text-xs text-slate-900 block">Paytm</span>
+                <span className="text-[10px] text-slate-500">Paytm App / UPI</span>
+              </button>
+
+              {/* Option 4: UPI QR Code */}
+              <button
+                type="button"
+                onClick={() => setPaymentMethod("QR")}
+                className={`p-4 rounded-2xl border text-center transition-all flex flex-col items-center justify-center space-y-2 cursor-pointer ${
+                  paymentMethod === "QR"
+                    ? "border-[#6D3FD6] bg-purple-50 ring-2 ring-[#6D3FD6]"
+                    : "border-slate-200 hover:border-purple-300 bg-slate-50"
+                }`}
+              >
+                <div className="w-10 h-10 rounded-full bg-amber-100 border border-amber-300 flex items-center justify-center text-xl">
+                  📱
+                </div>
+                <span className="font-extrabold text-xs text-slate-900 block">UPI QR Code</span>
+                <span className="text-[10px] text-slate-500">Scan & Pay</span>
               </button>
             </div>
 
-            {/* Dynamic QR Code Card */}
-            {paymentMethod === "QR" && (
-              <div className="p-6 bg-[#11152E] rounded-3xl text-white space-y-4 text-center border border-[#292E4D]">
-                <h3 className="font-bold text-[#F5C451]">TEST QR CODE</h3>
-                <div className="inline-block bg-white p-3 rounded-2xl shadow-xl">
-                  <img
-                    src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=TEST_QR_CODE`}
-                    alt="TEST UPI QR Code"
-                    className="w-40 h-40 object-contain mx-auto"
-                  />
+            {/* PAYMENT METHOD DETAILS CARD */}
+            <div className="p-6 bg-slate-50 rounded-3xl border border-slate-200 text-center space-y-6">
+              
+              {/* App Opening Deep-Link for Mobile (Google Pay / PhonePe / Paytm) */}
+              {["GPAY", "PHONEPE", "PAYTM"].includes(paymentMethod) && (
+                <div className="space-y-4">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 bg-purple-100 border border-purple-200 rounded-full text-[11px] font-extrabold text-[#6D3FD6]">
+                    ⚡ Mobile App Payment Supported
+                  </div>
+                  <p className="text-xs text-slate-600">
+                    Tap below to open <strong className="text-slate-900">{paymentMethod === "GPAY" ? "Google Pay" : paymentMethod === "PHONEPE" ? "PhonePe" : "Paytm"}</strong> on your mobile device, or scan the QR code below.
+                  </p>
+                  
+                  <a
+                    href={getAppPaymentLink(paymentMethod, dynamicUpiUri)}
+                    className="inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-[#6D3FD6] hover:bg-[#5B21B6] text-white font-extrabold text-xs uppercase tracking-wider rounded-xl shadow-md transition-all cursor-pointer"
+                  >
+                    <span>Open {paymentMethod === "GPAY" ? "Google Pay" : paymentMethod === "PHONEPE" ? "PhonePe" : "Paytm"} App →</span>
+                  </a>
                 </div>
-                <p className="text-xs text-[#B9B8C7]">Scan this test QR code to simulate a payment.</p>
-              </div>
-            )}
+              )}
 
-            {/* UPI Direct App Card */}
-            {paymentMethod === "UPI" && (
-              <div className="p-6 bg-[#11152E] rounded-3xl text-white space-y-4 border border-[#292E4D]">
-                <p className="text-xs text-[#B9B8C7] font-medium">Enter a Dummy UPI ID for testing:</p>
-                
+              {/* QR Code Section - Scan & Pay */}
+              <div className="space-y-4">
+                <h3 className="font-extrabold text-sm text-[#6D3FD6] uppercase tracking-wider">
+                  Scan & Pay
+                </h3>
+
+                <div className="inline-block bg-white p-4 rounded-3xl shadow-xl border-4 border-amber-300">
+                  {qrAccount?.qrImage ? (
+                    <img
+                      src={qrAccount.qrImage}
+                      alt="Merchant UPI QR Code"
+                      className="w-48 h-48 object-contain mx-auto"
+                    />
+                  ) : (
+                    <img
+                      src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(dynamicUpiUri)}`}
+                      alt="Merchant UPI QR Code"
+                      className="w-48 h-48 object-contain mx-auto"
+                    />
+                  )}
+                </div>
+
+                <div className="space-y-1 text-xs text-slate-600">
+                  <p>Merchant: <strong className="text-slate-900">{settings.storeName}</strong></p>
+                  <p>UPI ID: <strong className="text-[#6D3FD6] font-mono">{upiIdToUse}</strong></p>
+                  <p>Amount to Pay: <strong className="text-base text-emerald-700 font-black">₹{grandTotalAmount.toLocaleString("en-IN")}</strong></p>
+                </div>
+              </div>
+
+              {/* UTR / Transaction Reference ID Input for Server Verification */}
+              <div className="pt-4 border-t border-slate-200 space-y-3 text-left max-w-md mx-auto">
+                <label className="block text-xs font-bold text-slate-900 uppercase tracking-wider">
+                  Enter 12-Digit UTR / Transaction Reference ID *
+                </label>
                 <input
                   ref={upiRef}
                   type="text"
-                  placeholder="e.g. test@upi"
-                  value={dummyUpiId}
-                  onChange={handleUpiInput}
-                  aria-invalid={errors.upiId ? "true" : "false"}
-                  aria-describedby={errors.upiId ? "upi-error" : undefined}
-                  className={`w-full px-4 py-2 bg-[#080B1A] border rounded-xl text-xs font-mono text-[#FFF9EA] focus:outline-none focus:ring-2 transition-all ${
-                    errors.upiId ? "border-red-500 ring-1 ring-red-500 bg-red-500/5 shadow-[0_0_8px_rgba(239,68,68,0.2)]" : "border-[#292E4D] focus:ring-[#F5C451] focus:border-[#F5C451]"
+                  required
+                  maxLength={35}
+                  placeholder="e.g. 423456789012"
+                  value={paymentRef}
+                  onChange={(e) => setPaymentRef(e.target.value)}
+                  className={`w-full px-4 py-3 bg-white border rounded-xl text-xs font-mono text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 transition-all ${
+                    errors.paymentRef ? "border-red-500 ring-1 ring-red-500" : "border-slate-200 focus:ring-[#6D3FD6]"
                   }`}
                 />
-                {errors.upiId && (
-                  <span id="upi-error" className="text-[11px] font-bold text-red-500 mt-1 block text-left">
-                    {errors.upiId}
+                {errors.paymentRef && (
+                  <span className="text-[11px] font-bold text-red-600 block">
+                    {errors.paymentRef}
                   </span>
+                )}
+                <span className="text-[10px] text-slate-500 block">
+                  Copy the 12-digit UTR/Ref number from your payment app receipt after completing payment.
+                </span>
+              </div>
+
+            </div>
+
+            {/* Error & Failure Handling Alert */}
+            {globalError && (
+              <div className="p-4 bg-red-50 border border-red-200 rounded-2xl space-y-3 text-center">
+                <p className="text-xs font-extrabold text-red-700">
+                  ⚠️ {globalError}
+                </p>
+                {paymentState === "FAILED" && (
+                  <div className="flex flex-wrap justify-center gap-3 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setGlobalError("");
+                        setPaymentState("IDLE");
+                      }}
+                      className="px-4 py-2 bg-[#6D3FD6] text-white text-xs font-black rounded-xl hover:bg-[#5B21B6] cursor-pointer"
+                    >
+                      Try Payment Again
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setGlobalError("");
+                        setPaymentState("IDLE");
+                        setPaymentMethod("QR");
+                      }}
+                      className="px-4 py-2 bg-slate-100 text-slate-800 border border-slate-200 text-xs font-bold rounded-xl cursor-pointer"
+                    >
+                      Change Payment Method
+                    </button>
+                  </div>
                 )}
               </div>
             )}
 
-            {["GPAY", "PHONEPE", "PAYTM"].includes(paymentMethod) && (
-              <div className="p-6 bg-[#11152E] rounded-3xl text-white space-y-4 border border-[#292E4D] text-center">
-                <p className="text-xs text-[#B9B8C7] font-medium">Test Payment Selected</p>
-                <p className="text-xs font-bold text-[#4ADE80]">Placing the order will simulate a successful {paymentMethod} payment.</p>
-              </div>
-            )}
-
-            {/* Order Button */}
+            {/* Submit Order & Verify Payment Button */}
             <button
               type="submit"
               disabled={loading || items.length < 2}
-              className="w-full py-4 mt-6 bg-[#F5C451] hover:bg-[#FFE29A] text-[#080B1A] font-black text-sm uppercase tracking-wider rounded-2xl shadow-xl transition-all flex items-center justify-center gap-3 disabled:opacity-70 disabled:cursor-not-allowed gold-glow"
+              className="w-full py-4 mt-6 bg-[#6D3FD6] hover:bg-[#5B21B6] text-white font-black text-sm uppercase tracking-wider rounded-2xl shadow-md transition-all flex items-center justify-center gap-3 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
             >
               {loading ? (
                 <span className="flex items-center gap-2">
-                  <span className="w-5 h-5 border-2 border-[#080B1A] border-t-transparent rounded-full animate-spin"></span>
-                  Processing Order...
+                  <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                  Verifying Payment Server-Side...
                 </span>
               ) : items.length < 2 ? (
                 <span>Min 2 Items Required to Checkout</span>
               ) : (
-                <span>Submit Order & Pay ₹{grandTotal.toLocaleString("en-IN")}</span>
+                <span>Pay & Verify Order ₹{grandTotalAmount.toLocaleString("en-IN")} →</span>
               )}
             </button>
 
-            <div className="text-center text-[10px] text-[#B9B8C7] space-y-1 pt-2">
-              <p>🔒 100% Direct Sivakasi Factory Quality Guarantee</p>
-              <p>⚡ Instant Same-Page Order Confirmation</p>
+            <div className="text-center text-[10px] text-slate-500 space-y-1 pt-2">
+              <p>🔒 100% Secure & Server-Verified Payment Flow</p>
+              <p>⚡ Direct Sivakasi Factory Quality Guarantee</p>
             </div>
           </div>
 

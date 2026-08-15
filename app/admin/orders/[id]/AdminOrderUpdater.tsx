@@ -7,6 +7,7 @@ import { updateOrderStatusAction, updatePaymentStatusAction } from "@/lib/action
 interface OrderUpdaterProps {
   order: {
     id: number;
+    invoiceNumber?: string | null;
     customerName: string;
     phone: string;
     email: string | null;
@@ -18,6 +19,8 @@ interface OrderUpdaterProps {
     shipping: number;
     totalAmount: number;
     paymentStatus: string;
+    paymentMethod?: string | null;
+    paymentId?: string | null;
     orderStatus: string;
     createdAt: string;
     items: {
@@ -111,13 +114,13 @@ export default function AdminOrderUpdater({ order }: OrderUpdaterProps) {
 
       </div>
 
-      {/* Customer Address Details */}
+      {/* Customer Address & Payment Audit Details */}
       <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-4 text-xs">
         <h3 className="font-black text-sm text-slate-900 uppercase tracking-wider border-b border-slate-100 pb-2">
-          Customer & Shipping Address
+          Customer & Payment Audit Details
         </h3>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>
             <span className="text-[10px] text-slate-400 uppercase font-bold block">Customer Name</span>
             <span className="font-extrabold text-slate-900 text-sm">{order.customerName}</span>
@@ -130,8 +133,28 @@ export default function AdminOrderUpdater({ order }: OrderUpdaterProps) {
             </a>
           </div>
 
-          <div className="sm:col-span-2">
-            <span className="text-[10px] text-slate-400 uppercase font-bold block">Full Address</span>
+          <div>
+            <span className="text-[10px] text-slate-400 uppercase font-bold block">Invoice Number</span>
+            <span className="font-mono font-bold text-slate-800">{order.invoiceNumber || `INV-${order.id}`}</span>
+          </div>
+
+          <div>
+            <span className="text-[10px] text-slate-400 uppercase font-bold block">Payment Method</span>
+            <span className="font-bold text-slate-800">{order.paymentMethod || "UPI / Online"}</span>
+          </div>
+
+          <div>
+            <span className="text-[10px] text-slate-400 uppercase font-bold block">Transaction / UTR ID</span>
+            <span className="font-mono font-bold text-slate-900 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">{order.paymentId || "N/A"}</span>
+          </div>
+
+          <div>
+            <span className="text-[10px] text-slate-400 uppercase font-bold block">Payment Status</span>
+            <span className="font-extrabold text-emerald-700 uppercase">{order.paymentStatus}</span>
+          </div>
+
+          <div className="sm:col-span-3 pt-2 border-t border-slate-100">
+            <span className="text-[10px] text-slate-400 uppercase font-bold block">Full Delivery Address</span>
             <p className="font-bold text-slate-800">{order.address}, {order.city}, {order.state} - {order.pincode}</p>
           </div>
         </div>

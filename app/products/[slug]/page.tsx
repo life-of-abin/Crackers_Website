@@ -46,32 +46,32 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
   const fallbackImage = `https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=800&q=80`;
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#080B1A] text-[#FFF9EA]">
+    <div className="min-h-screen flex flex-col bg-[#F8FAFC] text-slate-900">
       <Header settings={settings} user={session} />
 
       {/* Breadcrumb Navigation */}
-      <div className="bg-[#11152E] border-b border-[#292E4D] py-3">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-xs font-semibold text-[#B9B8C7] flex items-center gap-2">
-          <Link href="/" className="hover:text-[#F5C451] transition-colors">Home</Link>
+      <div className="bg-white border-b border-slate-200 py-3 shadow-xs">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-xs font-semibold text-slate-500 flex items-center gap-2">
+          <Link href="/" className="hover:text-[#6D3FD6] transition-colors">Home</Link>
           <span>/</span>
-          <Link href="/products" className="hover:text-[#F5C451] transition-colors">Products</Link>
+          <Link href="/products" className="hover:text-[#6D3FD6] transition-colors">Products</Link>
           <span>/</span>
-          <Link href={`/category/${product.category.slug}`} className="hover:text-[#F5C451] transition-colors">
+          <Link href={`/category/${product.category.slug}`} className="hover:text-[#6D3FD6] transition-colors">
             {product.category.name}
           </Link>
           <span>/</span>
-          <span className="text-[#FFF9EA] line-clamp-1">{product.name}</span>
+          <span className="text-slate-900 line-clamp-1">{product.name}</span>
         </div>
       </div>
 
       {/* Main Product Showcase */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 flex-1 w-full">
-        <div className="bg-[#151A35] rounded-3xl border border-[#292E4D] shadow-xl p-6 sm:p-10 mb-12">
+        <div className="bg-white rounded-3xl border border-slate-200 shadow-xl p-6 sm:p-10 mb-12">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
             
             {/* Media Gallery Column */}
             <div className="space-y-4">
-              <div className="relative aspect-4/3 bg-[#080B1A] rounded-2xl overflow-hidden border border-[#292E4D] shadow-inner">
+              <div className="relative aspect-4/3 bg-slate-50 rounded-2xl overflow-hidden border border-slate-200 shadow-inner">
                 <img
                   src={product.image || fallbackImage}
                   alt={product.name}
@@ -79,30 +79,30 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
                 />
 
                 {discountPercent > 0 && (
-                  <span className="absolute top-4 left-4 bg-[#6D3FD6] text-white font-black text-xs px-3 py-1 rounded-lg uppercase shadow-md">
+                  <span className="absolute top-4 left-4 bg-[#6D3FD6] text-white font-black text-xs px-3 py-1 rounded-lg uppercase shadow-sm">
                     {discountPercent}% OFF
                   </span>
                 )}
                 {product.badge && (
-                  <span className="absolute top-4 right-4 bg-[#F5C451] text-[#080B1A] font-black text-xs px-3 py-1 rounded-lg uppercase shadow-md">
+                  <span className="absolute top-4 right-4 bg-[#F5C451] text-amber-950 font-black text-xs px-3 py-1 rounded-lg uppercase shadow-sm">
                     {product.badge}
                   </span>
                 )}
               </div>
 
               {/* Package & Quality Guarantee Badges */}
-              <div className="grid grid-cols-3 gap-3 text-center text-xs font-bold text-[#B9B8C7]">
-                <div className="bg-[#11152E] border border-[#292E4D] p-2.5 rounded-xl">
-                  <span className="block text-[#B9B8C7]/60 text-[10px] uppercase">Package Qty</span>
-                  <span className="text-[#F5C451]">{product.quantity}</span>
+              <div className="grid grid-cols-3 gap-3 text-center text-xs font-bold text-slate-600">
+                <div className="bg-slate-50 border border-slate-200 p-2.5 rounded-xl">
+                  <span className="block text-slate-400 text-[10px] uppercase">Package Qty</span>
+                  <span className="text-[#6D3FD6] font-extrabold">{product.quantity}</span>
                 </div>
-                <div className="bg-[#11152E] border border-[#292E4D] p-2.5 rounded-xl">
-                  <span className="block text-[#B9B8C7]/60 text-[10px] uppercase">Origin</span>
-                  <span className="text-[#FFF9EA]">Sivakasi, TN</span>
+                <div className="bg-slate-50 border border-slate-200 p-2.5 rounded-xl">
+                  <span className="block text-slate-400 text-[10px] uppercase">Origin</span>
+                  <span className="text-slate-900 font-extrabold">Sivakasi, TN</span>
                 </div>
-                <div className="bg-[#11152E] border border-[#292E4D] p-2.5 rounded-xl">
-                  <span className="block text-[#B9B8C7]/60 text-[10px] uppercase">Stock Status</span>
-                  <span className={product.stock > 0 ? "text-[#4ADE80]" : "text-[#B9B8C7]/60"}>
+                <div className="bg-slate-50 border border-slate-200 p-2.5 rounded-xl">
+                  <span className="block text-slate-400 text-[10px] uppercase">Stock Status</span>
+                  <span className={product.stock > 0 ? "text-emerald-600 font-extrabold" : "text-slate-400"}>
                     {product.stock > 0 ? `${product.stock} In Stock` : "Out of Stock"}
                   </span>
                 </div>
@@ -113,23 +113,23 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
             <div className="space-y-6">
               
               <div>
-                <span className="text-xs font-black text-[#F5C451] uppercase tracking-widest block mb-1">
+                <span className="text-xs font-extrabold text-[#6D3FD6] uppercase tracking-widest block mb-1">
                   {product.category.name}
                 </span>
-                <h1 className="text-2xl sm:text-3xl font-black text-[#FFF9EA] tracking-tight leading-snug font-display">
+                <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight leading-snug font-display">
                   {product.name}
                 </h1>
               </div>
 
               {/* Price Banner */}
-              <div className="bg-[#11152E]/60 border border-[#292E4D] p-4 rounded-2xl flex items-baseline justify-between">
+              <div className="bg-purple-50/60 border border-purple-200 p-4 rounded-2xl flex items-baseline justify-between">
                 <div>
-                  <span className="text-[#B9B8C7] text-xs block font-medium">Discounted Price</span>
+                  <span className="text-slate-500 text-xs block font-medium">Discounted Price</span>
                   <div className="flex items-baseline gap-3">
-                    <span className="text-3xl font-black text-[#F5C451] font-display">
+                    <span className="text-3xl font-black text-[#6D3FD6] font-display">
                       ₹{priceNum.toLocaleString("en-IN")}
                     </span>
-                    <span className="text-base text-[#B9B8C7] line-through font-medium">
+                    <span className="text-base text-slate-400 line-through font-medium">
                       ₹{mrpNum.toLocaleString("en-IN")}
                     </span>
                   </div>
@@ -137,7 +137,7 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
 
                 {savings > 0 && (
                   <div className="text-right">
-                    <span className="bg-[#6D3FD6] text-white font-extrabold text-xs px-2.5 py-1 rounded-md inline-block shadow-sm">
+                    <span className="bg-[#6D3FD6] text-white font-extrabold text-xs px-2.5 py-1 rounded-md inline-block shadow-xs">
                       SAVE ₹{savings.toLocaleString("en-IN")}
                     </span>
                   </div>
@@ -159,17 +159,17 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
               />
 
               {/* Description & Safety Details */}
-              <div className="border-t border-[#292E4D] pt-6 space-y-3">
-                <h3 className="font-extrabold text-sm text-[#FFF9EA] uppercase tracking-wider font-display">
+              <div className="border-t border-slate-200 pt-6 space-y-3">
+                <h3 className="font-extrabold text-sm text-slate-900 uppercase tracking-wider font-display">
                   Product Description & Guidelines
                 </h3>
-                <p className="text-xs text-[#B9B8C7] leading-relaxed">
+                <p className="text-xs text-slate-600 leading-relaxed">
                   {product.description ||
                     `Premium quality ${product.name} manufactured in Sivakasi using genuine raw materials. Certified for safe sound emissions, vibrant spark output, and long duration performance.`}
                 </p>
-                <div className="bg-[#11152E] p-4 rounded-xl border border-[#292E4D] text-xs text-[#B9B8C7] space-y-1">
-                  <span className="font-bold block text-[#FFF9EA]">⚠️ Safety Warning:</span>
-                  <ul className="list-disc list-inside space-y-0.5 text-[#B9B8C7]/80">
+                <div className="bg-amber-50 p-4 rounded-xl border border-amber-200 text-xs text-amber-900 space-y-1">
+                  <span className="font-bold block text-amber-950">⚠️ Safety Warning:</span>
+                  <ul className="list-disc list-inside space-y-0.5 text-amber-800">
                     <li>Always light outdoors under adult supervision.</li>
                     <li>Maintain a safe distance of at least 5 meters.</li>
                     <li>Keep water or sand bucket nearby.</li>
@@ -185,7 +185,7 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
         {/* Related Products Grid */}
         {relatedProducts.length > 0 && (
           <div className="space-y-6">
-            <h2 className="text-xl font-black text-[#FFF9EA] tracking-tight font-display">
+            <h2 className="text-xl font-black text-slate-900 tracking-tight font-display">
               Related {product.category.name}
             </h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">

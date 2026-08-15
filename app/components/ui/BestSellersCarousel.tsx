@@ -90,7 +90,6 @@ export default function BestSellersCarousel({ products }: { products: Product[] 
     setIsTransitioning(true);
     setActiveIndex((prev) => prev + 1);
     
-    // Reset interaction state after 3s
     const timeout = setTimeout(() => setIsInteracting(false), 3000);
     return () => clearTimeout(timeout);
   };
@@ -108,7 +107,6 @@ export default function BestSellersCarousel({ products }: { products: Product[] 
     setIsTransitioning(true);
     setActiveIndex((prev) => prev - 1);
     
-    // Reset interaction state after 3s
     const timeout = setTimeout(() => setIsInteracting(false), 3000);
     return () => clearTimeout(timeout);
   };
@@ -116,7 +114,7 @@ export default function BestSellersCarousel({ products }: { products: Product[] 
   // Touch and Mouse Drag Handlers
   const handleDragStart = (clientX: number) => {
     if (!products || products.length <= 1) return;
-    if (isTransitioning) return; // prevent starting drag during transition normalisation
+    if (isTransitioning) return;
 
     setIsInteracting(true);
     setIsDragging(true);
@@ -135,7 +133,7 @@ export default function BestSellersCarousel({ products }: { products: Product[] 
     if (!isDragging) return;
     setIsDragging(false);
 
-    const threshold = 50; // drag threshold in pixels
+    const threshold = 50; 
     setIsTransitioning(true);
 
     if (dragOffset < -threshold) {
@@ -143,7 +141,6 @@ export default function BestSellersCarousel({ products }: { products: Product[] 
     } else if (dragOffset > threshold) {
       setActiveIndex((prev) => prev - 1);
     } else {
-      // Force visual snap back to original index
       setActiveIndex((prev) => prev);
     }
     setDragOffset(0);
@@ -177,10 +174,10 @@ export default function BestSellersCarousel({ products }: { products: Product[] 
 
   if (!products || products.length === 0) {
     return (
-      <div className="w-full max-w-[1000px] mx-auto p-12 rounded-2xl bg-[#151A35] border border-[#292E4D] text-center space-y-3 shadow-xl">
+      <div className="w-full max-w-[1000px] mx-auto p-12 rounded-2xl bg-white border border-slate-200 text-center space-y-3 shadow-md">
         <div className="text-4xl">🌟</div>
-        <h3 className="text-lg font-bold text-[#FFF9EA] font-display">No Best Sellers Available</h3>
-        <p className="text-xs text-[#B9B8C7]">Check back later for our featured premium crackers!</p>
+        <h3 className="text-lg font-bold text-slate-900 font-display">No Best Sellers Available</h3>
+        <p className="text-xs text-slate-500">Check back later for our featured premium crackers!</p>
       </div>
     );
   }
@@ -230,14 +227,8 @@ export default function BestSellersCarousel({ products }: { products: Product[] 
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
     >
-      <div className="relative overflow-hidden rounded-2xl bg-[#151A35] border border-[#292E4D] shadow-[0_0_20px_rgba(109,63,214,0.05)] transition-all hover:shadow-[0_0_30px_rgba(109,63,214,0.15)] hover:border-[#6D3FD6]/50">
+      <div className="relative overflow-hidden rounded-2xl bg-white border border-slate-200 shadow-md transition-all hover:shadow-xl hover:border-purple-300">
         
-        {/* Subtle Firework/Glow Effect */}
-        <div className="absolute inset-0 pointer-events-none opacity-20">
-           <div className="absolute top-0 right-0 w-64 h-64 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-[#F5C451]/20 via-transparent to-transparent opacity-30" />
-           <div className="absolute bottom-0 left-0 w-64 h-64 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-[#6D3FD6]/20 via-transparent to-transparent opacity-30" />
-        </div>
-
         {/* Carousel Tracks */}
         <div 
           className={`flex ${isTransitioning && !isDragging ? 'transition-transform duration-400 ease-in-out' : ''}`}
@@ -254,12 +245,12 @@ export default function BestSellersCarousel({ products }: { products: Product[] 
               <div key={`${product.id}-${index}`} className="w-full flex-shrink-0 flex flex-col sm:flex-row min-h-[260px] sm:min-h-[300px]">
                 
                 {/* Image Side (Left) */}
-                <Link href={`/products/${product.slug}`} className="relative w-full sm:w-[40%] bg-[#080B1A] flex flex-col items-center justify-center p-6 border-b sm:border-b-0 sm:border-r border-[#292E4D]">
+                <Link href={`/products/${product.slug}`} className="relative w-full sm:w-[40%] bg-slate-50 flex flex-col items-center justify-center p-6 border-b sm:border-b-0 sm:border-r border-slate-200">
                    <div className="relative w-full max-w-[220px] aspect-square transition-transform duration-500 group-hover:scale-105">
                      <img
                        src={product.image || fallbackImage}
                        alt={product.name}
-                       className="w-full h-full object-contain drop-shadow-2xl"
+                       className="w-full h-full object-contain drop-shadow-md"
                        loading="lazy"
                        draggable="false"
                      />
@@ -267,11 +258,11 @@ export default function BestSellersCarousel({ products }: { products: Product[] 
                    
                    {/* Badges */}
                    <div className="absolute top-3 left-3 z-10 flex flex-col gap-1">
-                      <span className="bg-[#292E4D]/80 backdrop-blur-md border border-[#F5C451]/40 text-[#F5C451] text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded-sm shadow-md flex items-center gap-1.5">
-                        <span className="text-[#F5C451]">🌟</span> BEST SELLER
+                      <span className="bg-[#F5C451] text-amber-950 text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded-md shadow-xs flex items-center gap-1.5">
+                        <span>🌟</span> BEST SELLER
                       </span>
                       {product.badge && (
-                        <span className="bg-[#6D3FD6] text-white text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-sm shadow-md w-fit mt-1">
+                        <span className="bg-[#6D3FD6] text-white text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md shadow-xs w-fit mt-1">
                            {product.badge}
                         </span>
                       )}
@@ -279,31 +270,31 @@ export default function BestSellersCarousel({ products }: { products: Product[] 
                 </Link>
 
                 {/* Information Side (Right) */}
-                <div className="w-full sm:w-[60%] p-6 sm:p-8 flex flex-col justify-center relative">
+                <div className="w-full sm:w-[60%] p-6 sm:p-8 flex flex-col justify-center relative bg-white">
                    <Link href={`/products/${product.slug}`} className="block flex-grow space-y-2 relative z-10">
-                     <div className="text-[10px] font-bold text-[#9B6DFF] tracking-widest uppercase mb-1">
+                     <div className="text-[10px] font-extrabold text-[#6D3FD6] tracking-widest uppercase mb-1">
                        {categoryName}
                      </div>
                      
-                     <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold text-[#FFF9EA] tracking-tight leading-tight pr-8">
+                     <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold text-slate-900 tracking-tight leading-tight pr-8">
                        {product.name}
                      </h3>
                      
-                     <div className="text-xs sm:text-sm font-medium text-[#B9B8C7]">
+                     <div className="text-xs sm:text-sm font-medium text-slate-500">
                        {packSizeText}
                      </div>
 
                      <div className="flex items-center gap-3 pt-3">
-                       <span className="text-xl sm:text-2xl font-black text-[#F5C451]">
+                       <span className="text-xl sm:text-2xl font-black text-[#6D3FD6]">
                          ₹{product.price}
                        </span>
                        {Number(product.mrp) > Number(product.price) && (
                          <>
-                           <span className="text-xs sm:text-sm text-[#B9B8C7] line-through font-medium">
+                           <span className="text-xs sm:text-sm text-slate-400 line-through font-medium">
                              ₹{product.mrp}
                            </span>
                            {product.discount && (
-                             <span className="bg-[#6D3FD6]/20 text-[#9B6DFF] text-[10px] font-black px-1.5 py-0.5 rounded-sm border border-[#6D3FD6]/30">
+                             <span className="bg-purple-100 text-[#6D3FD6] text-[10px] font-black px-1.5 py-0.5 rounded-md border border-purple-200">
                                {product.discount} OFF
                              </span>
                            )}
@@ -311,7 +302,7 @@ export default function BestSellersCarousel({ products }: { products: Product[] 
                        )}
                      </div>
                      
-                     <div className="text-[11px] font-bold text-[#FFE29A] flex items-center gap-1.5 pt-5 opacity-90 group-hover:opacity-100 transition-opacity">
+                     <div className="text-[11px] font-bold text-[#6D3FD6] flex items-center gap-1.5 pt-5">
                        <span className="animate-bounce">👆</span> Tap to view product
                      </div>
                    </Link>
@@ -320,12 +311,12 @@ export default function BestSellersCarousel({ products }: { products: Product[] 
                    <button 
                      onClick={(e) => handleAddToCart(e, product)}
                      disabled={isOutOfStock}
-                     className={`absolute bottom-6 right-6 z-20 px-4 py-2 rounded-lg font-bold text-xs shadow-lg transition-all ${
+                     className={`absolute bottom-6 right-6 z-20 px-4 py-2.5 rounded-xl font-extrabold text-xs shadow-xs transition-all cursor-pointer ${
                        addedId === product.id
-                         ? "bg-[#4ADE80] text-[#080B1A]"
+                         ? "bg-emerald-600 text-white"
                          : isOutOfStock
-                           ? "bg-[#292E4D] text-[#B9B8C7] cursor-not-allowed"
-                           : "bg-[#11152E] text-[#F5C451] border border-[#F5C451]/30 hover:bg-[#F5C451] hover:text-[#080B1A] hover:border-[#F5C451] hover:shadow-[0_0_15px_rgba(245,196,81,0.3)]"
+                           ? "bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed"
+                           : "bg-[#6D3FD6] text-white hover:bg-[#5B21B6] shadow-sm"
                      }`}
                    >
                      {addedId === product.id ? "Added ✓" : isOutOfStock ? "Out of Stock" : "Add to Cart"}
@@ -341,17 +332,17 @@ export default function BestSellersCarousel({ products }: { products: Product[] 
           <>
             <button 
               onClick={(e) => prevSlide(e)}
-              className="absolute left-3 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full border border-[#292E4D] bg-[#11152E]/80 backdrop-blur-sm text-[#FFF9EA] flex items-center justify-center hover:border-[#F5C451] hover:text-[#080B1A] hover:bg-[#F5C451] transition-all shadow-lg hidden sm:flex"
+              className="absolute left-3 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full border border-slate-200 bg-white/90 text-slate-800 flex items-center justify-center hover:border-purple-300 hover:text-[#6D3FD6] hover:bg-purple-50 transition-all shadow-md hidden sm:flex cursor-pointer"
               aria-label="Previous"
             >
-              <span className="text-lg leading-none -mt-1">‹</span>
+              <span className="text-lg leading-none -mt-0.5">‹</span>
             </button>
             <button 
               onClick={(e) => nextSlide(e)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full border border-[#292E4D] bg-[#11152E]/80 backdrop-blur-sm text-[#FFF9EA] flex items-center justify-center hover:border-[#F5C451] hover:text-[#080B1A] hover:bg-[#F5C451] transition-all shadow-lg hidden sm:flex"
+              className="absolute right-3 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full border border-slate-200 bg-white/90 text-slate-800 flex items-center justify-center hover:border-purple-300 hover:text-[#6D3FD6] hover:bg-purple-50 transition-all shadow-md hidden sm:flex cursor-pointer"
               aria-label="Next"
             >
-              <span className="text-lg leading-none -mt-1">›</span>
+              <span className="text-lg leading-none -mt-0.5">›</span>
             </button>
           </>
         )}
@@ -361,9 +352,9 @@ export default function BestSellersCarousel({ products }: { products: Product[] 
       {products.length > 1 && (
         <div className="flex flex-col items-center justify-center mt-4 sm:mt-5 space-y-3">
           {/* Subtle Progress Bar */}
-          <div className="w-48 h-[2px] bg-[#292E4D] rounded-full overflow-hidden">
+          <div className="w-48 h-[2px] bg-slate-200 rounded-full overflow-hidden">
             <div 
-              className="h-full bg-gradient-to-r from-[#6D3FD6] to-[#F5C451] transition-all duration-75 ease-linear"
+              className="h-full bg-gradient-to-r from-[#6D3FD6] to-[#8B5CF6] transition-all duration-75 ease-linear"
               style={{ 
                 width: `${progress}%`,
                 opacity: (isHovered || isInteracting || isDragging) ? 0 : 1
@@ -386,10 +377,10 @@ export default function BestSellersCarousel({ products }: { products: Product[] 
                     setActiveIndex(i + products.length);
                     setTimeout(() => setIsInteracting(false), 3000);
                   }}
-                  className={`transition-all duration-300 rounded-full ${
+                  className={`transition-all duration-300 rounded-full cursor-pointer ${
                     isActive 
-                      ? "w-2 h-2 bg-[#F5C451] shadow-[0_0_8px_rgba(245,196,81,0.5)]" 
-                      : "w-1.5 h-1.5 bg-[#292E4D] hover:bg-[#6D3FD6]"
+                      ? "w-2 h-2 bg-[#6D3FD6] shadow-xs" 
+                      : "w-1.5 h-1.5 bg-slate-300 hover:bg-[#6D3FD6]"
                   }`}
                   aria-label={`Go to product ${i + 1}`}
                 />

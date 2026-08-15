@@ -40,20 +40,20 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     : [];
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50">
+    <div className="min-h-screen flex flex-col bg-[#F8FAFC] text-slate-900">
       <Header settings={settings} user={session} />
 
-      <div className="bg-slate-900 text-white py-8 border-b border-slate-800">
+      <div className="bg-white text-slate-900 py-8 border-b border-slate-200 shadow-xs">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-2 text-amber-400 text-xs font-semibold uppercase tracking-wider mb-1">
-            <Link href="/">Home</Link>
+          <div className="flex items-center gap-2 text-[#6D3FD6] text-xs font-bold uppercase tracking-wider mb-1">
+            <Link href="/" className="hover:underline">Home</Link>
             <span>/</span>
             <span>Search Results</span>
           </div>
-          <h1 className="text-xl sm:text-3xl font-black text-white">
-            Search Results for <span className="text-amber-400">"{queryClean}"</span>
+          <h1 className="text-xl sm:text-3xl font-black text-slate-900 font-display">
+            Search Results for <span className="text-[#6D3FD6]">"{queryClean}"</span>
           </h1>
-          <p className="text-xs text-slate-400 mt-1">
+          <p className="text-xs text-slate-500 mt-1">
             Found {products.length} products matching your query
           </p>
         </div>
@@ -67,22 +67,22 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
               Showing <strong className="text-slate-900">{products.length}</strong> search results
             </span>
             <div className="flex items-center gap-2">
-              <span className="text-slate-500">Sort:</span>
+              <span className="text-slate-500 font-medium">Sort:</span>
               <SortSelect currentSort={sort} />
             </div>
           </div>
         )}
 
         {products.length === 0 ? (
-          <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center space-y-4 max-w-lg mx-auto my-8">
+          <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center space-y-4 max-w-lg mx-auto my-8 shadow-sm">
             <div className="text-5xl">🔍</div>
-            <h3 className="text-lg font-bold text-slate-900">No matching products found</h3>
+            <h3 className="text-lg font-bold text-slate-900 font-display">No matching products found</h3>
             <p className="text-xs text-slate-500">
               We couldn't find any crackers matching "{queryClean}". Try searching for terms like "sparklers", "rockets", "gift box", or "flower pots".
             </p>
             <Link
               href="/products"
-              className="inline-block bg-red-600 text-white font-bold text-xs px-6 py-2.5 rounded-xl hover:bg-red-700 transition-colors"
+              className="inline-block bg-[#6D3FD6] hover:bg-[#5B21B6] text-white font-bold text-xs px-6 py-2.5 rounded-xl transition-colors shadow-xs"
             >
               Browse All Fireworks
             </Link>

@@ -148,7 +148,7 @@ export default function InvoiceDocument({ order, settings, products }: InvoiceDo
   const amountInWords = numberToWords(formattedGrandTotal);
 
   return (
-    <div className="min-h-screen bg-[#080B1A] py-8 print:py-0 print:bg-white font-sans text-slate-800 flex flex-col items-center">
+    <div className="min-h-screen bg-slate-100 py-8 print:py-0 print:bg-white font-sans text-slate-800 flex flex-col items-center">
       {/* Dynamic print stylesheet */}
       <style dangerouslySetInnerHTML={{
         __html: `
@@ -181,20 +181,20 @@ export default function InvoiceDocument({ order, settings, products }: InvoiceDo
       <div className="w-full max-w-[210mm] flex justify-between items-center px-4 md:px-0 mb-6 no-print">
         <button
           onClick={() => window.history.back()}
-          className="flex items-center gap-2 px-4 py-2 border border-[#292E4D] bg-[#11152E] text-[#FFF9EA] hover:text-[#F5C451] rounded-xl text-sm font-bold transition-all hover:border-[#F5C451]/50 cursor-pointer"
+          className="flex items-center gap-2 px-4 py-2 border border-slate-300 bg-white text-slate-700 hover:text-[#6D3FD6] rounded-xl text-sm font-bold transition-all hover:border-purple-300 shadow-xs cursor-pointer"
         >
           ← Back to Order
         </button>
         <div className="flex gap-3">
           <button
             onClick={() => window.print()}
-            className="flex items-center gap-2 px-5 py-2.5 bg-[#11152E] border border-[#292E4D] text-[#FFF9EA] font-extrabold hover:text-[#F5C451] rounded-xl text-sm transition-all shadow-lg cursor-pointer"
+            className="flex items-center gap-2 px-5 py-2.5 bg-white border border-slate-300 text-slate-800 font-extrabold hover:text-[#6D3FD6] rounded-xl text-sm transition-all shadow-xs cursor-pointer"
           >
             🖨️ Print Invoice
           </button>
           <button
             onClick={() => window.print()}
-            className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#F5C451] to-[#FFE29A] text-[#080B1A] font-extrabold hover:brightness-105 rounded-xl text-sm transition-all shadow-lg cursor-pointer"
+            className="flex items-center gap-2 px-5 py-2.5 bg-[#6D3FD6] hover:bg-[#5B21B6] text-white font-extrabold rounded-xl text-sm transition-all shadow-md cursor-pointer"
           >
             📥 Download PDF
           </button>
@@ -320,7 +320,7 @@ export default function InvoiceDocument({ order, settings, products }: InvoiceDo
         <div className="flex-1 w-full overflow-x-auto mb-6">
           <table className="w-full text-left text-xs border-collapse border border-slate-200 min-w-[750px] print:min-w-full">
             <thead>
-              <tr className="bg-[#080B1A] text-white">
+              <tr className="bg-[#5B21B6] text-white">
                 <th className="p-2 border border-slate-200 font-black text-center w-[4%]">S.No</th>
                 <th className="p-2 border border-slate-200 font-black w-[28%]">Product Description</th>
                 {isGst && <th className="p-2 border border-slate-200 font-black text-center w-[8%]">HSN</th>}

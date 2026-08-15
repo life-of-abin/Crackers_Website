@@ -10,6 +10,7 @@ import {
   validatePasswordPolicy,
 } from "@/lib/auth";
 import { verifyIndianPincode, normalizeIndianPhone, isValidEmailFormat, isValidGmailFormat } from "@/lib/pincode";
+import { validateTransactionRef, generateInvoiceNumber } from "@/lib/payment-utils";
 import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 
@@ -351,40 +352,116 @@ export async function createOrderAction(data: {
 }
 
 export async function confirmPaymentAction(orderId: number, paymentRefStr: string, paymentMethod: string = "DUMMY") {
+  return verifyAndConfirmPaymentAction(orderId, paymentRefStr, paymentMethod);
+}
+
+export async function verifyAndConfirmPaymentAction(
+  orderId: number,
+  transactionRef: string,
+  paymentMethod: string = "UPI_QR"
+) {
   try {
+    if (!orderId || isNaN(orderId)) {
+      return { error: "Invalid order ID." };
+    }
+
+    // 1. Server-side transaction reference validation
+    const refCheck = validateTransactionRef(transactionRef);
+    if (!refCheck.valid) {
+      return { error: refCheck.error || "Invalid transaction reference." };
+    }
+
     const existingOrder = await prisma.order.findUnique({
       where: { id: orderId },
+      include: { payments: true },
     });
 
     if (!existingOrder) {
       return { error: "Order not found." };
     }
 
+    // Check if already paid
+    if (existingOrder.paymentStatus === "PAID" || existingOrder.paymentStatus === "TEST_PAID") {
+      return {
+        success: true,
+        orderId: existingOrder.id,
+        invoiceNumber: existingOrder.invoiceNumber || generateInvoiceNumber(existingOrder.id, existingOrder.createdAt),
+      };
+    }
+
+    // Generate unique invoice number if not already assigned
+    const invoiceNumber = existingOrder.invoiceNumber || generateInvoiceNumber(existingOrder.id, existingOrder.createdAt);
+
+    // Update order status atomically
     await prisma.order.update({
       where: { id: orderId },
       data: {
-        paymentStatus: "TEST_PAID",
-        paymentId: paymentRefStr,
+        paymentStatus: "PAID",
+        paymentMethod: paymentMethod,
+        paymentId: transactionRef.trim(),
         orderStatus: "CONFIRMED",
+        invoiceNumber: invoiceNumber,
+        paidAt: new Date(),
       },
     });
 
+    // Record payment attempt transaction
     await prisma.payment.create({
       data: {
-        orderId,
-        paymentRef: paymentRefStr,
-        paymentMethod,
+        orderId: existingOrder.id,
+        paymentRef: transactionRef.trim(),
+        paymentMethod: paymentMethod,
         amount: existingOrder.totalAmount,
         status: "SUCCESS",
       },
     });
 
+    revalidatePath(`/order-confirmation/${orderId}`);
     revalidatePath(`/orders/${orderId}`);
     revalidatePath("/admin/orders");
+    revalidatePath("/admin/dashboard");
 
+    return {
+      success: true,
+      orderId: existingOrder.id,
+      invoiceNumber: invoiceNumber,
+    };
+  } catch (error: any) {
+    console.error("verifyAndConfirmPaymentAction error:", error);
+    return { error: error.message || "Server-side payment verification failed. Please try again." };
+  }
+}
+
+export async function handlePaymentFailureAction(orderId: number, status: "FAILED" | "CANCELLED" = "FAILED") {
+  try {
+    const existingOrder = await prisma.order.findUnique({
+      where: { id: orderId },
+    });
+
+    if (!existingOrder) return { error: "Order not found." };
+
+    if (existingOrder.paymentStatus !== "PAID" && existingOrder.paymentStatus !== "TEST_PAID") {
+      await prisma.order.update({
+        where: { id: orderId },
+        data: {
+          paymentStatus: status,
+        },
+      });
+
+      await prisma.payment.create({
+        data: {
+          orderId,
+          amount: existingOrder.totalAmount,
+          status: status,
+        },
+      });
+    }
+
+    revalidatePath(`/checkout`);
+    revalidatePath(`/admin/orders`);
     return { success: true };
   } catch (error: any) {
-    return { error: error.message || "Failed to confirm payment." };
+    return { error: error.message || "Failed to update payment status." };
   }
 }
 

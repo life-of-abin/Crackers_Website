@@ -29,7 +29,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${plusJakarta.variable} ${outfit.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col bg-[#080B1A] text-[#FFF9EA] font-sans selection:bg-[#6D3FD6] selection:text-white">
+      <body className="min-h-full flex flex-col bg-[#F8FAFC] text-[#0F172A] font-sans selection:bg-[#6D3FD6] selection:text-white">
         <CartProvider>{children}</CartProvider>
       </body>
     </html>

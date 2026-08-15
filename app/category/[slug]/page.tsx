@@ -44,13 +44,13 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
   });
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#080B1A] text-[#FFF9EA]">
+    <div className="min-h-screen flex flex-col bg-[#F8FAFC] text-slate-900">
       <Header settings={settings} user={session} />
 
       {/* Category Banner */}
-      <div className="bg-[#11152E] text-[#FFF9EA] py-10 border-b border-[#292E4D]">
+      <div className="bg-white text-slate-900 py-10 border-b border-slate-200 shadow-xs">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-2 text-[#F5C451] text-xs font-semibold uppercase tracking-wider mb-1">
+          <div className="flex items-center gap-2 text-[#6D3FD6] text-xs font-bold uppercase tracking-wider mb-1">
             <Link href="/" className="hover:underline">Home</Link>
             <span>/</span>
             <Link href="/products" className="hover:underline">Categories</Link>
@@ -60,22 +60,22 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
 
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
-              <h1 className="text-2xl sm:text-4xl font-black tracking-tight text-[#FFF9EA] flex items-center gap-3 font-display">
+              <h1 className="text-2xl sm:text-4xl font-black tracking-tight text-slate-900 flex items-center gap-3 font-display">
                 {category.image ? (
-                  <img src={category.image} alt={category.name} className="w-12 h-12 object-contain drop-shadow-[0_0_10px_rgba(245,196,81,0.3)]" />
+                  <img src={category.image} alt={category.name} className="w-12 h-12 object-contain drop-shadow-xs" />
                 ) : (
-                  <span className="drop-shadow-[0_0_10px_rgba(245,196,81,0.5)]">{category.icon || "🎆"}</span>
+                  <span>{category.icon || "🎆"}</span>
                 )}
                 <span>{category.name} Collection</span>
               </h1>
-              <p className="text-xs sm:text-sm text-[#B9B8C7] mt-1 max-w-xl">
+              <p className="text-xs sm:text-sm text-slate-500 mt-1 max-w-xl">
                 {category.description || `Browse our complete range of high-quality ${category.name} directly from Sivakasi factory.`}
               </p>
             </div>
 
-            <div className="bg-[#151A35] border border-[#292E4D] px-4 py-2 rounded-xl text-xs">
-              <span className="text-[#B9B8C7]">Total Items: </span>
-              <strong className="text-[#F5C451] font-extrabold">{products.length} Products</strong>
+            <div className="bg-slate-50 border border-slate-200 px-4 py-2 rounded-xl text-xs">
+              <span className="text-slate-500">Total Items: </span>
+              <strong className="text-[#6D3FD6] font-extrabold">{products.length} Products</strong>
             </div>
           </div>
         </div>
@@ -85,24 +85,24 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full space-y-6">
         
         {/* Sort Bar */}
-        <div className="bg-[#151A35] p-4 rounded-2xl border border-[#292E4D] shadow-xl flex items-center justify-between text-xs">
-          <span className="font-semibold text-[#B9B8C7]">
-            Showing <strong className="text-[#FFF9EA]">{products.length}</strong> items in {category.name}
+        <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between text-xs">
+          <span className="font-semibold text-slate-500">
+            Showing <strong className="text-slate-900">{products.length}</strong> items in {category.name}
           </span>
 
           <div className="flex items-center gap-2">
-            <span className="text-[#B9B8C7] font-medium hidden sm:inline">Sort:</span>
+            <span className="text-slate-500 font-medium hidden sm:inline">Sort:</span>
             <SortSelect currentSort={sort} />
           </div>
         </div>
 
         {/* Product Cards Grid */}
         {products.length === 0 ? (
-          <div className="bg-[#151A35] rounded-2xl border border-[#292E4D] p-12 text-center space-y-3 shadow-xl">
+          <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center space-y-3 shadow-sm">
             <div className="text-5xl">📦</div>
-            <h3 className="text-base font-bold text-[#FFF9EA] font-display">No products currently available</h3>
-            <p className="text-xs text-[#B9B8C7]">Check back soon for new arrivals in {category.name}.</p>
-            <Link href="/products" className="inline-block bg-[#F5C451] text-[#080B1A] font-bold text-xs px-5 py-2 rounded-xl shadow-lg">
+            <h3 className="text-base font-bold text-slate-900 font-display">No products currently available</h3>
+            <p className="text-xs text-slate-500">Check back soon for new arrivals in {category.name}.</p>
+            <Link href="/products" className="inline-block bg-[#6D3FD6] text-white font-bold text-xs px-5 py-2 rounded-xl shadow-xs">
               Browse All Products
             </Link>
           </div>

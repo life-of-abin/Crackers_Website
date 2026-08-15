@@ -48,6 +48,7 @@ export default async function AdminOrderDetailPage({ params }: AdminOrderDetailP
         <AdminOrderUpdater
           order={{
             id: order.id,
+            invoiceNumber: order.invoiceNumber,
             customerName: order.customerName,
             phone: order.phone,
             email: order.email,
@@ -59,6 +60,8 @@ export default async function AdminOrderDetailPage({ params }: AdminOrderDetailP
             shipping: Number(order.shipping),
             totalAmount: Number(order.totalAmount),
             paymentStatus: order.paymentStatus,
+            paymentMethod: order.paymentMethod,
+            paymentId: order.paymentId,
             orderStatus: order.orderStatus,
             createdAt: order.createdAt.toISOString(),
             items: order.items.map((i) => ({

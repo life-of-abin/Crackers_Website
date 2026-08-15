@@ -36,10 +36,10 @@ export default function SortSelect({
     <select
       value={currentSort}
       onChange={handleChange}
-      className="bg-[#11152E] border border-[#292E4D] rounded-lg px-3 py-1.5 text-xs font-semibold text-[#FFF9EA] focus:outline-none focus:ring-2 focus:ring-[#F5C451] cursor-pointer"
+      className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#6D3FD6] cursor-pointer"
     >
       {options.map((opt) => (
-        <option key={opt.value} value={opt.value} className="bg-[#11152E] text-[#FFF9EA]">
+        <option key={opt.value} value={opt.value} className="bg-white text-slate-900">
           {opt.label}
         </option>
       ))}

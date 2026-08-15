@@ -66,26 +66,26 @@ export default function ProductDetailActions({ product }: ProductDetailActionsPr
     <div className="space-y-4 pt-2">
       {/* Quantity Control */}
       <div className="flex items-center gap-4">
-        <span className="text-xs font-bold text-[#B9B8C7] uppercase tracking-wider font-display">
+        <span className="text-xs font-extrabold text-slate-500 uppercase tracking-wider font-display">
           Quantity:
         </span>
-        <div className="flex items-center border border-[#292E4D] rounded-xl bg-[#11152E] overflow-hidden">
+        <div className="flex items-center border border-slate-200 rounded-xl bg-white overflow-hidden shadow-xs">
           <button
             type="button"
             onClick={() => setQty((q) => Math.max(1, q - 1))}
             disabled={isOutOfStock || qty <= 1}
-            className="w-10 h-10 flex items-center justify-center text-[#FFF9EA] font-bold hover:bg-[#151A35] disabled:opacity-40 transition-colors"
+            className="w-10 h-10 flex items-center justify-center text-slate-700 font-bold hover:bg-slate-100 disabled:opacity-40 transition-colors cursor-pointer"
           >
             -
           </button>
-          <span className="w-12 text-center font-extrabold text-[#F5C451] text-sm">
+          <span className="w-12 text-center font-extrabold text-[#6D3FD6] text-sm">
             {qty}
           </span>
           <button
             type="button"
             onClick={() => setQty((q) => Math.min(product.stock > 0 ? product.stock : 99, q + 1))}
             disabled={isOutOfStock || qty >= product.stock}
-            className="w-10 h-10 flex items-center justify-center text-[#FFF9EA] font-bold hover:bg-[#151A35] disabled:opacity-40 transition-colors"
+            className="w-10 h-10 flex items-center justify-center text-slate-700 font-bold hover:bg-slate-100 disabled:opacity-40 transition-colors cursor-pointer"
           >
             +
           </button>
@@ -98,12 +98,12 @@ export default function ProductDetailActions({ product }: ProductDetailActionsPr
           type="button"
           onClick={handleAddToCart}
           disabled={isOutOfStock}
-          className={`py-3.5 px-6 rounded-xl font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all shadow ${
+          className={`py-3.5 px-6 rounded-xl font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all shadow-xs cursor-pointer ${
             isOutOfStock
-              ? "bg-[#11152E] text-[#B9B8C7] border border-[#292E4D] cursor-not-allowed"
+              ? "bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed"
               : added
-              ? "bg-[#4ADE80] text-[#080B1A] font-black"
-              : "bg-gradient-to-r from-[#6D3FD6] to-[#9B6DFF] hover:from-[#9B6DFF] hover:to-[#6D3FD6] text-white"
+              ? "bg-emerald-600 text-white font-black"
+              : "bg-[#6D3FD6] hover:bg-[#5B21B6] text-white"
           }`}
         >
           {isOutOfStock ? "Out of Stock" : added ? "✓ Added to Cart!" : "🛒 Add to Cart"}
@@ -113,7 +113,7 @@ export default function ProductDetailActions({ product }: ProductDetailActionsPr
           type="button"
           onClick={handleBuyNow}
           disabled={isOutOfStock}
-          className="py-3.5 px-6 rounded-xl font-extrabold text-xs sm:text-sm bg-[#F5C451] hover:bg-[#FFE29A] text-[#080B1A] flex items-center justify-center gap-2 transition-all shadow disabled:opacity-40 gold-glow"
+          className="py-3.5 px-6 rounded-xl font-extrabold text-xs sm:text-sm bg-[#F5C451] hover:bg-amber-400 text-amber-950 flex items-center justify-center gap-2 transition-all shadow-xs disabled:opacity-40 cursor-pointer"
         >
           ⚡ Buy Now
         </button>
