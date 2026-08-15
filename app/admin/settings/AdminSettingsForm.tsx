@@ -186,37 +186,35 @@ export default function AdminSettingsForm({ settings }: { settings: StoreSetting
             />
           </div>
 
-          <div className="sm:col-span-2 pt-2 border-t border-slate-100 font-extrabold text-sm text-slate-900 uppercase">
-            Order & Shipping Rules
+          {/* SHIPPING & DELIVERY SECTION */}
+          <div className="sm:col-span-2 pt-4 border-t border-slate-200">
+            <h3 className="font-black text-sm text-slate-900 uppercase tracking-wider font-display">
+              SHIPPING & DELIVERY
+            </h3>
+            <p className="text-[11px] text-slate-500 mt-0.5">
+              Set the standard shipping fee applied to orders below the free-delivery threshold.
+            </p>
           </div>
 
           <div>
             <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">
-              Minimum Order Threshold (₹) *
-            </label>
-            <input
-              type="number"
-              name="minOrderAmount"
-              required
-              defaultValue={settings.minOrderAmount}
-              className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:ring-2 focus:ring-red-600"
-            />
-          </div>
-
-          <div>
-            <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">
-              Flat Shipping Fee (₹) *
+              Shipping Fee (₹) *
             </label>
             <input
               type="number"
               name="flatShippingFee"
               required
+              min="0"
+              step="any"
               defaultValue={settings.flatShippingFee}
-              className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:ring-2 focus:ring-red-600"
+              className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#6D3FD6] focus:border-[#6D3FD6]"
             />
+            <span className="text-[10px] text-slate-400 mt-1 block">
+              Applied to customer orders below ₹3,000.
+            </span>
           </div>
 
-          <div className="sm:col-span-2">
+          <div>
             <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">
               Free Shipping Order Threshold (₹) *
             </label>
@@ -224,8 +222,28 @@ export default function AdminSettingsForm({ settings }: { settings: StoreSetting
               type="number"
               name="freeShippingThreshold"
               required
+              min="0"
+              step="any"
               defaultValue={settings.freeShippingThreshold}
-              className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:ring-2 focus:ring-red-600"
+              className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#6D3FD6] focus:border-[#6D3FD6]"
+            />
+            <span className="text-[10px] text-slate-400 mt-1 block">
+              Orders at or above this amount receive FREE shipping (Default: ₹3,000).
+            </span>
+          </div>
+
+          <div className="sm:col-span-2">
+            <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">
+              Minimum Order Amount (₹) *
+            </label>
+            <input
+              type="number"
+              name="minOrderAmount"
+              required
+              min="0"
+              step="any"
+              defaultValue={settings.minOrderAmount}
+              className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#6D3FD6] focus:border-[#6D3FD6]"
             />
           </div>
 
@@ -235,9 +253,9 @@ export default function AdminSettingsForm({ settings }: { settings: StoreSetting
           <button
             type="submit"
             disabled={loading}
-            className="px-6 py-2.5 bg-gradient-to-r from-red-600 to-amber-600 text-white font-extrabold rounded-xl shadow hover:from-red-700 hover:to-amber-700 transition-all disabled:opacity-50"
+            className="px-6 py-3 bg-[#6D3FD6] hover:bg-[#5B21B6] text-white font-extrabold rounded-xl shadow-md transition-all disabled:opacity-50 cursor-pointer shadow-purple-200"
           >
-            {loading ? "Saving Settings..." : "Save Settings to Database →"}
+            {loading ? "Saving Settings..." : "Save Changes →"}
           </button>
         </div>
 

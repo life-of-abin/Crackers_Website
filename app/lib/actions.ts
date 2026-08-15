@@ -782,8 +782,14 @@ export async function updateSettingsAction(formData: FormData) {
     const googleMapsUrl = formData.get("googleMapsUrl") as string;
     const whatsappNumber = formData.get("whatsappNumber") as string;
     const minOrderAmount = parseFloat((formData.get("minOrderAmount") as string) || "500");
-    const flatShippingFee = parseFloat((formData.get("flatShippingFee") as string) || "100");
+    const flatShippingFeeStr = (formData.get("flatShippingFee") as string) || "100";
+    const flatShippingFee = parseFloat(flatShippingFeeStr);
     const freeShippingThreshold = parseFloat((formData.get("freeShippingThreshold") as string) || "3000");
+
+    if (isNaN(flatShippingFee) || flatShippingFee < 0) {
+      return { error: "Shipping Fee must be a valid non-negative number." };
+    }
+
     const legalName = (formData.get("legalName") as string) || null;
     const gstin = (formData.get("gstin") as string) || null;
     const invoiceTerms = (formData.get("invoiceTerms") as string) || null;
@@ -826,6 +832,10 @@ export async function updateSettingsAction(formData: FormData) {
 
     revalidatePath("/admin/settings");
     revalidatePath("/");
+    revalidatePath("/cart");
+    revalidatePath("/checkout");
+    revalidatePath("/shipping");
+    revalidatePath("/api/settings");
     return { success: true };
   } catch (error: any) {
     return { error: error.message || "Failed to update store settings." };
