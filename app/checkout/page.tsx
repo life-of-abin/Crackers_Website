@@ -51,12 +51,10 @@ const INDIAN_STATES = [
 ];
 
 function isValidGmailFormat(val: string): boolean {
-  const trimmed = val.trim();
-  if (!trimmed.includes("@") || !trimmed.includes(".")) return false;
-  const parts = trimmed.split("@");
-  if (parts.length !== 2) return false;
-  const domain = parts[1];
-  return domain.includes(".") && domain.split(".")[1].length >= 2;
+  if (!val) return false;
+  const clean = val.trim().toLowerCase();
+  // Requires a valid domain ending with a complete TLD like .com, .in, .co.in, .org, .net
+  return /^[a-z0-9._%+-]+@[a-z0-9.-]+\.(com|in|co\.in|org|net|edu|gov)$/.test(clean);
 }
 
 export default function CheckoutPage() {
@@ -121,13 +119,24 @@ export default function CheckoutPage() {
     }
   }, [isMounted, items, subtotal, settings.minOrderAmount, router]);
 
-
-
-  // Reactive PIN Code Lookup Effect (6 Digits Only)
+  // Reactive PIN Code Lookup Effect (6 Digits Only & Tamil Nadu Verification)
   useEffect(() => {
-    const cleaned = pincode.trim().replace(/[^0-9]/g, "");
+    const cleaned = pincode.trim().replace(/[^0-9]/g, "").slice(0, 6);
 
     if (cleaned.length !== 6) return;
+
+    // Strict Tamil Nadu PIN Code Prefix Check (60xxxx - 64xxxx)
+    const tnPrefixes = ["60", "61", "62", "63", "64"];
+    const prefix2 = cleaned.slice(0, 2);
+    if (!tnPrefixes.includes(prefix2)) {
+      setPinError("⚠️ Invalid Tamil Nadu PIN code. Only Tamil Nadu PIN codes (60xxxx - 64xxxx) are accepted.");
+      setPinVerifiedInfo(null);
+      setAutoFilledPin(null);
+      setCity("");
+      setDistrict("");
+      return;
+    }
+
     if (cleaned === autoFilledPin) return;
 
     setPinLoading(true);
@@ -142,13 +151,18 @@ export default function CheckoutPage() {
       .then((data) => {
         if (!isCurrent) return;
         setPinLoading(false);
-        if (data && data.valid) {
+
+        // Check if verified AND state is Tamil Nadu
+        const stateNorm = (data?.state || "").toLowerCase().replace(/[^a-z]/g, "");
+        const isTN = stateNorm.includes("tamil") || stateNorm.includes("tn");
+
+        if (data && data.valid && isTN) {
           setPinVerifiedInfo(data);
           setAutoFilledPin(cleaned);
 
           if (data.city) setCity(data.city);
           if (data.district) setDistrict(data.district);
-          if (data.state && INDIAN_STATES.includes(data.state)) setState(data.state);
+          setState("Tamil Nadu");
 
           setErrors((prev) => {
             const copy = { ...prev };
@@ -158,14 +172,22 @@ export default function CheckoutPage() {
             return copy;
           });
         } else {
-          setPinError("Location could not be detected. Please check your pincode.");
+          setPinError("⚠️ Invalid Tamil Nadu PIN code. Only Tamil Nadu PIN codes (60xxxx - 64xxxx) are accepted.");
+          setAutoFilledPin(null);
+          setPinVerifiedInfo(null);
+          setCity("");
+          setDistrict("");
         }
       })
       .catch((err) => {
         if (!isCurrent) return;
         if (err.name !== "AbortError") {
           setPinLoading(false);
-          setPinError("Location could not be detected. Please check your pincode.");
+          setPinError("⚠️ Invalid Tamil Nadu PIN code. Please enter a valid 6-digit Tamil Nadu PIN code.");
+          setAutoFilledPin(null);
+          setPinVerifiedInfo(null);
+          setCity("");
+          setDistrict("");
         }
       });
 
@@ -180,11 +202,10 @@ export default function CheckoutPage() {
     const cleaned = e.target.value.replace(/[^0-9]/g, "").slice(0, 6);
     setPincode(cleaned);
 
-    if (!cleaned || cleaned.length < 6) {
-      const needed = 6 - cleaned.length;
+    if (!/^\d{6}$/.test(cleaned)) {
       setErrors((prev) => ({
         ...prev,
-        pincode: `Please enter a valid 6-digit PIN code (${needed} digit${needed === 1 ? "" : "s"} remaining).`,
+        pincode: "Enter a valid 6-digit PIN code.",
       }));
     } else {
       setErrors((prev) => {
