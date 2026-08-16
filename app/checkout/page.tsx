@@ -103,7 +103,7 @@ export default function CheckoutPage() {
 
   // Fetch Store Settings on Mount
   useEffect(() => {
-    fetch("/api/settings")
+    fetch("/api/settings", { cache: "no-store" })
       .then((res) => res.json())
       .then((data) => {
         if (data && !data.error) setSettings(data);
@@ -114,11 +114,13 @@ export default function CheckoutPage() {
   // Redirect to cart if empty or minimum purchase amount not met
   useEffect(() => {
     if (!isMounted) return;
-    const minOrder = settings.minOrderAmount || 0;
+    const rawMin = Number(settings.minOrderAmount);
+    const minOrder = !isNaN(rawMin) && rawMin >= 0 ? rawMin : 500;
     if (items.length === 0 || subtotal < minOrder) {
       router.push("/cart");
     }
   }, [isMounted, items, subtotal, settings.minOrderAmount, router]);
+
 
 
   // Reactive PIN Code Lookup Effect (6 Digits Only)

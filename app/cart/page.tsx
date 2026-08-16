@@ -38,7 +38,7 @@ export default function CartPage() {
   const [minOrderAlert, setMinOrderAlert] = useState(false);
 
   useEffect(() => {
-    fetch("/api/settings")
+    fetch("/api/settings", { cache: "no-store" })
       .then((res) => res.json())
       .then((data) => {
         if (data && !data.error) setSettings(data);
@@ -57,12 +57,14 @@ export default function CartPage() {
     );
   }
 
-  const flatFee = settings.flatShippingFee;
-  const freeThreshold = settings.freeShippingThreshold;
-  const minOrder = settings.minOrderAmount || 0;
+  const flatFee = Number(settings.flatShippingFee) || 0;
+  const freeThreshold = Number(settings.freeShippingThreshold) || 0;
+  const rawMin = Number(settings.minOrderAmount);
+  const minOrder = !isNaN(rawMin) && rawMin >= 0 ? rawMin : 500;
 
   const isMinOrderMet = subtotal >= minOrder;
   const amountNeededForMinOrder = Math.max(0, minOrder - subtotal);
+
 
   const isFreeShipping = subtotal >= freeThreshold;
   const shippingFee = items.length === 0 ? 0 : isFreeShipping ? 0 : flatFee;
