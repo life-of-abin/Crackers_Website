@@ -18,25 +18,33 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
   const settings = await getStoreSettings();
   const session = await getSession();
 
-  const product = await prisma.product.findUnique({
-    where: { slug },
-    include: { category: true },
-  });
+  let product: any = null;
+  let relatedProducts: any[] = [];
+
+  try {
+    product = await prisma.product.findUnique({
+      where: { slug },
+      include: { category: true },
+    });
+
+    if (product && product.active) {
+      relatedProducts = await prisma.product.findMany({
+        where: {
+          categoryId: product.categoryId,
+          id: { not: product.id },
+          active: true,
+        },
+        include: { category: true },
+        take: 4,
+      });
+    }
+  } catch (err) {
+    console.error("Failed to fetch product detail data:", err);
+  }
 
   if (!product || !product.active) {
     notFound();
   }
-
-  // Related products in same category
-  const relatedProducts = await prisma.product.findMany({
-    where: {
-      categoryId: product.categoryId,
-      id: { not: product.id },
-      active: true,
-    },
-    include: { category: true },
-    take: 4,
-  });
 
   const priceNum = Number(product.price);
   const mrpNum = Number(product.mrp);

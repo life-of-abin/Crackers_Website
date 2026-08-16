@@ -8,8 +8,13 @@ const globalForPrisma = globalThis as unknown as {
 };
 
 const createPrismaClient = () => {
+  const connectionString = process.env.DATABASE_URL;
+  if (!connectionString) {
+    console.warn("⚠️ DATABASE_URL environment variable is missing! Database queries will fail until DATABASE_URL is set in environment settings.");
+  }
+
   const pool = new pg.Pool({
-    connectionString: process.env.DATABASE_URL,
+    connectionString: connectionString || "",
     ssl: { rejectUnauthorized: false },
     max: 10,
     idleTimeoutMillis: 30000,

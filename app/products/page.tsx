@@ -57,17 +57,26 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
   if (sortOption === "name") orderBy = { name: "asc" };
   if (sortOption === "popular") orderBy = { purchases: "desc" };
 
-  const [products, categories] = await Promise.all([
-    prisma.product.findMany({
-      where: whereClause,
-      include: { category: true },
-      orderBy,
-    }),
-    prisma.category.findMany({
-      where: { active: true },
-      orderBy: { name: "asc" },
-    }),
-  ]);
+  let products: any[] = [];
+  let categories: any[] = [];
+
+  try {
+    const [fetchedProducts, fetchedCategories] = await Promise.all([
+      prisma.product.findMany({
+        where: whereClause,
+        include: { category: true },
+        orderBy,
+      }),
+      prisma.category.findMany({
+        where: { active: true },
+        orderBy: { name: "asc" },
+      }),
+    ]);
+    products = fetchedProducts;
+    categories = fetchedCategories;
+  } catch (err) {
+    console.error("Failed to fetch products page data:", err);
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-[#F8FAFC] text-slate-900">

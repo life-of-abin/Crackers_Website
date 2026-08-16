@@ -24,20 +24,25 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
   if (sort === "price-high") orderBy = { price: "desc" };
   if (sort === "popular") orderBy = { purchases: "desc" };
 
-  const products = queryClean
-    ? await prisma.product.findMany({
-      where: {
-        active: true,
-        OR: [
-          { name: { contains: queryClean } },
-          { description: { contains: queryClean } },
-          { category: { name: { contains: queryClean } } },
-        ],
-      },
-      include: { category: true },
-      orderBy,
-    })
-    : [];
+  let products: any[] = [];
+  if (queryClean) {
+    try {
+      products = await prisma.product.findMany({
+        where: {
+          active: true,
+          OR: [
+            { name: { contains: queryClean } },
+            { description: { contains: queryClean } },
+            { category: { name: { contains: queryClean } } },
+          ],
+        },
+        include: { category: true },
+        orderBy,
+      });
+    } catch (err) {
+      console.error("Failed to execute product search query:", err);
+    }
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-[#F8FAFC] text-slate-900">

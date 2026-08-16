@@ -20,13 +20,8 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
   const settings = await getStoreSettings();
   const session = await getSession();
 
-  const category = await prisma.category.findUnique({
-    where: { slug },
-  });
-
-  if (!category || !category.active) {
-    notFound();
-  }
+  let category: any = null;
+  let products: any[] = [];
 
   let orderBy: any = { featured: "desc" };
   if (sort === "price-low") orderBy = { price: "asc" };
@@ -34,14 +29,28 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
   if (sort === "popular") orderBy = { purchases: "desc" };
   if (sort === "name") orderBy = { name: "asc" };
 
-  const products = await prisma.product.findMany({
-    where: {
-      categoryId: category.id,
-      active: true,
-    },
-    include: { category: true },
-    orderBy,
-  });
+  try {
+    category = await prisma.category.findUnique({
+      where: { slug },
+    });
+
+    if (category && category.active) {
+      products = await prisma.product.findMany({
+        where: {
+          categoryId: category.id,
+          active: true,
+        },
+        include: { category: true },
+        orderBy,
+      });
+    }
+  } catch (err) {
+    console.error("Failed to fetch category page data:", err);
+  }
+
+  if (!category || !category.active) {
+    notFound();
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-[#F8FAFC] text-slate-900">

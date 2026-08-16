@@ -16,31 +16,46 @@ export default async function HomePage() {
   const session = await getSession();
 
   // Fetch live categories with product counts
-  const categories = await prisma.category.findMany({
-    where: { active: true },
-    include: {
-      _count: {
-        select: { products: { where: { active: true } } },
+  let categories: any[] = [];
+  try {
+    categories = await prisma.category.findMany({
+      where: { active: true },
+      include: {
+        _count: {
+          select: { products: { where: { active: true } } },
+        },
       },
-    },
-    orderBy: { name: "asc" },
-  });
+      orderBy: { name: "asc" },
+    });
+  } catch (err) {
+    console.error("Failed to fetch categories:", err);
+  }
 
   // Fetch featured products
-  const featuredProducts = await prisma.product.findMany({
-    where: { active: true, featured: true },
-    include: { category: true },
-    take: 8,
-    orderBy: { purchases: "desc" },
-  });
+  let featuredProducts: any[] = [];
+  try {
+    featuredProducts = await prisma.product.findMany({
+      where: { active: true, featured: true },
+      include: { category: true },
+      take: 8,
+      orderBy: { purchases: "desc" },
+    });
+  } catch (err) {
+    console.error("Failed to fetch featured products:", err);
+  }
 
   // Fetch best sellers
-  const bestSellers = await prisma.product.findMany({
-    where: { active: true },
-    include: { category: true },
-    take: 8,
-    orderBy: { purchases: "desc" },
-  });
+  let bestSellers: any[] = [];
+  try {
+    bestSellers = await prisma.product.findMany({
+      where: { active: true },
+      include: { category: true },
+      take: 8,
+      orderBy: { purchases: "desc" },
+    });
+  } catch (err) {
+    console.error("Failed to fetch best sellers:", err);
+  }
 
   const displayFeatured = featuredProducts.length > 0 ? featuredProducts : bestSellers.slice(0, 4);
 
