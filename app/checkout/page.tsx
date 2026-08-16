@@ -408,6 +408,19 @@ export default function CheckoutPage() {
 
   const grandTotalAmount = subtotal;
 
+  // 3-Second Processing Overlay State
+  const [processingOverlay, setProcessingOverlay] = useState<{
+    active: boolean;
+    orderId: number | null;
+    progress: number;
+    stepText: string;
+  }>({
+    active: false,
+    orderId: null,
+    progress: 0,
+    stepText: "Processing & Verifying Order...",
+  });
+
   // Form Submit Handler
   const handleSubmitOrder = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -447,8 +460,42 @@ export default function CheckoutPage() {
       }
 
       if (result.success && result.orderId) {
-        clearCart();
-        router.push(`/order-confirmation/${result.orderId}`);
+        // Trigger 3-Second Celebratory Processing Modal
+        setProcessingOverlay({
+          active: true,
+          orderId: result.orderId,
+          progress: 0,
+          stepText: "Processing & Verifying Order Details...",
+        });
+
+        const startTime = Date.now();
+        const duration = 3000; // Exactly 3 seconds
+
+        const interval = setInterval(() => {
+          const elapsed = Date.now() - startTime;
+          const pct = Math.min(100, Math.floor((elapsed / duration) * 100));
+
+          let currentStep = "Processing & Verifying Order Details...";
+          if (pct >= 33 && pct < 66) {
+            currentStep = `Registering Sivakasi Booking #${result.orderId}...`;
+          } else if (pct >= 66) {
+            currentStep = "Generating Invoice & Summary Image...";
+          }
+
+          setProcessingOverlay({
+            active: true,
+            orderId: result.orderId,
+            progress: pct,
+            stepText: currentStep,
+          });
+
+          if (elapsed >= duration) {
+            clearInterval(interval);
+            clearCart();
+            router.push(`/order-confirmation/${result.orderId}?autoWhatsapp=true`);
+          }
+        }, 50);
+
         return;
       }
 
@@ -817,6 +864,47 @@ export default function CheckoutPage() {
       </main>
 
       <Footer settings={settings} />
+
+      {/* 3-Second Celebratory Processing Modal Overlay */}
+      {processingOverlay.active && (
+        <div className="fixed inset-0 z-50 bg-[#080B1A]/95 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center text-white space-y-6">
+          <div className="relative">
+            <div className="w-24 h-24 rounded-full bg-gradient-to-tr from-[#6D3FD6] via-[#8B5CF6] to-[#F5C451] flex items-center justify-center text-5xl shadow-2xl animate-bounce">
+              🎆
+            </div>
+            <span className="absolute -top-2 -right-2 w-7 h-7 rounded-full bg-emerald-500 border-2 border-white flex items-center justify-center text-xs font-bold text-white animate-pulse">
+              ✓
+            </span>
+          </div>
+
+          <div className="space-y-2 max-w-sm">
+            <h2 className="text-2xl sm:text-3xl font-black text-[#F5C451] uppercase font-display tracking-tight">
+              Order Placed! 🎉
+            </h2>
+            <p className="text-xs text-slate-300 font-bold animate-pulse">
+              {processingOverlay.stepText}
+            </p>
+          </div>
+
+          {/* Fast 3-Second Progress Bar */}
+          <div className="w-full max-w-xs space-y-1.5">
+            <div className="w-full bg-slate-800 rounded-full h-3 overflow-hidden p-0.5 border border-white/10">
+              <div
+                className="bg-gradient-to-r from-[#6D3FD6] via-purple-400 to-[#F5C451] h-full rounded-full transition-all duration-75 ease-linear"
+                style={{ width: `${processingOverlay.progress}%` }}
+              />
+            </div>
+            <div className="flex justify-between text-[11px] font-mono text-slate-400 font-bold px-1">
+              <span>Packing Order</span>
+              <span className="text-[#F5C451]">{processingOverlay.progress}%</span>
+            </div>
+          </div>
+
+          <p className="text-[10px] text-slate-500 font-medium pt-2">
+            Redirecting to Order Summary & Sending Invoice...
+          </p>
+        </div>
+      )}
     </div>
   );
 }
