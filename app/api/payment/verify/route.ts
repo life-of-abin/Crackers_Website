@@ -64,7 +64,7 @@ export async function POST(req: Request) {
         where: { id: order.payments[0].id },
         data: {
           status: "SUCCESS",
-          transactionId: paymentId || paymentRef || `TXN-${Date.now()}`,
+          paymentRef: paymentId || paymentRef || `TXN-${Date.now()}`,
         },
       });
     } else {
@@ -72,9 +72,9 @@ export async function POST(req: Request) {
         data: {
           orderId: order.id,
           amount: order.totalAmount,
-          method: order.paymentMethod || "UPI",
+          paymentMethod: order.paymentMethod || "UPI",
           status: "SUCCESS",
-          transactionId: paymentId || paymentRef || `TXN-${Date.now()}`,
+          paymentRef: paymentId || paymentRef || `TXN-${Date.now()}`,
         },
       });
     }
