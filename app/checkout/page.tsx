@@ -335,7 +335,7 @@ export default function CheckoutPage() {
     return true;
   };
 
-  const grandTotalAmount = subtotal >= settings.freeShippingThreshold ? subtotal : subtotal + settings.flatShippingFee;
+  const grandTotalAmount = subtotal;
 
   // Form Submit Handler
   const handleSubmitOrder = async (e: React.FormEvent) => {
@@ -415,7 +415,7 @@ export default function CheckoutPage() {
             Place Your Order
           </h1>
           <p className="text-xs text-slate-500 mt-1">
-            Fast & easy order placement. Factory wholesale Sivakasi fireworks delivered to your doorstep.
+            Fast & easy order placement. Factory wholesale Sivakasi fireworks delivered to your doorstep or collected at shop.
           </p>
         </div>
       </div>
@@ -427,61 +427,58 @@ export default function CheckoutPage() {
           <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-xl space-y-5">
             <h2 className="text-sm font-black text-slate-900 border-b border-slate-200 pb-3 uppercase tracking-wider flex items-center gap-2 font-display">
               <span className="w-6 h-6 rounded-full bg-[#6D3FD6] text-white text-xs flex items-center justify-center font-bold">1</span>
-              Customer Contact Information
+              Customer Details
             </h2>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
               
-              {/* Full Name */}
               <div className="sm:col-span-2">
                 <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">
-                  Full Name (Letters & Spaces Only) *
+                  Full Name *
                 </label>
                 <input
                   ref={nameRef}
                   type="text"
                   required
-                  placeholder="Abinesh Kumar"
+                  placeholder="E.g. Abinesh Kumar"
                   value={customerName}
                   onChange={handleNameInput}
                   aria-invalid={errors.name ? "true" : "false"}
                   aria-describedby={errors.name ? "name-error" : undefined}
-                  className={`w-full px-4 py-3 bg-slate-50 border rounded-xl text-xs font-semibold text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 transition-all ${
+                  className={`w-full px-4 py-3 bg-slate-50 border rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 transition-all ${
                     errors.name ? "border-red-500 ring-1 ring-red-500 bg-red-50" : "border-slate-200 focus:ring-[#6D3FD6] focus:border-[#6D3FD6]"
                   }`}
                 />
-                {errors.name ? (
+                {errors.name && (
                   <span id="name-error" className="text-[11px] font-bold text-red-600 mt-1 block">
                     {errors.name}
-                  </span>
-                ) : (
-                  <span className="text-[10px] text-slate-400 mt-1 block">
-                    Accepts letters (A-Z, a-z) and spaces only. E.g. Abinesh N, Ravi Kumar
                   </span>
                 )}
               </div>
 
-              {/* Mobile Input */}
               <div>
                 <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">
-                  Mobile Number *
+                  Mobile Number (10 Digits) *
                 </label>
-                <input
-                  ref={phoneRef}
-                  type="tel"
-                  required
-                  maxLength={10}
-                  placeholder="98765 43210"
-                  value={phone ? phone.replace(/(\d{5})(\d{5})/, "$1 $2") : ""}
-                  onChange={handlePhoneInput}
-                  aria-invalid={errors.phone ? "true" : "false"}
-                  aria-describedby={errors.phone ? "phone-error" : undefined}
-                  className={`w-full px-4 py-3 bg-slate-50 border rounded-xl text-xs font-semibold text-slate-900 font-mono placeholder-slate-400 focus:outline-none focus:ring-2 transition-all ${
-                    errors.phone ? "border-red-500 ring-1 ring-red-500 bg-red-50" : "border-slate-200 focus:ring-[#6D3FD6] focus:border-[#6D3FD6]"
-                  }`}
-                />
-                <span className="text-[10px] text-slate-400 mt-1 block">10-digit Indian mobile number</span>
-
+                <div className="flex">
+                  <span className="inline-flex items-center px-3 rounded-l-xl border border-r-0 border-slate-200 bg-slate-100 text-slate-700 font-bold text-xs">
+                    +91
+                  </span>
+                  <input
+                    ref={phoneRef}
+                    type="tel"
+                    required
+                    maxLength={10}
+                    placeholder="9629525907"
+                    value={phone}
+                    onChange={handlePhoneInput}
+                    aria-invalid={errors.phone ? "true" : "false"}
+                    aria-describedby={errors.phone ? "phone-error" : undefined}
+                    className={`w-full px-4 py-3 bg-slate-50 border rounded-r-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 transition-all ${
+                      errors.phone ? "border-red-500 ring-1 ring-red-500 bg-red-50" : "border-slate-200 focus:ring-[#6D3FD6] focus:border-[#6D3FD6]"
+                    }`}
+                  />
+                </div>
                 {errors.phone && (
                   <span id="phone-error" className="text-[11px] font-bold text-red-600 mt-1 block">
                     {errors.phone}
@@ -489,7 +486,6 @@ export default function CheckoutPage() {
                 )}
               </div>
 
-              {/* Email Address Input */}
               <div>
                 <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">
                   Email Address *
@@ -498,17 +494,15 @@ export default function CheckoutPage() {
                   ref={emailRef}
                   type="email"
                   required
-                  placeholder="customer@gmail.com"
+                  placeholder="yourname@gmail.com"
                   value={email}
                   onChange={handleEmailInput}
                   aria-invalid={errors.email ? "true" : "false"}
                   aria-describedby={errors.email ? "email-error" : undefined}
-                  className={`w-full px-4 py-3 bg-slate-50 border rounded-xl text-xs font-semibold text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 transition-all ${
+                  className={`w-full px-4 py-3 bg-slate-50 border rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 transition-all ${
                     errors.email ? "border-red-500 ring-1 ring-red-500 bg-red-50" : "border-slate-200 focus:ring-[#6D3FD6] focus:border-[#6D3FD6]"
                   }`}
                 />
-                <span className="text-[10px] text-slate-400 mt-1 block">Order updates & receipt sent here</span>
-
                 {errors.email && (
                   <span id="email-error" className="text-[11px] font-bold text-red-600 mt-1 block">
                     {errors.email}
@@ -519,29 +513,29 @@ export default function CheckoutPage() {
             </div>
           </div>
 
-          {/* Section 2: Address & PIN Code */}
+          {/* Section 2: Delivery / Pickup Address */}
           <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-xl space-y-5">
             <h2 className="text-sm font-black text-slate-900 border-b border-slate-200 pb-3 uppercase tracking-wider flex items-center gap-2 font-display">
               <span className="w-6 h-6 rounded-full bg-[#6D3FD6] text-white text-xs flex items-center justify-center font-bold">2</span>
-              Delivery Address & Smart Postal Auto-Fill
+              Delivery Address / Shop Pickup Note
             </h2>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
               
               <div className="sm:col-span-2">
                 <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">
-                  Address Line 1 (House No., Building, Street Name) *
+                  Street Address / Shop Pickup Note *
                 </label>
                 <textarea
                   ref={addressRef}
                   required
-                  rows={2}
-                  placeholder="Door No 42, Gandhi Road"
+                  rows={3}
+                  placeholder="Door No, Street Name, Landmark (or enter 'Shop Pickup Sivakasi')"
                   value={address}
                   onChange={handleAddressInput}
                   aria-invalid={errors.address ? "true" : "false"}
                   aria-describedby={errors.address ? "address-error" : undefined}
-                  className={`w-full px-4 py-3 bg-slate-50 border rounded-xl text-xs font-semibold text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 transition-all ${
+                  className={`w-full px-4 py-3 bg-slate-50 border rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 transition-all ${
                     errors.address ? "border-red-500 ring-1 ring-red-500 bg-red-50" : "border-slate-200 focus:ring-[#6D3FD6] focus:border-[#6D3FD6]"
                   }`}
                 />
@@ -552,16 +546,16 @@ export default function CheckoutPage() {
                 )}
               </div>
 
-              <div className="sm:col-span-2">
+              <div>
                 <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">
-                  Address Line 2 / Landmark (Optional)
+                  Landmark (Optional)
                 </label>
                 <input
                   type="text"
-                  placeholder="Near Bus Stand / Opposite SBI Bank"
+                  placeholder="Near Bus Stand"
                   value={landmark}
                   onChange={(e) => setLandmark(e.target.value)}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#6D3FD6]"
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#6D3FD6] focus:border-[#6D3FD6]"
                 />
               </div>
 
@@ -572,10 +566,12 @@ export default function CheckoutPage() {
                 <select
                   value={state}
                   onChange={(e) => setState(e.target.value)}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#6D3FD6]"
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#6D3FD6] focus:border-[#6D3FD6]"
                 >
                   {INDIAN_STATES.map((st) => (
-                    <option key={st} value={st} className="bg-white text-slate-900">{st}</option>
+                    <option key={st} value={st}>
+                      {st}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -589,12 +585,12 @@ export default function CheckoutPage() {
                   type="text"
                   required
                   maxLength={6}
-                  placeholder="641001"
+                  placeholder="626123"
                   value={pincode}
                   onChange={handlePincodeChange}
                   aria-invalid={errors.pincode ? "true" : "false"}
                   aria-describedby={errors.pincode ? "pincode-error" : undefined}
-                  className={`w-full px-4 py-3 bg-slate-50 border rounded-xl text-xs font-semibold text-slate-900 font-mono focus:outline-none focus:ring-2 transition-all ${
+                  className={`w-full px-4 py-3 bg-slate-50 border rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 transition-all ${
                     errors.pincode ? "border-red-500 ring-1 ring-red-500 bg-red-50" : "border-slate-200 focus:ring-[#6D3FD6] focus:border-[#6D3FD6]"
                   }`}
                 />
@@ -693,16 +689,26 @@ export default function CheckoutPage() {
                 <span>Items Total ({items.reduce((acc, item) => acc + item.cartQuantity, 0)} items):</span>
                 <span className="font-bold text-slate-900">₹{subtotal.toLocaleString("en-IN")}</span>
               </div>
-              <div className="flex justify-between">
-                <span>Estimated Shipping Fee:</span>
-                <span className="font-bold text-slate-900">
-                  {subtotal >= settings.freeShippingThreshold ? "FREE" : `₹${settings.flatShippingFee}`}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                <span>Shipping / Transport:</span>
+                <span className="font-bold text-[#6D3FD6] text-xs">
+                  Discussed via WhatsApp / Store Pickup
                 </span>
               </div>
               <div className="flex justify-between border-t border-slate-200 pt-2 text-sm font-black text-slate-900">
-                <span>Total Amount:</span>
-                <span className="text-[#6D3FD6]">₹{grandTotalAmount.toLocaleString("en-IN")}</span>
+                <span>Product Total Amount:</span>
+                <span className="text-[#6D3FD6]">₹{subtotal.toLocaleString("en-IN")}</span>
               </div>
+            </div>
+
+            {/* Shipping & Pickup Note Box */}
+            <div className="p-3.5 bg-purple-50 border border-purple-200 rounded-2xl text-xs space-y-1">
+              <div className="font-bold text-[#6D3FD6] flex items-center gap-1.5">
+                <span>💬 Delivery & Store Pickup Note:</span>
+              </div>
+              <p className="text-slate-600 leading-relaxed font-normal">
+                Next-day store pickup at our Sivakasi shop incurs zero shipping charges. For outstation delivery, transport charges will be discussed and confirmed directly via WhatsApp.
+              </p>
             </div>
 
             {/* Global Error Banner */}
@@ -726,7 +732,7 @@ export default function CheckoutPage() {
                   Placing Order...
                 </span>
               ) : (
-                <span>Place Order ₹{grandTotalAmount.toLocaleString("en-IN")} →</span>
+                <span>Place Order (Product Total ₹{subtotal.toLocaleString("en-IN")}) →</span>
               )}
             </button>
 

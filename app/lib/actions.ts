@@ -275,8 +275,8 @@ export async function createOrderAction(data: {
         });
       }
 
-      const shippingFee = calculatedSubtotal >= freeThreshold ? 0 : flatFee;
-      const grandTotal = calculatedSubtotal + shippingFee;
+      const shippingFee = 0; // Shipping/transport charges discussed via WhatsApp or free store pickup
+      const grandTotal = calculatedSubtotal;
       const selectedPayMethod = data.paymentMethod || "DIRECT_ORDER";
 
       // Create Order & OrderItems with packSize & unitType

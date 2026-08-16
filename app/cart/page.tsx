@@ -109,18 +109,15 @@ export default function CartPage() {
         ) : (
           <div className="max-w-3xl mx-auto space-y-6">
             
-            {/* Free Shipping Progress Bar */}
-            <div className="bg-white border border-purple-200 p-4 rounded-2xl space-y-2 shadow-xs">
-              <div className="flex items-center justify-between text-xs font-extrabold text-[#6D3FD6]">
-                <span>🚚 Free Express Shipping Threshold</span>
-                <span>{isFreeShipping ? "Unlocked! 🎉" : `Add ₹${amountNeededForFreeShipping.toFixed(0)} more`}</span>
+            {/* Delivery & Pickup Notice Banner */}
+            <div className="bg-purple-50 border border-purple-200 p-4 rounded-2xl space-y-1 shadow-xs text-xs">
+              <div className="flex items-center gap-2 font-extrabold text-[#6D3FD6]">
+                <span>🚚</span>
+                <span>Store Pickup & Parcel Delivery Options</span>
               </div>
-              <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden border border-slate-200">
-                <div
-                  className="bg-gradient-to-r from-[#6D3FD6] to-[#8B5CF6] h-full transition-all duration-500"
-                  style={{ width: `${Math.min(100, (subtotal / freeThreshold) * 100)}%` }}
-                />
-              </div>
+              <p className="text-slate-600 font-medium leading-relaxed">
+                Collect directly at our Sivakasi shop with zero delivery fee, or request parcel transport. Delivery charges are arranged & confirmed via WhatsApp after placing your order.
+              </p>
             </div>
 
             {/* Single Unified Order Summary Card */}
@@ -235,16 +232,19 @@ export default function CartPage() {
                   </div>
                 )}
 
-                <div className="flex justify-between text-slate-500">
-                  <span>Shipping Fee:</span>
-                  <span className={shippingFee === 0 ? "text-emerald-700 font-bold" : "font-bold text-slate-900"}>
-                    {shippingFee === 0 ? "FREE" : `₹${shippingFee.toLocaleString("en-IN")}`}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-slate-500">
+                  <span>Shipping / Delivery:</span>
+                  <span className="font-bold text-[#6D3FD6] text-xs">
+                    Discussed via WhatsApp / Store Pickup
                   </span>
                 </div>
 
                 <div className="border-t border-slate-200 pt-3.5 flex justify-between items-baseline">
-                  <span className="text-sm sm:text-base font-black text-slate-900 uppercase">Grand Total:</span>
-                  <span className="text-xl sm:text-2xl font-black text-[#6D3FD6] font-display">₹{grandTotal.toLocaleString("en-IN")}</span>
+                  <div>
+                    <span className="text-sm sm:text-base font-black text-slate-900 uppercase block">Product Total:</span>
+                    <span className="text-[10px] text-slate-400 font-medium">* Outstation parcel transport fee (if required) confirmed on WhatsApp</span>
+                  </div>
+                  <span className="text-xl sm:text-2xl font-black text-[#6D3FD6] font-display">₹{subtotal.toLocaleString("en-IN")}</span>
                 </div>
               </div>
 
