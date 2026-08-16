@@ -21,13 +21,17 @@ export interface ProductCardData {
 }
 
 export default function ProductCard({ product }: { product: ProductCardData }) {
-  const { addToCart } = useCart();
-  const [added, setAdded] = useState(false);
+  const { items, addToCart, isMounted } = useCart();
 
   const isOutOfStock = product.stock <= 0;
   const isLowStock = product.stock > 0 && product.stock < 10;
   const unitLabel = product.unitType || "BOX";
   const packSizeText = product.packSize || product.quantity || "10 Pieces";
+
+  // Check if item is in cart
+  const cartItem = isMounted ? items.find((i) => i.id === product.id) : null;
+  const isInCart = Boolean(cartItem);
+  const cartQty = cartItem ? cartItem.cartQuantity : 0;
 
   const handleAdd = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -45,9 +49,6 @@ export default function ProductCard({ product }: { product: ProductCardData }) {
       packSize: product.packSize,
       stock: product.stock,
     });
-
-    setAdded(true);
-    setTimeout(() => setAdded(false), 1500);
   };
 
   const fallbackImage = `https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=400&q=80`;
@@ -139,15 +140,20 @@ export default function ProductCard({ product }: { product: ProductCardData }) {
           className={`w-full h-10 sm:h-11 rounded-xl font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all shadow-xs touch-target cursor-pointer ${
             isOutOfStock
               ? "bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200"
-              : added
-              ? "bg-emerald-600 text-white font-black scale-95"
+              : isInCart
+              ? "bg-emerald-600 hover:bg-emerald-700 text-white font-black shadow-sm"
               : "bg-[#6D3FD6] hover:bg-[#5B21B6] text-white hover:shadow-md active:scale-98"
           }`}
         >
           {isOutOfStock ? (
             <span>Sold Out</span>
-          ) : added ? (
-            <span>✓ Added!</span>
+          ) : isInCart ? (
+            <>
+              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+              </svg>
+              <span>In Cart ({cartQty})</span>
+            </>
           ) : (
             <>
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

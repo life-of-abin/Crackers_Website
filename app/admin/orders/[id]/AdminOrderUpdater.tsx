@@ -78,37 +78,66 @@ export default function AdminOrderUpdater({ order }: OrderUpdaterProps) {
         </button>
       </div>
 
-      <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm grid grid-cols-1 sm:grid-cols-2 gap-6 text-xs">
-        <div>
-          <label className="block font-bold text-slate-700 uppercase tracking-wider mb-2">
-            Fulfillment Stage
-          </label>
-          <select
-            value={orderStatus}
-            onChange={(e) => handleUpdateOrderStatus(e.target.value)}
-            disabled={loading}
-            className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-black text-slate-900 focus:ring-2 focus:ring-[#6D3FD6] focus:outline-none cursor-pointer"
+      <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-4 text-xs">
+        <h3 className="font-black text-sm text-slate-900 uppercase tracking-wider border-b border-slate-100 pb-2">
+          Real-Time Status Controls
+        </h3>
+
+        {/* Quick Buttons */}
+        <div className="flex flex-wrap gap-3">
+          <button
+            type="button"
+            onClick={() => handleUpdatePaymentStatus("PAID")}
+            disabled={loading || paymentStatus === "PAID"}
+            className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-extrabold rounded-xl shadow-xs transition-all flex items-center gap-1.5 cursor-pointer"
           >
-            {statusList.map((st) => (
-              <option key={st} value={st}>{st}</option>
-            ))}
-          </select>
+            <span>✓</span>
+            <span>Mark Payment as PAID</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => handleUpdateOrderStatus("DELIVERED")}
+            disabled={loading || orderStatus === "DELIVERED"}
+            className="px-4 py-2.5 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white font-extrabold rounded-xl shadow-xs transition-all flex items-center gap-1.5 cursor-pointer"
+          >
+            <span>🎉</span>
+            <span>Mark Order as DELIVERED</span>
+          </button>
         </div>
 
-        <div>
-          <label className="block font-bold text-slate-700 uppercase tracking-wider mb-2">
-            Payment Status
-          </label>
-          <select
-            value={paymentStatus}
-            onChange={(e) => handleUpdatePaymentStatus(e.target.value)}
-            disabled={loading}
-            className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-black text-slate-900 focus:ring-2 focus:ring-[#6D3FD6] focus:outline-none cursor-pointer"
-          >
-            {paymentList.map((st) => (
-              <option key={st} value={st}>{st}</option>
-            ))}
-          </select>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-2">
+          <div>
+            <label className="block font-bold text-slate-700 uppercase tracking-wider mb-2">
+              Fulfillment Stage
+            </label>
+            <select
+              value={orderStatus}
+              onChange={(e) => handleUpdateOrderStatus(e.target.value)}
+              disabled={loading}
+              className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-black text-slate-900 focus:ring-2 focus:ring-[#6D3FD6] focus:outline-none cursor-pointer"
+            >
+              {statusList.map((st) => (
+                <option key={st} value={st}>{st}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block font-bold text-slate-700 uppercase tracking-wider mb-2">
+              Payment Status
+            </label>
+            <select
+              value={paymentStatus}
+              onChange={(e) => handleUpdatePaymentStatus(e.target.value)}
+              disabled={loading}
+              className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-black text-slate-900 focus:ring-2 focus:ring-[#6D3FD6] focus:outline-none cursor-pointer"
+            >
+              {paymentList.map((st) => (
+                <option key={st} value={st}>{st}</option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
 

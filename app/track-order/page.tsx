@@ -102,18 +102,20 @@ export default function TrackOrderPage() {
     }
   };
 
-  const getActiveStepIndex = (status: string): number => {
+  const getActiveStepIndex = (status: string, paymentStatus: string): number => {
     const s = (status || "").toUpperCase();
+    const p = (paymentStatus || "").toUpperCase();
+
     if (s === "DELIVERED") return 6;
     if (s === "OUT_FOR_DELIVERY") return 5;
     if (s === "SHIPPED") return 4;
     if (s === "PACKED") return 3;
-    if (s === "PROCESSING") return 2;
-    if (s === "CONFIRMED" || s === "PAID") return 1;
+    if (s === "PROCESSING" || s === "READY") return 2;
+    if (s === "CONFIRMED" || p === "PAID" || p === "COMPLETED") return 1;
     return 0;
   };
 
-  const activeIndex = order ? getActiveStepIndex(order.orderStatus) : 0;
+  const activeIndex = order ? getActiveStepIndex(order.orderStatus, order.paymentStatus) : 0;
   const isCancelled = order?.orderStatus?.toUpperCase() === "CANCELLED";
 
   return (
@@ -171,8 +173,15 @@ export default function TrackOrderPage() {
                   placeholder="abinesh@gmail.com"
                   value={email}
                   onChange={(e) => {
-                    setEmail(e.target.value);
-                    if (emailError) setEmailError("");
+                    const val = e.target.value.toLowerCase();
+                    setEmail(val);
+                    if (!val || val.trim().length === 0) {
+                      setEmailError("Please enter your Gmail address (lowercase only).");
+                    } else if (!isValidGmailFormat(val)) {
+                      setEmailError("Please enter a valid Gmail address ending with @gmail.com.");
+                    } else {
+                      setEmailError("");
+                    }
                   }}
                   className={`w-full px-4 py-3 bg-slate-50 border rounded-xl text-xs font-semibold text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 transition-all ${
                     emailError ? "border-red-500 ring-1 ring-red-500" : "border-slate-200 focus:ring-[#6D3FD6]"
@@ -184,7 +193,7 @@ export default function TrackOrderPage() {
                   </span>
                 ) : (
                   <span className="text-[10px] text-slate-400 mt-1 block">
-                    Must end with @gmail.com
+                    Must end with @gmail.com (lowercase only)
                   </span>
                 )}
               </div>
@@ -252,13 +261,24 @@ export default function TrackOrderPage() {
               </div>
             ) : (
               <div className="space-y-4">
-                <h3 className="text-xs font-black text-[#6D3FD6] uppercase tracking-widest font-display">
-                  Live Dispatch Stepper
-                </h3>
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xs font-black text-[#6D3FD6] uppercase tracking-widest font-display">
+                    Live Real-Time Dispatch Stepper
+                  </h3>
+                  {order.paymentStatus === "PAID" && (
+                    <span className="bg-emerald-100 text-emerald-800 font-extrabold text-[10px] px-2.5 py-0.5 rounded-full border border-emerald-300">
+                      ✓ Payment Verified (PAID)
+                    </span>
+                  )}
+                </div>
 
                 <div className="grid grid-cols-2 sm:grid-cols-7 gap-2 pt-2">
                   {ORDER_STEPS.map((step, idx) => {
-                    const isCompleted = idx <= activeIndex;
+                    const isPaymentStep = step.key === "CONFIRMED";
+                    const isDeliveredStep = step.key === "DELIVERED";
+                    const isPaid = order.paymentStatus === "PAID";
+                    
+                    const isCompleted = isPaymentStep ? (isPaid || idx <= activeIndex) : (idx <= activeIndex);
                     const isCurrent = idx === activeIndex;
 
                     return (
@@ -266,7 +286,7 @@ export default function TrackOrderPage() {
                         key={step.key}
                         className={`p-3 rounded-2xl border text-center transition-all flex flex-col items-center justify-between ${
                           isCurrent
-                            ? "bg-purple-50 border-[#6D3FD6] text-[#6D3FD6] ring-2 ring-[#6D3FD6]/40 font-bold"
+                            ? "bg-purple-50 border-[#6D3FD6] text-[#6D3FD6] ring-2 ring-[#6D3FD6]/40 font-bold shadow-sm"
                             : isCompleted
                             ? "bg-emerald-50 border-emerald-200 text-emerald-700 font-bold"
                             : "bg-slate-50 border-slate-200 text-slate-400"
@@ -274,9 +294,23 @@ export default function TrackOrderPage() {
                       >
                         <span className="text-lg mb-1">{step.icon}</span>
                         <span className="text-[10px] font-extrabold leading-tight">{step.label}</span>
-                        {isCompleted && (
+                        {isPaymentStep ? (
+                          isPaid ? (
+                            <span className="text-[9px] text-emerald-700 font-black mt-1 bg-emerald-100 px-1.5 py-0.5 rounded">
+                              ✓ Paid
+                            </span>
+                          ) : (
+                            <span className="text-[9px] text-amber-700 font-bold mt-1">
+                              ⏳ Pending
+                            </span>
+                          )
+                        ) : isDeliveredStep && isCompleted ? (
+                          <span className="text-[9px] text-emerald-700 font-black mt-1">
+                            🎉 Handed Over
+                          </span>
+                        ) : isCompleted ? (
                           <span className="text-[9px] text-emerald-700 font-bold mt-1">✓ Done</span>
-                        )}
+                        ) : null}
                       </div>
                     );
                   })}

@@ -14,7 +14,7 @@ export default function BestSellersCarousel({ products }: { products: Product[] 
   const [isHovered, setIsHovered] = useState(false);
   const [isInteracting, setIsInteracting] = useState(false);
   const [progress, setProgress] = useState(0);
-  const { addToCart } = useCart();
+  const { items, addToCart, isMounted } = useCart();
   const [addedId, setAddedId] = useState<number | null>(null);
 
   // Dragging / Swiping States
@@ -167,9 +167,6 @@ export default function BestSellersCarousel({ products }: { products: Product[] 
       packSize: product.packSize,
       stock: product.stock,
     });
-
-    setAddedId(product.id);
-    setTimeout(() => setAddedId(null), 1500);
   };
 
   if (!products || products.length === 0) {
@@ -243,84 +240,94 @@ export default function BestSellersCarousel({ products }: { products: Product[] 
 
             return (
               <div key={`${product.id}-${index}`} className="w-full flex-shrink-0 flex flex-col sm:flex-row min-h-[260px] sm:min-h-[300px]">
+                {(() => {
+                  const cartItem = isMounted ? items.find((i) => i.id === product.id) : null;
+                  const isInCart = Boolean(cartItem);
+                  const cartQty = cartItem ? cartItem.cartQuantity : 0;
 
-                {/* Image Side (Left) */}
-                <Link href={`/products/${product.slug}`} className="relative w-full sm:w-[40%] bg-slate-50 flex flex-col items-center justify-center p-6 border-b sm:border-b-0 sm:border-r border-slate-200">
-                  <div className="relative w-full max-w-[220px] aspect-square transition-transform duration-500 group-hover:scale-105">
-                    <img
-                      src={product.image || fallbackImage}
-                      alt={product.name}
-                      className="w-full h-full object-contain drop-shadow-md"
-                      loading="lazy"
-                      draggable="false"
-                    />
-                  </div>
+                  return (
+                    <>
+                      {/* Image Side (Left) */}
+                      <Link href={`/products/${product.slug}`} className="relative w-full sm:w-[40%] bg-slate-50 flex flex-col items-center justify-center p-6 border-b sm:border-b-0 sm:border-r border-slate-200">
+                        <div className="relative w-full max-w-[220px] aspect-square transition-transform duration-500 group-hover:scale-105">
+                          <img
+                            src={product.image || fallbackImage}
+                            alt={product.name}
+                            className="w-full h-full object-contain drop-shadow-md"
+                            loading="lazy"
+                            draggable="false"
+                          />
+                        </div>
 
-                  {/* Badges */}
-                  <div className="absolute top-3 left-3 z-10 flex flex-col gap-1">
-                    <span className="bg-[#F5C451] text-amber-950 text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded-md shadow-xs flex items-center gap-1.5">
-                      <span>🌟</span> BEST SELLER
-                    </span>
-                    {product.badge && (
-                      <span className="bg-[#6D3FD6] text-white text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md shadow-xs w-fit mt-1">
-                        {product.badge}
-                      </span>
-                    )}
-                  </div>
-                </Link>
-
-                {/* Information Side (Right) */}
-                <div className="w-full sm:w-[60%] p-6 sm:p-8 flex flex-col justify-center relative bg-white">
-                  <Link href={`/products/${product.slug}`} className="block flex-grow space-y-2 relative z-10">
-                    <div className="text-[10px] font-extrabold text-[#6D3FD6] tracking-widest uppercase mb-1">
-                      {categoryName}
-                    </div>
-
-                    <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold text-slate-900 tracking-tight leading-tight pr-8">
-                      {product.name}
-                    </h3>
-
-                    <div className="text-xs sm:text-sm font-medium text-slate-500">
-                      {packSizeText}
-                    </div>
-
-                    <div className="flex items-center gap-3 pt-3">
-                      <span className="text-xl sm:text-2xl font-black text-[#6D3FD6]">
-                        ₹{product.price}
-                      </span>
-                      {Number(product.mrp) > Number(product.price) && (
-                        <>
-                          <span className="text-xs sm:text-sm text-slate-400 line-through font-medium">
-                            ₹{product.mrp}
+                        {/* Badges */}
+                        <div className="absolute top-3 left-3 z-10 flex flex-col gap-1">
+                          <span className="bg-[#F5C451] text-amber-950 text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded-md shadow-xs flex items-center gap-1.5">
+                            <span>🌟</span> BEST SELLER
                           </span>
-                          {product.discount && (
-                            <span className="bg-purple-100 text-[#6D3FD6] text-[10px] font-black px-1.5 py-0.5 rounded-md border border-purple-200">
-                              {product.discount} OFF
+                          {product.badge && (
+                            <span className="bg-[#6D3FD6] text-white text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md shadow-xs w-fit mt-1">
+                              {product.badge}
                             </span>
                           )}
-                        </>
-                      )}
-                    </div>
+                        </div>
+                      </Link>
 
-                    <div className="text-[11px] font-bold text-[#6D3FD6] flex items-center gap-1.5 pt-5">
-                      <span className="animate-bounce">👆</span> Tap to view product
-                    </div>
-                  </Link>
+                      {/* Information Side (Right) */}
+                      <div className="w-full sm:w-[60%] p-6 sm:p-8 flex flex-col justify-center relative bg-white">
+                        <Link href={`/products/${product.slug}`} className="block flex-grow space-y-2 relative z-10">
+                          <div className="text-[10px] font-extrabold text-[#6D3FD6] tracking-widest uppercase mb-1">
+                            {categoryName}
+                          </div>
 
-                  {/* Add to Cart Overlay Button */}
-                  <button
-                    onClick={(e) => handleAddToCart(e, product)}
-                    disabled={isOutOfStock}
-                    className={`absolute bottom-6 right-6 z-20 px-4 py-2.5 rounded-xl font-extrabold text-xs shadow-xs transition-all cursor-pointer ${addedId === product.id
-                      ? "bg-emerald-600 text-white"
-                      : isOutOfStock
-                        ? "bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed"
-                        : "bg-[#6D3FD6] text-white hover:bg-[#5B21B6] shadow-sm"
-                      }`}
-                  >
-                    {addedId === product.id ? "Added ✓" : isOutOfStock ? "Out of Stock" : "Add to Cart"}
-                  </button>
-                </div>
+                          <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold text-slate-900 tracking-tight leading-tight pr-8">
+                            {product.name}
+                          </h3>
+
+                          <div className="text-xs sm:text-sm font-medium text-slate-500">
+                            {packSizeText}
+                          </div>
+
+                          <div className="flex items-center gap-3 pt-3">
+                            <span className="text-xl sm:text-2xl font-black text-[#6D3FD6]">
+                              ₹{product.price}
+                            </span>
+                            {Number(product.mrp) > Number(product.price) && (
+                              <>
+                                <span className="text-xs sm:text-sm text-slate-400 line-through font-medium">
+                                  ₹{product.mrp}
+                                </span>
+                                {product.discount && (
+                                  <span className="bg-purple-100 text-[#6D3FD6] text-[10px] font-black px-1.5 py-0.5 rounded-md border border-purple-200">
+                                    {product.discount} OFF
+                                  </span>
+                                )}
+                              </>
+                            )}
+                          </div>
+
+                          <div className="text-[11px] font-bold text-[#6D3FD6] flex items-center gap-1.5 pt-5">
+                            <span className="animate-bounce">👆</span> Tap to view product
+                          </div>
+                        </Link>
+
+                        {/* Add to Cart Overlay Button */}
+                        <button
+                          onClick={(e) => handleAddToCart(e, product)}
+                          disabled={isOutOfStock}
+                          className={`absolute bottom-6 right-6 z-20 px-4 py-2.5 rounded-xl font-extrabold text-xs shadow-xs transition-all cursor-pointer ${
+                            isOutOfStock
+                              ? "bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed"
+                              : isInCart
+                              ? "bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm"
+                              : "bg-[#6D3FD6] text-white hover:bg-[#5B21B6] shadow-sm"
+                          }`}
+                        >
+                          {isOutOfStock ? "Out of Stock" : isInCart ? `✓ In Cart (${cartQty})` : "Add to Cart"}
+                        </button>
+                      </div>
+                    </>
+                  );
+                })()}
               </div>
             );
           })}

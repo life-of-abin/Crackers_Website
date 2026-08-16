@@ -84,60 +84,51 @@ export default function Header({ settings, user }: HeaderProps) {
         <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-2.5 sm:py-3">
           <div className="flex items-center justify-between gap-2 md:gap-4 min-h-[44px] w-full flex-nowrap">
             
-            {/* MOBILE ONLY: Hamburger Menu Button [☰] */}
-            <button
-              type="button"
-              onClick={() => setDrawerOpen(true)}
-              className="lg:hidden w-9 h-9 flex items-center justify-center text-slate-800 hover:text-[#6D3FD6] active:scale-95 bg-slate-100 border border-slate-200 hover:border-purple-300 rounded-xl transition-all duration-200 flex-shrink-0 touch-target shadow-xs cursor-pointer"
-              aria-label="Open navigation menu"
-              title="Open Navigation Menu"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
-            </button>
+            {/* Always Visible Animated Hamburger Menu Button [☰ -> ✕] (Desktop & Mobile) */}
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setDrawerOpen((prev) => !prev)}
+                className="w-10 h-10 flex flex-col items-center justify-center gap-1.5 text-slate-800 hover:text-[#6D3FD6] active:scale-95 bg-slate-100 hover:bg-purple-50 border border-slate-200 hover:border-purple-300 rounded-xl transition-all duration-300 flex-shrink-0 touch-target shadow-xs cursor-pointer group"
+                aria-label={drawerOpen ? "Close navigation menu" : "Open navigation menu"}
+                title={drawerOpen ? "Close Navigation Menu" : "Open Navigation Menu"}
+              >
+                {/* Top Line */}
+                <span
+                  className={`w-5 h-0.5 bg-slate-800 group-hover:bg-[#6D3FD6] rounded-full transition-all duration-300 transform ${
+                    drawerOpen ? "rotate-45 translate-y-[8px]" : ""
+                  }`}
+                />
+                {/* Middle Line */}
+                <span
+                  className={`w-5 h-0.5 bg-slate-800 group-hover:bg-[#6D3FD6] rounded-full transition-all duration-300 ${
+                    drawerOpen ? "opacity-0 scale-x-0" : "opacity-100"
+                  }`}
+                />
+                {/* Bottom Line */}
+                <span
+                  className={`w-5 h-0.5 bg-slate-800 group-hover:bg-[#6D3FD6] rounded-full transition-all duration-300 transform ${
+                    drawerOpen ? "-rotate-45 -translate-y-[8px]" : ""
+                  }`}
+                />
+              </button>
 
-            {/* BRAND LOGO: [🎆 Sivakasi Crackers] */}
-            <Link
-              href="/"
-              className="flex items-center gap-2 flex-shrink-0 group truncate"
-            >
-              <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-gradient-to-tr from-[#6D3FD6] to-[#8B5CF6] flex items-center justify-center text-white text-base sm:text-lg font-black shadow-md">
-                🪔
-              </div>
-              <span className="text-xs sm:text-sm md:text-lg font-black tracking-tight text-slate-900 font-display group-hover:text-[#6D3FD6] transition-colors uppercase leading-none truncate">
-                {settings.storeName}
-              </span>
-            </Link>
-
-            {/* DESKTOP NAV LINKS */}
-            <nav className="hidden lg:flex items-center gap-1 xl:gap-2">
-              {navLinks.map((link) => {
-                const isActive =
-                  link.href === "/"
-                    ? pathname === "/"
-                    : link.href.includes("#")
-                    ? pathname.startsWith("/products")
-                    : pathname.startsWith(link.href);
-
-                return (
-                  <Link
-                    key={link.label}
-                    href={link.href}
-                    className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all ${
-                      isActive
-                        ? "bg-purple-50 text-[#6D3FD6] border border-purple-200"
-                        : "text-slate-700 hover:text-[#6D3FD6] hover:bg-slate-100"
-                    }`}
-                  >
-                    {link.label}
-                  </Link>
-                );
-              })}
-            </nav>
+              {/* BRAND LOGO: [🎆 Sivakasi Crackers] */}
+              <Link
+                href="/"
+                className="flex items-center gap-2 flex-shrink-0 group truncate"
+              >
+                <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-gradient-to-tr from-[#6D3FD6] to-[#8B5CF6] flex items-center justify-center text-white text-base sm:text-lg font-black shadow-md">
+                  🪔
+                </div>
+                <span className="text-xs sm:text-sm md:text-lg font-black tracking-tight text-slate-900 font-display group-hover:text-[#6D3FD6] transition-colors uppercase leading-none truncate">
+                  {settings.storeName}
+                </span>
+              </Link>
+            </div>
 
             {/* RIGHT CONTROLS: SEARCH BAR + CART */}
-            <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0 ml-auto lg:ml-0">
+            <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
               
               {/* DESKTOP FULL SEARCH BAR */}
               <div className="hidden lg:block w-56 xl:w-72">
@@ -193,22 +184,26 @@ export default function Header({ settings, user }: HeaderProps) {
         </div>
       </header>
 
-      {/* MOBILE SLIDE-OVER NAVIGATION DRAWER */}
+      {/* SLIDE-OVER NAVIGATION DRAWER (Pop left-to-right) */}
       <div
-        className={`fixed inset-0 z-[100] flex transition-opacity duration-300 ${drawerOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}`}
+        className={`fixed inset-0 z-[100] flex transition-all duration-300 ${
+          drawerOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+        }`}
         role="dialog"
         aria-modal="true"
       >
-        {/* Backdrop */}
+        {/* Backdrop Overlay */}
         <div
-          className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity"
+          className={`fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity duration-300 ${
+            drawerOpen ? "opacity-100" : "opacity-0"
+          }`}
           onClick={() => setDrawerOpen(false)}
         />
 
-        {/* Drawer Panel */}
+        {/* Left-to-Right Pop Drawer Panel */}
         <div
-          className={`relative z-10 w-[85vw] max-w-xs bg-white text-slate-900 border-r border-slate-200 flex flex-col shadow-2xl h-[100dvh] overflow-hidden transition-transform duration-300 ease-in-out ${
-            drawerOpen ? "translate-x-0" : "-translate-x-full"
+          className={`relative z-10 w-[85vw] max-w-xs sm:max-w-sm bg-white text-slate-900 border-r border-slate-200 flex flex-col shadow-2xl h-[100dvh] overflow-hidden transition-all duration-300 ease-out transform ${
+            drawerOpen ? "translate-x-0 shadow-purple-950/20" : "-translate-x-full"
           }`}
         >
           {/* Drawer Header */}
