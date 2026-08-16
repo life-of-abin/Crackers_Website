@@ -39,9 +39,9 @@ const FAQS = [
   },
   {
     id: 5,
-    question: "What payment options are supported?",
+    question: "How do I place an order?",
     answer:
-      "We accept all major payment methods including UPI (Google Pay, PhonePe, Paytm), Net Banking, and Debit/Credit cards through our secure payment gateway.",
+      "Select your items, enter your delivery address and contact information at checkout, and submit your order directly on our website.",
   },
 ];
 

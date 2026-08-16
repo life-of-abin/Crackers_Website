@@ -277,7 +277,7 @@ export async function createOrderAction(data: {
 
       const shippingFee = calculatedSubtotal >= freeThreshold ? 0 : flatFee;
       const grandTotal = calculatedSubtotal + shippingFee;
-      const selectedPayMethod = data.paymentMethod || "UPI_QR";
+      const selectedPayMethod = data.paymentMethod || "DIRECT_ORDER";
 
       // Create Order & OrderItems with packSize & unitType
       const createdOrder = await tx.order.create({
@@ -295,10 +295,10 @@ export async function createOrderAction(data: {
           discount: 0,
           shipping: shippingFee,
           totalAmount: grandTotal,
-          paymentStatus: "PAID",
-          orderStatus: "CONFIRMED",
+          paymentStatus: "PENDING",
+          orderStatus: "PLACED",
           paymentMethod: selectedPayMethod,
-          paidAt: new Date(),
+          paidAt: null,
           items: {
             create: validatedItems.map((item) => ({
               productId: item.productId,
