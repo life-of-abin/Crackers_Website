@@ -2,7 +2,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 import pg from "pg";
-import { PrismaClient } from "../generated/prisma/client";
+import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 
 export async function updateStoreSettings() {
