@@ -180,11 +180,19 @@ export default function CheckoutPage() {
     const cleaned = e.target.value.replace(/[^0-9]/g, "").slice(0, 6);
     setPincode(cleaned);
 
-    setErrors((prev) => {
-      const copy = { ...prev };
-      delete copy.pincode;
-      return copy;
-    });
+    if (!cleaned || cleaned.length < 6) {
+      const needed = 6 - cleaned.length;
+      setErrors((prev) => ({
+        ...prev,
+        pincode: `Please enter a valid 6-digit PIN code (${needed} digit${needed === 1 ? "" : "s"} remaining).`,
+      }));
+    } else {
+      setErrors((prev) => {
+        const copy = { ...prev };
+        delete copy.pincode;
+        return copy;
+      });
+    }
     setPinError("");
 
     if (cleaned.length !== 6 || cleaned !== autoFilledPin) {
@@ -200,9 +208,12 @@ export default function CheckoutPage() {
     const val = e.target.value;
     setCustomerName(val);
 
-    if (!val || val.trim().length === 0) return;
-
-    if (!isValidCustomerName(val)) {
+    if (!val || val.trim().length < 2) {
+      setErrors((prev) => ({
+        ...prev,
+        name: "Please enter your full name (minimum 2 characters).",
+      }));
+    } else if (!isValidCustomerName(val)) {
       setErrors((prev) => ({
         ...prev,
         name: "Name can contain letters and spaces only.",
@@ -217,32 +228,42 @@ export default function CheckoutPage() {
   };
 
   const handlePhoneInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const raw = e.target.value.replace(/[^0-9]/g, "");
-    if (raw.length <= 10) {
-      setPhone(raw);
-      if (raw.length === 10) {
-        setErrors((prev) => {
-          const copy = { ...prev };
-          delete copy.phone;
-          return copy;
-        });
-      }
+    const raw = e.target.value.replace(/[^0-9]/g, "").slice(0, 10);
+    setPhone(raw);
+
+    if (!raw || raw.length === 0) {
+      setErrors((prev) => ({
+        ...prev,
+        phone: "Please enter your 10-digit mobile number.",
+      }));
+    } else if (raw.length < 10) {
+      const needed = 10 - raw.length;
+      setErrors((prev) => ({
+        ...prev,
+        phone: `Please enter all 10 digits (${needed} digit${needed === 1 ? "" : "s"} remaining).`,
+      }));
+    } else {
+      setErrors((prev) => {
+        const copy = { ...prev };
+        delete copy.phone;
+        return copy;
+      });
     }
   };
 
   const handleEmailInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value;
+    const val = e.target.value.toLowerCase();
     setEmail(val);
 
     if (!val || val.trim().length === 0) {
       setErrors((prev) => ({
         ...prev,
-        email: "Please enter your email address.",
+        email: "Please enter your email address (lowercase only).",
       }));
     } else if (!isValidGmailFormat(val)) {
       setErrors((prev) => ({
         ...prev,
-        email: "Please enter a valid email address (e.g. name@gmail.com).",
+        email: "Please enter a valid lowercase email (e.g. name@gmail.com).",
       }));
     } else {
       setErrors((prev) => {
@@ -256,7 +277,13 @@ export default function CheckoutPage() {
   const handleAddressInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const val = e.target.value;
     setAddress(val);
-    if (val.trim().length >= 5) {
+
+    if (!val || val.trim().length < 5) {
+      setErrors((prev) => ({
+        ...prev,
+        address: "Please enter street address / pickup note (minimum 5 characters).",
+      }));
+    } else {
       setErrors((prev) => {
         const copy = { ...prev };
         delete copy.address;
@@ -268,7 +295,12 @@ export default function CheckoutPage() {
   const handleCityInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     setCity(val);
-    if (val.trim().length >= 2) {
+    if (!val || val.trim().length < 2) {
+      setErrors((prev) => ({
+        ...prev,
+        city: "Please enter City / Town.",
+      }));
+    } else {
       setErrors((prev) => {
         const copy = { ...prev };
         delete copy.city;
@@ -280,7 +312,12 @@ export default function CheckoutPage() {
   const handleDistrictInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     setDistrict(val);
-    if (val.trim().length >= 2) {
+    if (!val || val.trim().length < 2) {
+      setErrors((prev) => ({
+        ...prev,
+        district: "Please enter District.",
+      }));
+    } else {
       setErrors((prev) => {
         const copy = { ...prev };
         delete copy.district;
@@ -294,33 +331,35 @@ export default function CheckoutPage() {
     const newErrors: Record<string, string> = {};
 
     if (!customerName || customerName.trim().length < 2 || !isValidCustomerName(customerName)) {
-      newErrors.name = "Name can contain letters and spaces only.";
+      newErrors.name = "Please enter your full name (letters and spaces only).";
     }
 
     if (!phone || phone.length !== 10) {
-      newErrors.phone = "Please enter a valid 10-digit mobile number.";
+      const needed = 10 - (phone ? phone.length : 0);
+      newErrors.phone = `Please enter a valid 10-digit mobile number (${needed} digit${needed === 1 ? "" : "s"} remaining).`;
     }
 
     if (!email || !isValidGmailFormat(email)) {
-      newErrors.email = "Please enter a valid email address.";
+      newErrors.email = "Please enter a valid lowercase email address (e.g. name@gmail.com).";
     }
 
     if (!address || address.trim().length < 5) {
-      newErrors.address = "Please enter a detailed delivery address (minimum 5 characters).";
+      newErrors.address = "Please enter street address / pickup note (minimum 5 characters).";
     }
 
     if (!pincode || pincode.length !== 6) {
-      newErrors.pincode = "Please enter a valid 6-digit pincode.";
+      const needed = 6 - (pincode ? pincode.length : 0);
+      newErrors.pincode = `Please enter a 6-digit PIN code (${needed} digit${needed === 1 ? "" : "s"} remaining).`;
     } else if (pinError) {
       newErrors.pincode = pinError;
     }
 
     if (!city || city.trim().length < 2) {
-      newErrors.city = "Please enter a valid City / Town.";
+      newErrors.city = "Please enter City / Town.";
     }
 
     if (!district || district.trim().length < 2) {
-      newErrors.district = "Please enter a valid District.";
+      newErrors.district = "Please enter District.";
     }
 
     setErrors(newErrors);
