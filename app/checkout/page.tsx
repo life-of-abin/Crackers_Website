@@ -111,6 +111,16 @@ export default function CheckoutPage() {
       .catch(console.error);
   }, []);
 
+  // Redirect to cart if empty or minimum purchase amount not met
+  useEffect(() => {
+    if (!isMounted) return;
+    const minOrder = settings.minOrderAmount || 0;
+    if (items.length === 0 || subtotal < minOrder) {
+      router.push("/cart");
+    }
+  }, [isMounted, items, subtotal, settings.minOrderAmount, router]);
+
+
   // Reactive PIN Code Lookup Effect (6 Digits Only)
   useEffect(() => {
     const cleaned = pincode.trim().replace(/[^0-9]/g, "");

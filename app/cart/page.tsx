@@ -35,6 +35,7 @@ const DEFAULT_SETTINGS: StoreSettings = {
 export default function CartPage() {
   const { items, updateQuantity, removeFromCart, clearCart, subtotal, mrpTotal, savings, totalQuantity, uniqueItemCount, isMounted } = useCart();
   const [settings, setSettings] = useState<StoreSettings>(DEFAULT_SETTINGS);
+  const [minOrderAlert, setMinOrderAlert] = useState(false);
 
   useEffect(() => {
     fetch("/api/settings")
@@ -58,12 +59,17 @@ export default function CartPage() {
 
   const flatFee = settings.flatShippingFee;
   const freeThreshold = settings.freeShippingThreshold;
+  const minOrder = settings.minOrderAmount || 0;
+
+  const isMinOrderMet = subtotal >= minOrder;
+  const amountNeededForMinOrder = Math.max(0, minOrder - subtotal);
 
   const isFreeShipping = subtotal >= freeThreshold;
   const shippingFee = items.length === 0 ? 0 : isFreeShipping ? 0 : flatFee;
   const grandTotal = subtotal + shippingFee;
 
   const amountNeededForFreeShipping = Math.max(0, freeThreshold - subtotal);
+
 
   return (
     <div className="min-h-screen flex flex-col bg-[#F8FAFC] text-slate-900">
@@ -240,13 +246,44 @@ export default function CartPage() {
                 </div>
               </div>
 
-              {/* C. Proceed Button */}
-              <Link
-                href="/checkout"
-                className="block w-full py-4 rounded-2xl font-black text-sm text-center uppercase tracking-wider shadow-md transition-all bg-[#6D3FD6] hover:bg-[#5B21B6] text-white shadow-purple-200"
-              >
-                PROCEED TO CHECKOUT →
-              </Link>
+              {/* C. Minimum Purchase Alert & Proceed Button */}
+              {!isMinOrderMet && (
+                <div
+                  className={`p-4 rounded-2xl bg-amber-50 border transition-all duration-300 ${
+                    minOrderAlert
+                      ? "border-amber-500 ring-2 ring-amber-400 scale-[1.02]"
+                      : "border-amber-200"
+                  }`}
+                >
+                  <div className="flex items-center gap-2 font-black text-xs text-amber-900 mb-1">
+                    <span>⚠️</span>
+                    <span>Minimum Purchase Required: ₹{minOrder.toLocaleString("en-IN")}</span>
+                  </div>
+                  <p className="text-xs text-amber-800 font-medium leading-relaxed">
+                    Your subtotal is <strong className="font-extrabold text-amber-950">₹{subtotal.toLocaleString("en-IN")}</strong>. Please add <strong className="font-extrabold text-amber-950">₹{amountNeededForMinOrder.toLocaleString("en-IN")}</strong> more of items to proceed to checkout.
+                  </p>
+                </div>
+              )}
+
+              {isMinOrderMet ? (
+                <Link
+                  href="/checkout"
+                  className="block w-full py-4 rounded-2xl font-black text-sm text-center uppercase tracking-wider shadow-md transition-all bg-[#6D3FD6] hover:bg-[#5B21B6] text-white shadow-purple-200 touch-target"
+                >
+                  PROCEED TO CHECKOUT →
+                </Link>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMinOrderAlert(true);
+                    setTimeout(() => setMinOrderAlert(false), 3000);
+                  }}
+                  className="block w-full py-4 rounded-2xl font-black text-sm text-center uppercase tracking-wider shadow-xs transition-all bg-slate-200 hover:bg-amber-100 text-slate-500 hover:text-amber-900 border border-slate-300 hover:border-amber-300 cursor-pointer touch-target"
+                >
+                  PROCEED TO CHECKOUT (MIN ₹{minOrder.toLocaleString("en-IN")})
+                </button>
+              )}
 
               <div className="flex items-center justify-between text-xs pt-1 border-t border-slate-200">
                 <button
