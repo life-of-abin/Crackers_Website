@@ -233,7 +233,18 @@ export default function CheckoutPage() {
   const handleEmailInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     setEmail(val);
-    if (isValidGmailFormat(val)) {
+
+    if (!val || val.trim().length === 0) {
+      setErrors((prev) => ({
+        ...prev,
+        email: "Please enter your email address.",
+      }));
+    } else if (!isValidGmailFormat(val)) {
+      setErrors((prev) => ({
+        ...prev,
+        email: "Please enter a valid email address (e.g. name@gmail.com).",
+      }));
+    } else {
       setErrors((prev) => {
         const copy = { ...prev };
         delete copy.email;
@@ -563,17 +574,17 @@ export default function CheckoutPage() {
                 <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">
                   State *
                 </label>
-                <select
-                  value={state}
-                  onChange={(e) => setState(e.target.value)}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#6D3FD6] focus:border-[#6D3FD6]"
-                >
-                  {INDIAN_STATES.map((st) => (
-                    <option key={st} value={st}>
-                      {st}
-                    </option>
-                  ))}
-                </select>
+                <div className="relative">
+                  <input
+                    type="text"
+                    readOnly
+                    value="Tamil Nadu"
+                    className="w-full px-4 py-3 bg-slate-100 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 cursor-not-allowed select-none"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-extrabold text-[#6D3FD6] bg-purple-100 border border-purple-200 px-2 py-0.5 rounded-full">
+                    Fixed (TN Only)
+                  </span>
+                </div>
               </div>
 
               <div>
@@ -704,10 +715,10 @@ export default function CheckoutPage() {
             {/* Shipping & Pickup Note Box */}
             <div className="p-3.5 bg-purple-50 border border-purple-200 rounded-2xl text-xs space-y-1">
               <div className="font-bold text-[#6D3FD6] flex items-center gap-1.5">
-                <span>💬 Delivery & Store Pickup Note:</span>
+                <span>💬 Store Pickup & Delivery Note:</span>
               </div>
               <p className="text-slate-600 leading-relaxed font-normal">
-                Next-day store pickup at our Sivakasi shop incurs zero shipping charges. For outstation delivery, transport charges will be discussed and confirmed directly via WhatsApp.
+                Once your order is processed and ready, our team will notify you via WhatsApp / Call. You can pick it up directly from our Sivakasi shop with 0 extra charges, or we will assist in arranging outstation parcel transport.
               </p>
             </div>
 

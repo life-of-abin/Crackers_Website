@@ -116,7 +116,7 @@ export default function CartPage() {
                 <span>Store Pickup & Parcel Delivery Options</span>
               </div>
               <p className="text-slate-600 font-medium leading-relaxed">
-                Collect directly at our Sivakasi shop with zero delivery fee, or request parcel transport. Delivery charges are arranged & confirmed via WhatsApp after placing your order.
+                Once your order is ready, our team will notify you to collect it directly at our Sivakasi shop with zero delivery fee, or we will assist you in arranging outstation parcel transport via WhatsApp.
               </p>
             </div>
 
