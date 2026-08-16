@@ -55,7 +55,7 @@ export async function adminLoginAction(formData: FormData) {
     });
 
     if (!user) {
-      return { error: "Invalid admin email or password." };
+      return { error: "No admin account found for this email. Please click 'Owner Initial Setup' below to create/update your password." };
     }
 
     if (user.status !== "ACTIVE") {

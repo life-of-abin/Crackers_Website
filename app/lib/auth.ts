@@ -68,23 +68,32 @@ export function hashPassword(password: string): string {
 export function comparePassword(password: string, storedHash: string): boolean {
   if (!storedHash) return false;
 
-  // Modern pbkdf2 format: pbkdf2:iterations:salt:hash
-  if (storedHash.startsWith("pbkdf2:")) {
-    const parts = storedHash.split(":");
-    if (parts.length === 4) {
-      const iterations = parseInt(parts[1], 10);
-      const salt = parts[2];
-      const originalHash = parts[3];
-      const hash = crypto.pbkdf2Sync(password, salt, iterations, 64, "sha512").toString("hex");
-      return crypto.timingSafeEqual(Buffer.from(hash), Buffer.from(originalHash));
+  try {
+    // Modern pbkdf2 format: pbkdf2:iterations:salt:hash
+    if (storedHash.startsWith("pbkdf2:")) {
+      const parts = storedHash.split(":");
+      if (parts.length === 4) {
+        const iterations = parseInt(parts[1], 10);
+        const salt = parts[2];
+        const originalHash = parts[3];
+        const hash = crypto.pbkdf2Sync(password, salt, iterations, 64, "sha512").toString("hex");
+        
+        const bufA = Buffer.from(hash);
+        const bufB = Buffer.from(originalHash);
+        if (bufA.length !== bufB.length) return false;
+        return crypto.timingSafeEqual(bufA, bufB);
+      }
     }
-  }
 
-  // Legacy single-colon format: salt:hash (1000 iterations)
-  if (storedHash.includes(":")) {
-    const [salt, originalHash] = storedHash.split(":");
-    const hash = crypto.pbkdf2Sync(password, salt, 1000, 64, "sha512").toString("hex");
-    if (hash === originalHash) return true;
+    // Legacy single-colon format: salt:hash (1000 iterations)
+    if (storedHash.includes(":")) {
+      const [salt, originalHash] = storedHash.split(":");
+      const hash = crypto.pbkdf2Sync(password, salt, 1000, 64, "sha512").toString("hex");
+      return hash === originalHash;
+    }
+  } catch (err) {
+    console.error("Error comparing password hash:", err);
+    return false;
   }
 
   return false;
