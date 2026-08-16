@@ -179,15 +179,10 @@ export default function Footer({ settings }: FooterProps) {
 
         </div>
 
-        {/* Bottom Bar & Trust Badges */}
+        {/* Bottom Bar */}
         <div className="border-t border-slate-800 pt-6 flex flex-col md:flex-row items-center justify-between text-xs text-slate-400 gap-4">
           <div>
             © {new Date().getFullYear()} <span className="text-white font-bold">{settings.storeName}</span>. All Rights Reserved. Sivakasi, Tamil Nadu, India.
-          </div>
-          <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-slate-300 font-medium">
-            <span className="bg-slate-800 px-2.5 py-1 rounded border border-slate-700">💳 Secure Checkout</span>
-            <span className="bg-slate-800 px-2.5 py-1 rounded border border-slate-700">📲 UPI / GPay / PhonePe</span>
-            <span className="bg-slate-800 px-2.5 py-1 rounded border border-slate-700">🚚 Safe Transit</span>
           </div>
         </div>
       </div>

@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState } from "react";
-import Link from "next/link";
 import type { StoreSettings } from "@/lib/settings";
 import Header from "@/components/ui/Header";
 import Footer from "@/components/ui/Footer";
@@ -17,7 +16,7 @@ const FAQS = [
     id: 1,
     question: "How do I track my order status?",
     answer:
-      "You can track your order anytime using your Order ID and registered Gmail address on our dedicated Track Order page. You will see live dispatch progress from packing to delivery.",
+      "You can track your order anytime using your Order ID and registered email address on our dedicated Track Order page. You will see live dispatch progress from packing to delivery.",
   },
   {
     id: 2,
@@ -27,9 +26,9 @@ const FAQS = [
   },
   {
     id: 3,
-    question: "What are your shipping timelines and charges?",
+    question: "What are your shipping & store pickup options?",
     answer:
-      "We offer express transport delivery across India. Orders are dispatched within 24 hours. We offer FREE shipping on orders over ₹3,000, with a flat nominal shipping fee on smaller orders.",
+      "You can pick up your order directly from our Sivakasi shop with 0 extra charges, or we will assist in arranging outstation parcel transport via WhatsApp after order placement.",
   },
   {
     id: 4,
@@ -47,338 +46,198 @@ const FAQS = [
 
 export default function ContactClient({ settings, user }: ContactClientProps) {
   const [openFaq, setOpenFaq] = useState<number | null>(1);
-  const [formData, setFormData] = useState({
-    name: "",
-    phone: "",
-    email: "",
-    topic: "Order Status",
-    message: "",
-  });
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
 
   const toggleFaq = (id: number) => {
     setOpenFaq(openFaq === id ? null : id);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    setTimeout(() => {
-      setIsSubmitting(false);
-      setSubmitted(true);
-      setFormData({ name: "", phone: "", email: "", topic: "Order Status", message: "" });
-    }, 800);
-  };
+  const storePhone = settings.supportPhone || "9629525907";
+  const whatsappPhone = settings.whatsappNumber || storePhone;
+  const storeEmail = settings.supportEmail || "abinesh.ece2003@gmail.com";
 
   return (
     <div className="min-h-screen flex flex-col bg-[#F8FAFC] text-slate-900 font-sans">
       <Header settings={settings} user={user} />
 
-      {/* Hero Section */}
-      <section className="relative bg-gradient-to-b from-purple-50 via-white to-[#F8FAFC] text-slate-900 overflow-hidden py-16 sm:py-20 lg:py-24 border-b border-slate-200 text-center">
+      {/* Hero Header Section */}
+      <section className="relative bg-gradient-to-b from-purple-50 via-white to-[#F8FAFC] text-slate-900 overflow-hidden py-14 sm:py-18 border-b border-slate-200 text-center">
         <HeroFireworks />
         <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#6D3FD6_1px,transparent_1px)] [background-size:20px_20px]" />
 
-        <div className="relative z-10 max-w-4xl mx-auto px-4 space-y-4">
+        <div className="relative z-10 max-w-4xl mx-auto px-4 space-y-3">
           <div className="inline-flex items-center gap-2 bg-purple-50 border border-purple-200 text-[#6D3FD6] text-xs font-extrabold px-4 py-1.5 rounded-full uppercase tracking-widest shadow-xs">
             <span className="inline-block w-2 h-2 rounded-full bg-[#6D3FD6] animate-ping" />
-            ✨ 24/7 CUSTOMER HELP & SUPPORT
+            ✨ CUSTOMER HELP & SUPPORT
           </div>
 
-          <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-tight uppercase font-display text-slate-900">
+          <h1 className="text-3xl sm:text-5xl font-black tracking-tight leading-tight uppercase font-display text-slate-900">
             How Can We Help You Today?
           </h1>
 
           <p className="text-slate-600 text-sm sm:text-base max-w-xl mx-auto leading-relaxed font-normal">
-            We are dedicated to making your Diwali fireworks shopping smooth and delightful. Get instant answers, order tracking, or speak directly with our Sivakasi customer service team.
+            Reach out directly to our Sivakasi fireworks customer service team via phone, WhatsApp, email, or visit our store location.
           </p>
         </div>
       </section>
 
-      {/* Support Action Cards */}
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 flex-1 w-full space-y-16">
+      {/* Main Content Section */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 flex-1 w-full space-y-16">
         
-        {/* 4 Support Options Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+        {/* 4 Support Options Grid Section */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           
-          {/* Option 1: Call Us */}
-          <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm hover:border-purple-300 transition-all flex flex-col justify-between group festive-card-hover">
-            <div className="space-y-3">
-              <div className="w-12 h-12 rounded-2xl bg-purple-50 border border-purple-200 text-[#6D3FD6] flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
+          {/* Card 1: Call Helpline */}
+          <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-7 shadow-xs hover:shadow-xl hover:border-purple-300 transition-all flex flex-col justify-between group festive-card-hover">
+            <div className="space-y-4">
+              <div className="w-13 h-13 rounded-2xl bg-pink-50 border border-pink-100 text-pink-600 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
                 📞
               </div>
-              <div>
-                <h3 className="text-base font-black text-slate-900 uppercase tracking-tight font-display">Call Helpline</h3>
-                <p className="text-xs text-slate-500 mt-1">Speak directly with our customer support team</p>
-              </div>
-              <div className="pt-2">
-                <span className="text-xs font-bold text-slate-400 block uppercase text-[10px]">Phone Number</span>
-                <p className="text-base font-black text-[#6D3FD6] font-mono">9629525907</p>
-              </div>
-            </div>
-            <div className="pt-6">
-              <a
-                href="tel:9629525907"
-                className="w-full inline-flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-slate-100 hover:bg-[#6D3FD6] hover:text-white text-slate-800 font-extrabold text-xs uppercase tracking-wider transition-colors border border-slate-200"
-              >
-                <span>📞 Call Now</span>
-              </a>
-              <span className="text-[10px] text-slate-400 text-center block mt-2 font-medium">Mon - Sat: 9:00 AM - 9:00 PM</span>
-            </div>
-          </div>
-
-          {/* Option 2: WhatsApp */}
-          <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm hover:border-purple-300 transition-all flex flex-col justify-between group festive-card-hover">
-            <div className="space-y-3">
-              <div className="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-600 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
-                💬
-              </div>
-              <div>
-                <h3 className="text-base font-black text-slate-900 uppercase tracking-tight font-display">WhatsApp Support</h3>
-                <p className="text-xs text-slate-500 mt-1">Quick replies, order updates & catalogue assistance</p>
-              </div>
-              <div className="pt-2">
-                <span className="text-xs font-bold text-slate-400 block uppercase text-[10px]">WhatsApp Chat</span>
-                <p className="text-base font-black text-emerald-600 font-mono">9629525907</p>
-              </div>
-            </div>
-            <div className="pt-6">
-              <a
-                href="https://wa.me/919629525907"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full inline-flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs uppercase tracking-wider transition-colors shadow-xs"
-              >
-                <span>💬 Chat on WhatsApp</span>
-              </a>
-              <span className="text-[10px] text-slate-400 text-center block mt-2 font-medium">Fastest response channel</span>
-            </div>
-          </div>
-
-          {/* Option 3: Email */}
-          <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm hover:border-purple-300 transition-all flex flex-col justify-between group festive-card-hover">
-            <div className="space-y-3">
-              <div className="w-12 h-12 rounded-2xl bg-purple-50 border border-purple-200 text-[#6D3FD6] flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
-                📧
-              </div>
-              <div>
-                <h3 className="text-base font-black text-slate-900 uppercase tracking-tight font-display">Email Support</h3>
-                <p className="text-xs text-slate-500 mt-1">For detailed inquiries, invoices & corporate orders</p>
-              </div>
-              <div className="pt-2">
-                <span className="text-xs font-bold text-slate-400 block uppercase text-[10px]">Email Address</span>
-                <p className="text-xs font-bold text-[#6D3FD6] truncate">abinesh.ece2003@gmail.com</p>
-              </div>
-            </div>
-            <div className="pt-6">
-              <a
-                href="mailto:abinesh.ece2003@gmail.com"
-                className="w-full inline-flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-slate-100 hover:bg-[#6D3FD6] hover:text-white text-slate-800 font-extrabold text-xs uppercase tracking-wider transition-colors border border-slate-200"
-              >
-                <span>📧 Send Email</span>
-              </a>
-              <span className="text-[10px] text-slate-400 text-center block mt-2 font-medium">Replies within 24 hours</span>
-            </div>
-          </div>
-
-          {/* Option 4: Track Order */}
-          <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm hover:border-purple-300 transition-all flex flex-col justify-between group festive-card-hover">
-            <div className="space-y-3">
-              <div className="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-200 text-amber-600 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
-                📦
-              </div>
-              <div>
-                <h3 className="text-base font-black text-slate-900 uppercase tracking-tight font-display">Track Order</h3>
-                <p className="text-xs text-slate-500 mt-1">Check real-time dispatch, courier & shipping status</p>
-              </div>
-              <div className="pt-2">
-                <span className="text-xs font-bold text-slate-400 block uppercase text-[10px]">Online Tracker</span>
-                <p className="text-xs font-extrabold text-[#6D3FD6]">Order ID + Gmail Required</p>
-              </div>
-            </div>
-            <div className="pt-6">
-              <Link
-                href="/track-order"
-                className="w-full inline-flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-[#6D3FD6] hover:bg-[#5B21B6] text-white font-extrabold text-xs uppercase tracking-wider transition-all shadow-md"
-              >
-                <span>🚚 Track Order Now</span>
-              </Link>
-              <span className="text-[10px] text-slate-400 text-center block mt-2 font-medium">Live status & invoice download</span>
-            </div>
-          </div>
-
-        </div>
-
-        {/* 2-Column Section: Store Info & Send Message Form */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          
-          {/* Left Column: Store Details */}
-          <div className="lg:col-span-5 space-y-6">
-            
-            <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-xl space-y-6">
-              <div className="border-b border-slate-200 pb-4">
-                <span className="text-[10px] font-black text-[#6D3FD6] uppercase tracking-widest block mb-1">
-                  MAIN DISTRIBUTION CENTER
-                </span>
-                <h2 className="text-xl font-black text-slate-900 uppercase font-display">
-                  Sivakasi Store & Hub
-                </h2>
-              </div>
-
-              <div className="space-y-4 text-xs">
-                <div>
-                  <span className="text-slate-400 font-bold uppercase block text-[10px] mb-1">Store Address</span>
-                  <p className="font-extrabold text-slate-900 text-sm">{settings.storeName}</p>
-                  <p className="text-slate-600 leading-relaxed mt-0.5">Sivakasi, Tamil Nadu, India</p>
-                </div>
-
-                <a
-                  href={settings.googleMapsUrl || "https://maps.google.com/?q=Sivakasi,Tamil+Nadu"}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-50 border border-slate-200 text-[#6D3FD6] hover:border-purple-300 rounded-xl font-bold text-xs transition-colors"
-                >
-                  <span>📍 Open Google Maps Directions →</span>
-                </a>
-              </div>
-
-              {/* Support Promises */}
-              <div className="pt-4 border-t border-slate-200 space-y-3">
-                <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider font-display">
-                  Our Support Promise
+              <div className="space-y-1">
+                <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight font-display">
+                  Call Helpline
                 </h3>
-                <ul className="space-y-2 text-xs text-slate-600">
-                  <li className="flex items-center gap-2.5">
-                    <span className="text-emerald-600 font-bold">✓</span>
-                    <span>100% Genuine Direct Sivakasi Crackers</span>
-                  </li>
-                  <li className="flex items-center gap-2.5">
-                    <span className="text-emerald-600 font-bold">✓</span>
-                    <span>Transport-Certified Heavy Safe Packaging</span>
-                  </li>
-                  <li className="flex items-center gap-2.5">
-                    <span className="text-emerald-600 font-bold">✓</span>
-                    <span>Instant WhatsApp Order Updates & SMS Alerts</span>
-                  </li>
-                  <li className="flex items-center gap-2.5">
-                    <span className="text-emerald-600 font-bold">✓</span>
-                    <span>Official Tax Invoice Provided with Every Order</span>
-                  </li>
-                </ul>
-              </div>
-
-            </div>
-
-          </div>
-
-          {/* Right Column: Form */}
-          <div className="lg:col-span-7">
-            <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-xl space-y-6">
-              <div className="border-b border-slate-200 pb-4">
-                <span className="text-[10px] font-black text-[#6D3FD6] uppercase tracking-widest block mb-1">
-                  DIRECT ENQUIRY FORM
-                </span>
-                <h2 className="text-xl font-black text-slate-900 uppercase font-display">
-                  Send Support Message
-                </h2>
-                <p className="text-xs text-slate-500 mt-1">
-                  Fill out the form below and our customer care team will get back to you promptly.
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  Speak directly with our customer support team
                 </p>
               </div>
+              <div className="pt-2 border-t border-slate-100">
+                <span className="text-[10px] font-bold text-slate-400 block uppercase tracking-wider">
+                  PHONE NUMBER
+                </span>
+                <p className="text-base font-black text-[#6D3FD6] font-mono mt-0.5">
+                  {storePhone}
+                </p>
+              </div>
+            </div>
 
-              {submitted ? (
-                <div className="p-8 bg-emerald-50 border border-emerald-200 rounded-2xl text-center space-y-3">
-                  <span className="text-4xl block">🎉</span>
-                  <h3 className="text-lg font-black text-emerald-800 uppercase font-display">Message Sent Successfully!</h3>
-                  <p className="text-xs text-slate-600 max-w-md mx-auto">
-                    Thank you for reaching out to Sivakasi Crackers. Our support team will review your inquiry and contact you shortly.
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => setSubmitted(false)}
-                    className="inline-block bg-[#6D3FD6] text-white font-bold text-xs px-6 py-2.5 rounded-xl hover:bg-[#5B21B6] transition-colors mt-2 cursor-pointer"
-                  >
-                    Send Another Message
-                  </button>
-                </div>
-              ) : (
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Your Name *</label>
-                      <input
-                        type="text"
-                        required
-                        placeholder="Abinesh Kumar"
-                        value={formData.name}
-                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                        className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#6D3FD6]"
-                      />
-                    </div>
+            <div className="pt-6 space-y-2">
+              <a
+                href={`tel:${storePhone}`}
+                className="w-full inline-flex items-center justify-center gap-2 py-3 px-4 rounded-2xl bg-slate-100 hover:bg-[#6D3FD6] hover:text-white text-slate-800 font-extrabold text-xs uppercase tracking-wider transition-all border border-slate-200 shadow-xs"
+              >
+                <span>📞 CALL NOW</span>
+              </a>
+              <span className="text-[11px] text-slate-400 text-center block font-medium">
+                Mon - Sat: 9:00 AM - 9:00 PM
+              </span>
+            </div>
+          </div>
 
-                    <div>
-                      <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Mobile Number *</label>
-                      <input
-                        type="tel"
-                        required
-                        placeholder="9629525907"
-                        value={formData.phone}
-                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                        className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#6D3FD6]"
-                      />
-                    </div>
-                  </div>
+          {/* Card 2: WhatsApp Support */}
+          <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-7 shadow-xs hover:shadow-xl hover:border-emerald-300 transition-all flex flex-col justify-between group festive-card-hover">
+            <div className="space-y-4">
+              <div className="w-13 h-13 rounded-2xl bg-emerald-50 border border-emerald-100 text-emerald-600 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
+                💬
+              </div>
+              <div className="space-y-1">
+                <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight font-display">
+                  WhatsApp Support
+                </h3>
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  Quick replies, order updates & catalogue assistance
+                </p>
+              </div>
+              <div className="pt-2 border-t border-slate-100">
+                <span className="text-[10px] font-bold text-slate-400 block uppercase tracking-wider">
+                  WHATSAPP CHAT
+                </span>
+                <p className="text-base font-black text-emerald-600 font-mono mt-0.5">
+                  {whatsappPhone}
+                </p>
+              </div>
+            </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Email Address *</label>
-                      <input
-                        type="email"
-                        required
-                        placeholder="abinesh.ece2003@gmail.com"
-                        value={formData.email}
-                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                        className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#6D3FD6]"
-                      />
-                    </div>
+            <div className="pt-6 space-y-2">
+              <a
+                href={`https://wa.me/91${whatsappPhone}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full inline-flex items-center justify-center gap-2 py-3 px-4 rounded-2xl bg-[#00B761] hover:bg-[#009E53] text-white font-extrabold text-xs uppercase tracking-wider transition-all shadow-md"
+              >
+                <span>💬 CHAT ON WHATSAPP</span>
+              </a>
+              <span className="text-[11px] text-slate-400 text-center block font-medium">
+                Fastest response channel
+              </span>
+            </div>
+          </div>
 
-                    <div>
-                      <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Inquiry Topic</label>
-                      <select
-                        value={formData.topic}
-                        onChange={(e) => setFormData({ ...formData, topic: e.target.value })}
-                        className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#6D3FD6]"
-                      >
-                        <option value="Order Status">Order Status Inquiry</option>
-                        <option value="Product Details">Product / Catalogue Query</option>
-                        <option value="Bulk Order">Bulk / Wholesale Booking</option>
-                        <option value="Payment Issue">Payment Assistance</option>
-                      </select>
-                    </div>
-                  </div>
+          {/* Card 3: Email Support */}
+          <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-7 shadow-xs hover:shadow-xl hover:border-purple-300 transition-all flex flex-col justify-between group festive-card-hover">
+            <div className="space-y-4">
+              <div className="w-13 h-13 rounded-2xl bg-purple-50 border border-purple-100 text-[#6D3FD6] flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
+                📧
+              </div>
+              <div className="space-y-1">
+                <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight font-display">
+                  Email Support
+                </h3>
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  For detailed inquiries, invoices & corporate orders
+                </p>
+              </div>
+              <div className="pt-2 border-t border-slate-100">
+                <span className="text-[10px] font-bold text-slate-400 block uppercase tracking-wider">
+                  EMAIL ADDRESS
+                </span>
+                <p className="text-xs font-bold text-[#6D3FD6] truncate mt-0.5">
+                  {storeEmail}
+                </p>
+              </div>
+            </div>
 
-                  <div>
-                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Message *</label>
-                    <textarea
-                      required
-                      rows={4}
-                      placeholder="Write your message or inquiry here..."
-                      value={formData.message}
-                      onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#6D3FD6]"
-                    />
-                  </div>
+            <div className="pt-6 space-y-2">
+              <a
+                href={`mailto:${storeEmail}`}
+                className="w-full inline-flex items-center justify-center gap-2 py-3 px-4 rounded-2xl bg-slate-100 hover:bg-[#6D3FD6] hover:text-white text-slate-800 font-extrabold text-xs uppercase tracking-wider transition-all border border-slate-200 shadow-xs"
+              >
+                <span>✉️ SEND EMAIL</span>
+              </a>
+              <span className="text-[11px] text-slate-400 text-center block font-medium">
+                Replies within 24 hours
+              </span>
+            </div>
+          </div>
 
-                  <button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="w-full py-3.5 bg-[#6D3FD6] hover:bg-[#5B21B6] text-white font-extrabold text-xs uppercase tracking-wider rounded-xl shadow-md transition-colors cursor-pointer"
-                  >
-                    {isSubmitting ? "Sending Message..." : "Submit Inquiry →"}
-                  </button>
-                </form>
-              )}
+          {/* Card 4: Store Location */}
+          <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-7 shadow-xs hover:shadow-xl hover:border-amber-300 transition-all flex flex-col justify-between group festive-card-hover">
+            <div className="space-y-4">
+              <div className="w-13 h-13 rounded-2xl bg-amber-50 border border-amber-100 text-amber-600 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
+                📍
+              </div>
+              <div className="space-y-1">
+                <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight font-display">
+                  Store Location
+                </h3>
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  Visit our store & explore our exclusive collection
+                </p>
+              </div>
+              <div className="pt-2 border-t border-slate-100 space-y-0.5">
+                <span className="text-[10px] font-bold text-slate-400 block uppercase tracking-wider">
+                  STORE ADDRESS
+                </span>
+                <p className="text-xs font-black text-slate-900">
+                  {settings.storeName || "Sri Sivakasi Crackers"}
+                </p>
+                <p className="text-[11px] text-slate-500 font-medium">
+                  Sivakasi, Tamil Nadu, India
+                </p>
+              </div>
+            </div>
+
+            <div className="pt-6 space-y-2">
+              <a
+                href={settings.googleMapsUrl || "https://maps.google.com/?q=Sivakasi,Tamil+Nadu"}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full inline-flex items-center justify-center gap-2 py-3 px-4 rounded-2xl bg-slate-100 hover:bg-[#6D3FD6] hover:text-white text-slate-800 font-extrabold text-xs uppercase tracking-wider transition-all border border-slate-200 shadow-xs"
+              >
+                <span>📍 VIEW LOCATION</span>
+              </a>
+              <span className="text-[11px] text-slate-400 text-center block font-medium">
+                Open Daily: 9:00 AM - 9:00 PM
+              </span>
             </div>
           </div>
 
@@ -387,8 +246,12 @@ export default function ContactClient({ settings, user }: ContactClientProps) {
         {/* FAQs Accordion Section */}
         <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-10 shadow-xl space-y-6">
           <div className="text-center max-w-xl mx-auto space-y-1">
-            <span className="text-[10px] font-black text-[#6D3FD6] uppercase tracking-widest block">FREQUENTLY ASKED QUESTIONS</span>
-            <h2 className="text-2xl font-black text-slate-900 uppercase font-display">Got Questions? We Have Answers</h2>
+            <span className="text-[10px] font-black text-[#6D3FD6] uppercase tracking-widest block">
+              FREQUENTLY ASKED QUESTIONS
+            </span>
+            <h2 className="text-2xl sm:text-3xl font-black text-slate-900 uppercase font-display">
+              Got Questions? We Have Answers
+            </h2>
           </div>
 
           <div className="space-y-3 max-w-3xl mx-auto">
@@ -400,7 +263,9 @@ export default function ContactClient({ settings, user }: ContactClientProps) {
                   className="w-full px-5 py-4 text-left font-bold text-xs sm:text-sm text-slate-900 flex justify-between items-center hover:text-[#6D3FD6] transition-colors cursor-pointer"
                 >
                   <span>{faq.question}</span>
-                  <span className="text-base font-mono ml-2 text-[#6D3FD6]">{openFaq === faq.id ? "−" : "+"}</span>
+                  <span className="text-base font-mono ml-2 text-[#6D3FD6]">
+                    {openFaq === faq.id ? "−" : "+"}
+                  </span>
                 </button>
 
                 {openFaq === faq.id && (
@@ -415,6 +280,7 @@ export default function ContactClient({ settings, user }: ContactClientProps) {
 
       </main>
 
+      {/* Global Site Footer */}
       <Footer settings={settings} />
     </div>
   );
