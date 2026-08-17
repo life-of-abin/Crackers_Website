@@ -187,17 +187,17 @@ export default async function HomePage() {
       {/* CATEGORIES SECTION */}
       <section id="categories" className="py-12 bg-[#F8FAFC] border-b border-slate-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between mb-8">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
             <div>
               <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight uppercase font-display shrink-0">
                 Shop By Category
               </h2>
-              <p className="text-xs sm:text-sm text-slate-500 font-medium">
+              <p className="text-xs sm:text-sm text-slate-500 font-medium mt-1">
                 Browse our complete Sivakasi cracker collection
               </p>
             </div>
-            <Link href="/products" className="text-xs font-extrabold text-[#6D3FD6] hover:underline">
-              View All Categories →
+            <Link href="/products" className="text-xs font-extrabold text-[#6D3FD6] hover:underline whitespace-nowrap shrink-0">
+              View All Categories &rarr;
             </Link>
           </div>
 
@@ -229,32 +229,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* FESTIVAL OFFER BANNER / DIWALI COMBO */}
-      <section className="py-12 bg-white border-b border-slate-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="relative rounded-3xl bg-gradient-to-r from-[#5B21B6] via-[#6D3FD6] to-[#7C3AED] p-8 sm:p-12 overflow-hidden text-center sm:text-left flex flex-col sm:flex-row items-center justify-between gap-6 shadow-xl text-white">
-            <div className="space-y-2 max-w-xl">
-              <span className="bg-amber-400 text-amber-950 font-black text-[10px] px-3 py-1 rounded-full uppercase tracking-wider inline-block">
-                Exclusive Festival Offer
-              </span>
-              <h3 className="text-2xl sm:text-3xl font-black text-white font-display">
-                Diwali Family Combo
-              </h3>
-              <p className="text-xs sm:text-sm text-purple-100">
-                Everything you need for a spectacular celebration. Contact us for custom wholesale package pricing.
-              </p>
-            </div>
-            <div className="flex-shrink-0">
-              <Link
-                href="/products"
-                className="inline-block bg-white text-[#6D3FD6] hover:bg-amber-300 hover:text-slate-900 font-black px-8 py-4 rounded-2xl shadow-md text-sm transition-all transform hover:scale-105"
-              >
-                Shop Combo Packs →
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
+
 
       {/* WHY CHOOSE SIVAKASI */}
       <section className="py-16 bg-[#F8FAFC] text-slate-900 border-b border-slate-200">

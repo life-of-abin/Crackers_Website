@@ -68,14 +68,9 @@ export default function Header({ settings, user }: HeaderProps) {
               <a href="tel:9629525907" className="hover:text-[#F5C451] transition-colors">
                 📞 Support: 9629525907
               </a>
-              <a
-                href="https://wa.me/919629525907"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hover:text-emerald-300 transition-colors flex items-center gap-1 font-bold text-emerald-300"
-              >
-                💬 WhatsApp Us
-              </a>
+              <span className="text-purple-200 flex items-center gap-1 font-bold">
+                🚚 Direct Sivakasi Wholesale
+              </span>
             </div>
           </div>
         </div>
@@ -289,18 +284,7 @@ export default function Header({ settings, user }: HeaderProps) {
             </div>
           </div>
 
-          {/* Drawer Footer */}
-          <div className="p-4 bg-slate-50 border-t border-slate-200">
-            <a
-              href="https://wa.me/919629525907"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-full inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs transition-colors shadow-sm"
-            >
-              <span>💬</span>
-              <span>WhatsApp Support</span>
-            </a>
-          </div>
+
         </div>
       </div>
     </>

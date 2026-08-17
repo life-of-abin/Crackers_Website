@@ -891,7 +891,7 @@ export default function CheckoutPage() {
             <button
               type="submit"
               disabled={loading || items.length === 0}
-              className="w-full py-4 bg-[#6D3FD6] hover:bg-[#5B21B6] text-white font-black text-sm uppercase tracking-wider rounded-2xl shadow-lg transition-all flex items-center justify-center gap-3 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer shadow-purple-200"
+              className="w-full py-3.5 sm:py-4 bg-[#6D3FD6] hover:bg-[#5B21B6] text-white font-black text-sm uppercase tracking-wider rounded-2xl shadow-lg transition-all flex items-center justify-center gap-3 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer shadow-purple-200 px-4"
             >
               {loading ? (
                 <span className="flex items-center gap-2">
@@ -899,7 +899,12 @@ export default function CheckoutPage() {
                   Placing Order...
                 </span>
               ) : (
-                <span>Place Order (Product Total ₹{subtotal.toLocaleString("en-IN")}) →</span>
+                <span className="flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-2 text-center w-full">
+                  <span className="font-black">Place Order</span>
+                  <span className="text-[11px] sm:text-xs text-purple-200 normal-case tracking-normal">
+                    (Total ₹{subtotal.toLocaleString("en-IN")}) &rarr;
+                  </span>
+                </span>
               )}
             </button>
 
