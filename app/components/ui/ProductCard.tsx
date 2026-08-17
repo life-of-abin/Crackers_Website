@@ -76,8 +76,8 @@ export default function ProductCard({ product }: { product: ProductCardData }) {
               </span>
             )}
             {product.badge && (
-              <span className="bg-[#F5C451] text-amber-950 font-black text-[10px] px-2.5 py-0.5 rounded-lg shadow-md uppercase">
-                {product.badge}
+              <span className="bg-[#F5C451] text-amber-950 font-black text-[10px] px-2.5 py-0.5 rounded-lg shadow-md uppercase tracking-wider">
+                BEST SELLER
               </span>
             )}
           </div>

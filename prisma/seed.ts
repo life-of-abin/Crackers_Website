@@ -1017,7 +1017,7 @@ async function main() {
 
     // Feature some top products
     const featured = index % 8 === 0;
-    const badge = index % 5 === 0 ? "Bestseller" : index % 7 === 0 ? "Hot" : null;
+    const badge = (index % 5 === 0 || index % 7 === 0) ? "Bestseller" : null;
 
     await prisma.product.upsert({
       where: { slug },

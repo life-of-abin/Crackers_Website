@@ -182,7 +182,7 @@ export default function NewProductPage() {
 
             <div>
               <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">
-                Badge / Tag (Optional e.g. Bestseller, Hot)
+                Badge / Tag (Optional e.g. Bestseller)
               </label>
               <input
                 type="text"

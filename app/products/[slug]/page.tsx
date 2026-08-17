@@ -93,7 +93,7 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
                 )}
                 {product.badge && (
                   <span className="absolute top-4 right-4 bg-[#F5C451] text-amber-950 font-black text-xs px-3 py-1 rounded-lg uppercase shadow-sm">
-                    {product.badge}
+                    BEST SELLER
                   </span>
                 )}
               </div>
