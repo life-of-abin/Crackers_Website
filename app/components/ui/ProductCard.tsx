@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import Link from "next/link";
 import { useCart } from "@/lib/cart-context";
 
@@ -21,7 +21,7 @@ export interface ProductCardData {
 }
 
 export default function ProductCard({ product }: { product: ProductCardData }) {
-  const { items, addToCart, isMounted } = useCart();
+  const { items, addToCart, updateQuantity, isMounted } = useCart();
 
   const isOutOfStock = product.stock <= 0;
   const isLowStock = product.stock > 0 && product.stock < 10;
@@ -51,19 +51,38 @@ export default function ProductCard({ product }: { product: ProductCardData }) {
     });
   };
 
+  const handleDecrement = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!isInCart) return;
+    updateQuantity(product.id, cartQty - 1);
+  };
+
+  const handleIncrement = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (isOutOfStock) return;
+    const maxAllowed = product.stock > 0 ? product.stock : 999;
+    if (isInCart) {
+      updateQuantity(product.id, Math.min(maxAllowed, cartQty + 1));
+    } else {
+      handleAdd(e);
+    }
+  };
+
   const fallbackImage = `https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=400&q=80`;
 
   return (
-    <div className="group relative bg-white border border-slate-200 rounded-2xl overflow-hidden flex flex-col justify-between festive-card-hover shadow-sm hover:shadow-xl hover:border-purple-300">
-      
+    <div className="bg-white rounded-2xl border border-slate-200 shadow-xs hover:shadow-lg transition-all duration-300 overflow-hidden flex flex-col justify-between group hover:border-purple-300 relative">
+
       {/* Card Header & Media */}
       <div>
-        <div className="relative aspect-4/3 bg-slate-100 overflow-hidden">
-          <Link href={`/products/${product.slug}`}>
+        <div className="relative aspect-square bg-slate-50 overflow-hidden p-4 border-b border-slate-100 flex items-center justify-center">
+          <Link href={`/products/${product.slug}`} className="w-full h-full flex items-center justify-center">
             <img
               src={product.image || fallbackImage}
               alt={product.name}
-              className="w-full h-full object-cover group-hover:scale-108 transition-transform duration-500 ease-out"
+              className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105"
               loading="lazy"
             />
           </Link>
@@ -132,37 +151,46 @@ export default function ProductCard({ product }: { product: ProductCardData }) {
         </div>
       </div>
 
-      {/* Card Action */}
+      {/* Card Action Button & Interactive Quantity Controller */}
       <div className="p-3.5 sm:p-4 pt-0">
-        <button
-          onClick={handleAdd}
-          disabled={isOutOfStock}
-          className={`w-full h-10 sm:h-11 rounded-xl font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all shadow-xs touch-target cursor-pointer ${
-            isOutOfStock
-              ? "bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200"
-              : isInCart
-              ? "bg-emerald-600 hover:bg-emerald-700 text-white font-black shadow-sm"
-              : "bg-[#6D3FD6] hover:bg-[#5B21B6] text-white hover:shadow-md active:scale-98"
-          }`}
-        >
-          {isOutOfStock ? (
-            <span>Sold Out</span>
-          ) : isInCart ? (
-            <>
-              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-              </svg>
-              <span>In Cart ({cartQty})</span>
-            </>
-          ) : (
-            <>
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
-              </svg>
-              <span>Add to Cart</span>
-            </>
-          )}
-        </button>
+        {isOutOfStock ? (
+          <button
+            disabled
+            className="w-full h-10 sm:h-11 rounded-xl font-extrabold text-xs sm:text-sm bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed flex items-center justify-center"
+          >
+            Sold Out
+          </button>
+        ) : isInCart ? (
+          <div className="w-full h-10 sm:h-11 rounded-xl bg-emerald-600 font-extrabold text-xs sm:text-sm text-white flex items-center justify-between px-2 shadow-sm">
+            <button
+              onClick={handleDecrement}
+              className="w-8 h-8 rounded-lg bg-emerald-700 hover:bg-emerald-800 flex items-center justify-center font-black text-base transition-colors cursor-pointer active:scale-90"
+              title="Decrease quantity (0 removes item)"
+            >
+              -
+            </button>
+            <span className="font-extrabold text-xs sm:text-sm px-1 select-none">
+              In Cart ({cartQty})
+            </span>
+            <button
+              onClick={handleIncrement}
+              className="w-8 h-8 rounded-lg bg-emerald-700 hover:bg-emerald-800 flex items-center justify-center font-black text-base transition-colors cursor-pointer active:scale-90"
+              title="Increase quantity"
+            >
+              +
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={handleAdd}
+            className="w-full h-10 sm:h-11 rounded-xl font-extrabold text-xs sm:text-sm bg-[#6D3FD6] hover:bg-[#5B21B6] text-white flex items-center justify-center gap-2 transition-all shadow-xs hover:shadow-md active:scale-98 cursor-pointer"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
+            </svg>
+            <span>Add to Cart</span>
+          </button>
+        )}
       </div>
 
     </div>

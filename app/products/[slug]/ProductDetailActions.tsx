@@ -99,8 +99,9 @@ export default function ProductDetailActions({ product }: ProductDetailActionsPr
           <button
             type="button"
             onClick={handleDecrement}
-            disabled={isOutOfStock || (isInCart ? cartQty <= 1 : localQty <= 1)}
+            disabled={isOutOfStock || (!isInCart && localQty <= 1)}
             className="w-10 h-10 flex items-center justify-center text-slate-700 font-bold hover:bg-slate-100 disabled:opacity-40 transition-colors cursor-pointer"
+            title={isInCart && cartQty === 1 ? "Remove from cart" : "Decrease quantity"}
           >
             -
           </button>

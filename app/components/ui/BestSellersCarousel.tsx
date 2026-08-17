@@ -24,7 +24,7 @@ type Product = {
 };
 
 export default function BestSellersCarousel({ products }: { products: Product[] }) {
-  const { items, addToCart, isMounted } = useCart();
+  const { items, addToCart, updateQuantity, isMounted } = useCart();
 
   const [activeIndex, setActiveIndex] = useState(
     products && products.length > 1 ? products.length : 0
@@ -314,23 +314,50 @@ export default function BestSellersCarousel({ products }: { products: Product[] 
                       View Product →
                     </Link>
 
-                    <button
-                      onClick={(e) => handleAddToCart(e, product)}
-                      disabled={isOutOfStock}
-                      className={`px-4 py-2.5 rounded-xl font-extrabold text-xs shadow-xs transition-all cursor-pointer ${
-                        isOutOfStock
-                          ? "bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed"
-                          : isInCart
-                          ? "bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm active:scale-95"
-                          : "bg-[#6D3FD6] text-white hover:bg-[#5B21B6] shadow-sm active:scale-95"
-                      }`}
-                    >
-                      {isOutOfStock
-                        ? "Out of Stock"
-                        : isInCart
-                        ? `✓ In Cart (${cartQty})`
-                        : "Add to Cart"}
-                    </button>
+                    {isOutOfStock ? (
+                      <button
+                        disabled
+                        className="px-4 py-2.5 rounded-xl font-extrabold text-xs bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed"
+                      >
+                        Out of Stock
+                      </button>
+                    ) : isInCart ? (
+                      <div className="rounded-xl bg-emerald-600 font-extrabold text-xs text-white flex items-center gap-1.5 p-1 shadow-sm">
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            updateQuantity(product.id, cartQty - 1);
+                          }}
+                          className="w-7 h-7 rounded-lg bg-emerald-700 hover:bg-emerald-800 flex items-center justify-center font-black text-sm transition-colors cursor-pointer active:scale-90"
+                          title="Decrease quantity (0 removes item)"
+                        >
+                          -
+                        </button>
+                        <span className="font-extrabold text-xs px-1 select-none">
+                          In Cart ({cartQty})
+                        </span>
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            const maxAllowed = product.stock > 0 ? product.stock : 999;
+                            updateQuantity(product.id, Math.min(maxAllowed, cartQty + 1));
+                          }}
+                          className="w-7 h-7 rounded-lg bg-emerald-700 hover:bg-emerald-800 flex items-center justify-center font-black text-sm transition-colors cursor-pointer active:scale-90"
+                          title="Increase quantity"
+                        >
+                          +
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={(e) => handleAddToCart(e, product)}
+                        className="px-4 py-2.5 rounded-xl font-extrabold text-xs bg-[#6D3FD6] text-white hover:bg-[#5B21B6] shadow-sm active:scale-95 transition-all cursor-pointer"
+                      >
+                        Add to Cart
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
