@@ -80,10 +80,12 @@ export default function CheckoutPage() {
     city?: string;
     district?: string;
     state?: string;
+    postOffices?: string[];
   } | null>(null);
 
   const [pinError, setPinError] = useState("");
   const [autoFilledPin, setAutoFilledPin] = useState<string | null>(null);
+  const [showAllAreas, setShowAllAreas] = useState(false);
 
   // Input Field References for Scrolling
   const nameRef = useRef<HTMLInputElement | null>(null);
@@ -119,24 +121,21 @@ export default function CheckoutPage() {
     }
   }, [isMounted, items, subtotal, settings.minOrderAmount, router]);
 
-  // Reactive PIN Code Lookup Effect (6 Digits Only & Tamil Nadu Verification)
+  // Reactive PIN Code Lookup Effect (6 Digits Only & Tamil Nadu API Detection)
   useEffect(() => {
     const cleaned = pincode.trim().replace(/[^0-9]/g, "").slice(0, 6);
 
-    if (cleaned.length !== 6) return;
-
-    // Strict Tamil Nadu PIN Code Prefix Check (60xxxx - 64xxxx)
-    const tnPrefixes = ["60", "61", "62", "63", "64"];
-    const prefix2 = cleaned.slice(0, 2);
-    if (!tnPrefixes.includes(prefix2)) {
-      setPinError("⚠️ Invalid Tamil Nadu PIN code. Only Tamil Nadu PIN codes (60xxxx - 64xxxx) are accepted.");
-      setPinVerifiedInfo(null);
-      setAutoFilledPin(null);
-      setCity("");
-      setDistrict("");
+    if (cleaned.length !== 6) {
+      if (autoFilledPin !== null) {
+        setAutoFilledPin(null);
+        setPinVerifiedInfo(null);
+        setCity("");
+        setDistrict("");
+        setLandmark("");
+        setShowAllAreas(false);
+      }
       return;
     }
-
     if (cleaned === autoFilledPin) return;
 
     setPinLoading(true);
@@ -146,17 +145,13 @@ export default function CheckoutPage() {
     const controller = new AbortController();
     let isCurrent = true;
 
-    fetch(`/api/pincode?pin=${cleaned}`, { signal: controller.signal })
+    fetch(`/api/pincode?pin=${cleaned}&tnOnly=true`, { signal: controller.signal })
       .then((res) => res.json())
       .then((data) => {
         if (!isCurrent) return;
         setPinLoading(false);
 
-        // Check if verified AND state is Tamil Nadu
-        const stateNorm = (data?.state || "").toLowerCase().replace(/[^a-z]/g, "");
-        const isTN = stateNorm.includes("tamil") || stateNorm.includes("tn");
-
-        if (data && data.valid && isTN) {
+        if (data && data.valid && data.isTamilNadu !== false) {
           setPinVerifiedInfo(data);
           setAutoFilledPin(cleaned);
 
@@ -172,22 +167,26 @@ export default function CheckoutPage() {
             return copy;
           });
         } else {
-          setPinError("⚠️ Invalid Tamil Nadu PIN code. Only Tamil Nadu PIN codes (60xxxx - 64xxxx) are accepted.");
+          setPinError(data?.error || "⚠️ Invalid Tamil Nadu PIN code. Only valid Tamil Nadu PIN codes are accepted.");
           setAutoFilledPin(null);
           setPinVerifiedInfo(null);
           setCity("");
           setDistrict("");
+          setLandmark("");
+          setShowAllAreas(false);
         }
       })
       .catch((err) => {
         if (!isCurrent) return;
         if (err.name !== "AbortError") {
           setPinLoading(false);
-          setPinError("⚠️ Invalid Tamil Nadu PIN code. Please enter a valid 6-digit Tamil Nadu PIN code.");
+          setPinError("⚠️ Unable to detect PIN code. Please enter a valid 6-digit Tamil Nadu PIN code.");
           setAutoFilledPin(null);
           setPinVerifiedInfo(null);
           setCity("");
           setDistrict("");
+          setLandmark("");
+          setShowAllAreas(false);
         }
       });
 
@@ -219,6 +218,8 @@ export default function CheckoutPage() {
     if (cleaned.length !== 6 || cleaned !== autoFilledPin) {
       setCity("");
       setDistrict("");
+      setLandmark("");
+      setShowAllAreas(false);
       setState("Tamil Nadu");
       setAutoFilledPin(null);
       setPinVerifiedInfo(null);
@@ -731,12 +732,60 @@ export default function CheckoutPage() {
                     </span>
                   )}
                   {pinVerifiedInfo && pinVerifiedInfo.valid && (
-                    <div className="text-emerald-700 bg-emerald-50 p-2.5 rounded-lg border border-emerald-200 text-[11px] space-y-0.5 mt-1">
-                      <span className="font-extrabold flex items-center gap-1">
-                        ✓ Pincode verified
-                      </span>
-                      <div>City: {pinVerifiedInfo.city} (Auto-detected)</div>
-                      <div>District: {pinVerifiedInfo.district} (Auto-detected)</div>
+                    <div className="text-emerald-800 bg-emerald-50/90 p-3 rounded-xl border border-emerald-200 text-[11px] space-y-1.5 mt-1 shadow-xs">
+                      <div className="font-black flex items-center justify-between text-emerald-900">
+                        <span className="flex items-center gap-1.5">
+                          <span className="w-4 h-4 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[10px]">✓</span>
+                          Tamil Nadu Location Verified
+                        </span>
+                        <span className="text-[10px] font-bold bg-emerald-200/80 text-emerald-900 px-2 py-0.5 rounded-full">
+                          India Post
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-1 pt-0.5 text-[11px]">
+                        <div><span className="font-bold text-slate-500">City/Town:</span> <span className="font-black text-slate-900">{pinVerifiedInfo.city}</span></div>
+                        <div><span className="font-bold text-slate-500">District:</span> <span className="font-black text-slate-900">{pinVerifiedInfo.district}</span></div>
+                      </div>
+                      {pinVerifiedInfo.postOffices && pinVerifiedInfo.postOffices.length > 0 && (
+                        <div className="pt-2 border-t border-emerald-200/60 mt-1">
+                          <div className="flex items-center justify-between text-[10px] font-bold text-slate-600 mb-1.5">
+                            <span>Covered Postal Areas / Localities ({pinVerifiedInfo.postOffices.length}):</span>
+                            <span className="text-[9px] text-slate-400 font-medium">Click area to fill Landmark</span>
+                          </div>
+                          <div className="flex flex-wrap gap-1.5 max-h-52 overflow-y-auto pr-1">
+                            {(showAllAreas ? pinVerifiedInfo.postOffices : pinVerifiedInfo.postOffices.slice(0, 6)).map((area, idx) => {
+                              const isSelected = landmark.trim().toLowerCase() === area.trim().toLowerCase();
+                              return (
+                                <button
+                                  key={idx}
+                                  type="button"
+                                  onClick={() => setLandmark(area)}
+                                  className={`text-[10px] font-extrabold px-2.5 py-1 rounded-lg border transition-all ${
+                                    isSelected
+                                      ? "bg-[#6D3FD6] text-white border-[#6D3FD6] shadow-xs"
+                                      : "bg-white hover:bg-purple-50 text-slate-800 border-slate-200 hover:border-purple-300"
+                                  }`}
+                                  title={`Click to set "${area}" as Landmark`}
+                                >
+                                  {isSelected ? `✓ ${area}` : area}
+                                </button>
+                              );
+                            })}
+
+                            {pinVerifiedInfo.postOffices.length > 6 && (
+                              <button
+                                type="button"
+                                onClick={() => setShowAllAreas(!showAllAreas)}
+                                className="bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-black px-2.5 py-1 rounded-lg border border-emerald-600 shadow-2xs transition-all cursor-pointer flex items-center gap-1"
+                              >
+                                {showAllAreas
+                                  ? "Show Less ▲"
+                                  : `+${pinVerifiedInfo.postOffices.length - 6} more ▼`}
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

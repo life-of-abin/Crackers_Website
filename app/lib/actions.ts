@@ -201,10 +201,10 @@ export async function createOrderAction(data: {
       return { error: "Please enter a valid 10-digit Indian mobile number." };
     }
 
-    // 4. India Post PIN Code Verification & State Cross-Validation
-    const pinCheck = await verifyIndianPincode(data.pincode, data.state);
+    // 4. India Post PIN Code Verification & State Cross-Validation (Tamil Nadu Only)
+    const pinCheck = await verifyIndianPincode(data.pincode, data.state, true);
     if (!pinCheck.valid) {
-      return { error: pinCheck.error || "Please enter a valid Indian PIN code." };
+      return { error: pinCheck.error || "Please enter a valid Tamil Nadu PIN code." };
     }
 
     if (!data.cartItems || data.cartItems.length === 0) {

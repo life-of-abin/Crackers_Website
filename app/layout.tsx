@@ -28,8 +28,8 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${plusJakarta.variable} ${outfit.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col bg-[#F8FAFC] text-[#0F172A] font-sans selection:bg-[#6D3FD6] selection:text-white">
+    <html lang="en" className={`${plusJakarta.variable} ${outfit.variable} h-full antialiased`} suppressHydrationWarning>
+      <body className="min-h-full flex flex-col bg-[#F8FAFC] text-[#0F172A] font-sans selection:bg-[#6D3FD6] selection:text-white" suppressHydrationWarning>
         <CartProvider>{children}</CartProvider>
       </body>
     </html>
