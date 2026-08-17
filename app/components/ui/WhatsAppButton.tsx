@@ -36,12 +36,12 @@ export default function WhatsAppButton({
       rel="noopener noreferrer"
       aria-label="Chat with us on WhatsApp"
       title="Chat with us on WhatsApp"
-      className="fixed bottom-5 right-5 sm:bottom-6 sm:right-6 z-40 flex items-center justify-center w-[54px] h-[54px] sm:w-[62px] sm:h-[62px] rounded-full shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-110 active:scale-95 focus:outline-none focus:ring-4 focus:ring-emerald-400/50 group bg-white/10 backdrop-blur-xs p-0.5 border border-white/20"
+      className="fixed bottom-5 right-5 sm:bottom-6 sm:right-6 z-40 flex items-center justify-center w-[66px] h-[66px] sm:w-[78px] sm:h-[78px] rounded-full shadow-2xl hover:shadow-emerald-500/40 transition-all duration-300 hover:scale-110 active:scale-95 focus:outline-none focus:ring-4 focus:ring-emerald-400/50 group bg-white/10 backdrop-blur-xs p-1 border border-white/30"
     >
       <img
         src="/Whatsapp Chatbot.png"
         alt="WhatsApp Chatbot"
-        className="w-full h-full object-contain rounded-full drop-shadow-md transition-transform duration-300 group-hover:rotate-6"
+        className="w-full h-full object-contain rounded-full drop-shadow-xl transition-transform duration-300 group-hover:rotate-6"
       />
     </a>
   );
