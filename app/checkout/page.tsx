@@ -855,7 +855,7 @@ export default function CheckoutPage() {
             </button>
 
             <div className="text-center text-[10px] text-slate-400 space-y-1 pt-1">
-              <p>🔒 Fast & Direct Order Placement</p>
+              <p>🔒 256-Bit SSL Encrypted Checkout</p>
               <p>⚡ Genuine Sivakasi Factory Quality Guarantee</p>
             </div>
           </div>

@@ -44,20 +44,20 @@ export default async function HomePage() {
     console.error("Failed to fetch featured products:", err);
   }
 
-  // Fetch best sellers
+  // Fetch top 10 best sellers
   let bestSellers: any[] = [];
   try {
     bestSellers = await prisma.product.findMany({
       where: { active: true },
       include: { category: true },
-      take: 8,
+      take: 10,
       orderBy: { purchases: "desc" },
     });
   } catch (err) {
     console.error("Failed to fetch best sellers:", err);
   }
 
-  const displayFeatured = featuredProducts.length > 0 ? featuredProducts : bestSellers.slice(0, 4);
+  const displayBestSellers = bestSellers.length > 0 ? bestSellers : featuredProducts;
 
   return (
     <div className="min-h-screen flex flex-col bg-[#F8FAFC] text-slate-900">
@@ -160,20 +160,15 @@ export default async function HomePage() {
       <section className="py-12 bg-white border-b border-slate-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="mb-6">
-            <div className="flex items-start justify-between gap-2">
-              <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight uppercase font-display shrink-0">
-                Best Sellers
-              </h2>
-              <div className="text-xs font-bold text-[#6D3FD6] flex items-center gap-1 text-right mt-1 shrink-0">
-                Swipe to explore <span className="text-sm leading-none">→</span>
-              </div>
-            </div>
+            <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight uppercase font-display">
+              Best Sellers
+            </h2>
             <p className="text-xs sm:text-sm text-slate-500 font-medium mt-0.5">
               Most loved by our customers this season
             </p>
           </div>
 
-          <BestSellersCarousel products={displayFeatured.map(p => ({
+          <BestSellersCarousel products={displayBestSellers.map(p => ({
             id: p.id,
             slug: p.slug,
             name: p.name,
