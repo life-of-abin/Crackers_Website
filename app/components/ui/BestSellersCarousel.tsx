@@ -197,7 +197,7 @@ export default function BestSellersCarousel({ products }: { products: Product[] 
     );
   }
 
-  const fallbackImage = `https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=400&q=80`;
+  const fallbackImage = "/placeholder.png";
 
   return (
     <div
@@ -252,7 +252,7 @@ export default function BestSellersCarousel({ products }: { products: Product[] 
                 >
                   <div className="relative w-full max-w-[220px] aspect-square transition-transform duration-500 group-hover/img:scale-108">
                     <img
-                      src={product.image || fallbackImage}
+                      src={product.image || "/placeholder.png"}
                       alt={product.name}
                       className="w-full h-full object-contain drop-shadow-md"
                       loading="lazy"

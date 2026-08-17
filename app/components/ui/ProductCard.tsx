@@ -70,7 +70,7 @@ export default function ProductCard({ product }: { product: ProductCardData }) {
     }
   };
 
-  const fallbackImage = `https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=400&q=80`;
+  const fallbackImage = "/placeholder.png";
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200 shadow-xs hover:shadow-lg transition-all duration-300 overflow-hidden flex flex-col justify-between group hover:border-purple-300 relative">

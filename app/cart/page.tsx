@@ -140,7 +140,7 @@ export default function CartPage() {
                 <div className="max-h-[360px] overflow-y-auto pr-1 sm:pr-2 divide-y divide-slate-200 border border-slate-200 rounded-2xl bg-slate-50/60 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-slate-300 [&::-webkit-scrollbar-thumb]:rounded-full">
                   {items.map((item) => {
                     const itemTotal = item.price * item.cartQuantity;
-                    const fallbackImg = `https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=200&q=80`;
+                    const fallbackImg = "/placeholder.png";
 
                     return (
                       <div key={item.id} className="p-3 sm:p-4 flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 hover:bg-slate-100/50 transition-colors">

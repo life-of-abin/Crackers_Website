@@ -3,7 +3,14 @@ import pg from "pg";
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 
-const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
+const pool = new pg.Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false },
+  max: 10,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 10000,
+  keepAlive: true,
+});
 const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
@@ -971,16 +978,19 @@ async function main() {
 
   for (const name of categories) {
     const slug = slugify(name);
+    const image = name === "Atom Bomb" ? "/categories/atom-bomb.png" : null;
     const category = await prisma.category.upsert({
       where: { name },
       update: {
         slug,
         active: true,
+        ...(name === "Atom Bomb" ? { image: "/categories/atom-bomb.png" } : {}),
       },
       create: {
         name,
         slug,
         active: true,
+        image,
       },
     });
 

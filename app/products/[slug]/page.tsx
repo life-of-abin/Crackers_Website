@@ -51,7 +51,7 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
   const savings = Math.max(0, mrpNum - priceNum);
   const discountPercent = Math.round((savings / mrpNum) * 100);
 
-  const fallbackImage = `https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=800&q=80`;
+  const fallbackImage = "/placeholder.png";
 
   return (
     <div className="min-h-screen flex flex-col bg-[#F8FAFC] text-slate-900">
