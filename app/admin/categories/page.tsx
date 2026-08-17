@@ -13,7 +13,7 @@ export default async function AdminCategoriesPage() {
         select: { products: true },
       },
     },
-    orderBy: { name: "asc" },
+    orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
   });
 
   return (
@@ -37,6 +37,8 @@ export default async function AdminCategoriesPage() {
             slug: c.slug,
             description: c.description,
             icon: c.icon,
+            image: c.image,
+            sortOrder: c.sortOrder,
             active: c.active,
             productCount: c._count.products,
           }))}

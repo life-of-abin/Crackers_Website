@@ -25,7 +25,7 @@ export default async function HomePage() {
           select: { products: { where: { active: true } } },
         },
       },
-      orderBy: { name: "asc" },
+      orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
     });
   } catch (err) {
     console.error("Failed to fetch categories:", err);
@@ -201,25 +201,25 @@ export default async function HomePage() {
             </Link>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-6 gap-5">
             {categories.map((cat) => (
               <Link
                 key={cat.id}
                 href={`/category/${cat.slug}`}
-                className="group bg-white hover:bg-purple-50/50 border border-slate-200 hover:border-purple-300 rounded-2xl p-4 text-center transition-all duration-300 hover:-translate-y-1 shadow-sm hover:shadow-md flex flex-col items-center justify-between min-h-[140px]"
+                className="group bg-white hover:bg-purple-50/60 border border-slate-200 hover:border-purple-300 rounded-2xl p-5 text-center transition-all duration-300 hover:-translate-y-1 shadow-sm hover:shadow-md flex flex-col items-center justify-between min-h-[190px]"
               >
-                <div className="w-20 h-20 sm:w-24 sm:h-24 mx-auto mb-3 flex items-center justify-center text-4xl group-hover:scale-110 transition-transform duration-500 relative">
+                <div className="w-24 h-24 sm:w-28 sm:h-28 mx-auto mb-3 flex items-center justify-center text-4xl group-hover:scale-105 transition-transform duration-500 relative p-1">
                   {cat.image ? (
                     <img src={cat.image} alt={cat.name} className="w-full h-full object-contain drop-shadow-xs" />
                   ) : (
                     <span>{cat.icon || "🎆"}</span>
                   )}
                 </div>
-                <div>
-                  <h3 className="font-black text-sm text-slate-900 group-hover:text-[#6D3FD6] transition-colors line-clamp-1 font-display">
+                <div className="w-full flex flex-col items-center justify-center">
+                  <h3 className="font-black text-base sm:text-lg text-slate-900 group-hover:text-[#6D3FD6] transition-colors leading-snug font-display text-center">
                     {cat.name}
                   </h3>
-                  <span className="text-[10px] text-slate-500 font-medium block mt-1">
+                  <span className="text-xs sm:text-sm text-[#6D3FD6] font-extrabold block mt-2 bg-purple-50 px-3 py-0.5 rounded-full border border-purple-100">
                     {cat._count.products} Products
                   </span>
                 </div>

@@ -10,6 +10,8 @@ interface CategoryRow {
   slug: string;
   description: string | null;
   icon: string | null;
+  image: string | null;
+  sortOrder: number;
   active: boolean;
   productCount: number;
 }
@@ -58,12 +60,14 @@ export default function CategoryManager({ categories }: { categories: CategoryRo
   };
 
   const handleDelete = async (id: number, name: string, productCount: number) => {
-    if (productCount > 0) {
-      alert(`Cannot delete category "${name}" because it contains ${productCount} products. Please reassign or delete products first.`);
-      return;
-    }
-    if (window.confirm(`Are you sure you want to delete category "${name}"?`)) {
+    const confirmMessage = productCount > 0
+      ? `This category "${name}" contains ${productCount} products.\nDeleting the category will NOT delete these products.\n\nAre you sure you want to delete this category?`
+      : `Are you sure you want to delete category "${name}"?`;
+
+    if (window.confirm(confirmMessage)) {
+      setLoading(true);
       const res = await deleteCategoryAction(id);
+      setLoading(false);
       if (res.error) {
         alert(res.error);
       } else {
@@ -93,14 +97,18 @@ export default function CategoryManager({ categories }: { categories: CategoryRo
       {showAddForm && (
         <form onSubmit={handleCreate} className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-4 text-xs">
           <h3 className="font-black text-sm text-slate-900 uppercase">New Category</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
             <div>
               <label className="block font-bold text-slate-700 mb-1">Category Name *</label>
-              <input type="text" name="name" required placeholder="e.g. Ground Spinners" className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#6D3FD6] outline-none" />
+              <input type="text" name="name" required placeholder="e.g. Ground Chakkras" className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#6D3FD6] outline-none" />
             </div>
             <div>
-              <label className="block font-bold text-slate-700 mb-1">Emoji / Icon</label>
-              <input type="text" name="icon" placeholder="🎆" className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#6D3FD6] outline-none" />
+              <label className="block font-bold text-slate-700 mb-1">Sort Order *</label>
+              <input type="number" name="sortOrder" defaultValue={categories.length + 1} required className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#6D3FD6] outline-none" />
+            </div>
+            <div>
+              <label className="block font-bold text-slate-700 mb-1">Image Path / URL</label>
+              <input type="text" name="image" placeholder="/categories/Rocket Icon.png" className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#6D3FD6] outline-none" />
             </div>
             <div>
               <label className="block font-bold text-slate-700 mb-1">Description</label>
@@ -119,10 +127,23 @@ export default function CategoryManager({ categories }: { categories: CategoryRo
           <div key={c.id} className="p-4 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs">
             {editingId === c.id ? (
               <form onSubmit={(e) => handleUpdate(c.id, e)} className="w-full space-y-3">
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <input type="text" name="name" defaultValue={c.name} required className="p-2 bg-slate-50 border border-slate-200 rounded-lg font-bold" />
-                  <input type="text" name="icon" defaultValue={c.icon || ""} placeholder="Emoji Icon" className="p-2 bg-slate-50 border border-slate-200 rounded-lg" />
-                  <input type="text" name="description" defaultValue={c.description || ""} placeholder="Description" className="p-2 bg-slate-50 border border-slate-200 rounded-lg" />
+                <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                  <div>
+                    <label className="block font-bold text-[10px] text-slate-500 mb-0.5">Name</label>
+                    <input type="text" name="name" defaultValue={c.name} required className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg font-bold" />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-[10px] text-slate-500 mb-0.5">Sort Order</label>
+                    <input type="number" name="sortOrder" defaultValue={c.sortOrder} required className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg font-bold" />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-[10px] text-slate-500 mb-0.5">Image Path</label>
+                    <input type="text" name="image" defaultValue={c.image || ""} placeholder="/categories/Rocket Icon.png" className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg" />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-[10px] text-slate-500 mb-0.5">Description</label>
+                    <input type="text" name="description" defaultValue={c.description || ""} placeholder="Description" className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg" />
+                  </div>
                 </div>
                 <div className="flex items-center gap-3">
                   <label className="flex items-center gap-1 font-bold">
@@ -136,15 +157,22 @@ export default function CategoryManager({ categories }: { categories: CategoryRo
             ) : (
               <>
                 <div className="flex items-center gap-3">
-                  <span className="text-2xl bg-slate-50 w-10 h-10 rounded-xl flex items-center justify-center border border-slate-100">{c.icon || "🎆"}</span>
+                  <div className="w-12 h-12 bg-slate-50 rounded-xl flex items-center justify-center border border-slate-200 p-1 relative overflow-hidden">
+                    {c.image ? (
+                      <img src={c.image} alt={c.name} className="w-full h-full object-contain" />
+                    ) : (
+                      <span className="text-xl">{c.icon || "🎆"}</span>
+                    )}
+                  </div>
                   <div>
                     <div className="flex items-center gap-2">
+                      <span className="bg-purple-100 text-[#6D3FD6] font-black text-[10px] px-2 py-0.5 rounded">Order: {c.sortOrder}</span>
                       <span className="font-black text-slate-900 text-sm">{c.name}</span>
                       <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase ${c.active ? "bg-emerald-100 text-emerald-800" : "bg-slate-200 text-slate-500"}`}>
                         {c.active ? "Active" : "Disabled"}
                       </span>
                     </div>
-                    <span className="text-slate-500 text-[11px] font-medium">{c.productCount} Products Linked • /{c.slug}</span>
+                    <span className="text-slate-500 text-[11px] font-medium block mt-0.5">{c.productCount} Products Linked • /{c.slug}</span>
                   </div>
                 </div>
 

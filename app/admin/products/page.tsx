@@ -31,7 +31,7 @@ export default async function AdminProductsPage({ searchParams }: AdminProductsP
       include: { category: true },
       orderBy: { updatedAt: "desc" },
     }),
-    prisma.category.findMany({ orderBy: { name: "asc" } }),
+    prisma.category.findMany({ orderBy: [{ sortOrder: "asc" }, { name: "asc" }] }),
   ]);
 
   return (
@@ -71,8 +71,8 @@ export default async function AdminProductsPage({ searchParams }: AdminProductsP
             active: p.active,
             featured: p.featured,
             badge: p.badge,
-            categoryName: p.category.name,
-            categoryId: p.categoryId,
+            categoryName: p.category?.name || "Uncategorized",
+            categoryId: p.categoryId ?? 0,
           }))}
           categories={categories.map((c) => ({ id: c.id, name: c.name }))}
           initialSearch={q}

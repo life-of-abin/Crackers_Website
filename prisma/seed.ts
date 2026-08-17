@@ -15,19 +15,17 @@ const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
 const categories = [
-  "Sparklers",
-  "Rockets",
-  "Gift Items",
-  "Chakkars",
-  "Flower Pots",
-  "Twinkling Star",
-  "Pencil",
-  "Single / Two Sound Crackers",
-  "Atom Bomb",
-  "Electric Crackers",
-  "Chorsa Garland",
-  "Matches",
-  "Guns & Rolls",
+  { name: "Atom Bombs", sortOrder: 1, image: "/categories/Atom Bomb Icon.png" },
+  { name: "Rockets", sortOrder: 2, image: "/categories/Rocket Icon.png" },
+  { name: "Chorsa Garland", sortOrder: 3, image: "/categories/Chorsa Garland Icon.png" },
+  { name: "Gift Boxes", sortOrder: 4, image: "/categories/Gift Boxes Icon.png" },
+  { name: "Sound Crackers", sortOrder: 5, image: "/categories/Sound Crackers Icon.png" },
+  { name: "Aerial Shots", sortOrder: 6, image: "/categories/Aerial Shots Icon.png" },
+  { name: "Ground Chakkras", sortOrder: 7, image: "/categories/Ground Chakkars Icon.png" },
+  { name: "Flower Pots", sortOrder: 8, image: "/categories/Flower Pots Icon.png" },
+  { name: "Sparkles", sortOrder: 9, image: "/categories/Sparkles Icon.png" },
+  { name: "Kids Fun Crackers", sortOrder: 10, image: "/categories/Kids Fun Crackers Icon.png" },
+  { name: "Newly Launched", sortOrder: 11, image: "/categories/Default Product Image.png" },
 ];
 const products = [
   // ============================================================
@@ -976,25 +974,26 @@ async function main() {
 
   const categoryMap = new Map<string, number>();
 
-  for (const name of categories) {
-    const slug = slugify(name);
-    const image = name === "Atom Bomb" ? "/categories/atom-bomb.png" : null;
+  for (const cat of categories) {
+    const slug = slugify(cat.name);
     const category = await prisma.category.upsert({
-      where: { name },
+      where: { name: cat.name },
       update: {
         slug,
+        sortOrder: cat.sortOrder,
+        image: cat.image,
         active: true,
-        ...(name === "Atom Bomb" ? { image: "/categories/atom-bomb.png" } : {}),
       },
       create: {
-        name,
+        name: cat.name,
         slug,
+        sortOrder: cat.sortOrder,
+        image: cat.image,
         active: true,
-        image,
       },
     });
 
-    categoryMap.set(name, category.id);
+    categoryMap.set(cat.name, category.id);
   }
 
   console.log(`✅ ${categories.length} categories ready`);

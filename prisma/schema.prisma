@@ -50,6 +50,7 @@ model Category {
   description String?
   image       String?
   icon        String?
+  sortOrder   Int       @default(0)
   active      Boolean   @default(true)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
@@ -62,7 +63,7 @@ model Product {
   name        String
   slug        String      @unique
   description String?
-  categoryId  Int
+  categoryId  Int?
   price       Decimal
   mrp         Decimal
   discount    String?
@@ -80,7 +81,7 @@ model Product {
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
 
-  category    Category    @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  category    Category?   @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   orderItems  OrderItem[]
 
   @@index([name])

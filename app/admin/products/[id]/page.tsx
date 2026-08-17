@@ -19,7 +19,7 @@ export default async function AdminEditProductPage({ params }: EditPageProps) {
 
   const [product, categories] = await Promise.all([
     prisma.product.findUnique({ where: { id: productId } }),
-    prisma.category.findMany({ orderBy: { name: "asc" } }),
+    prisma.category.findMany({ orderBy: [{ sortOrder: "asc" }, { name: "asc" }] }),
   ]);
 
   if (!product) notFound();
@@ -43,7 +43,7 @@ export default async function AdminEditProductPage({ params }: EditPageProps) {
           product={{
             id: product.id,
             name: product.name,
-            categoryId: product.categoryId,
+            categoryId: product.categoryId ?? 0,
             price: Number(product.price),
             mrp: Number(product.mrp),
             quantity: product.quantity,

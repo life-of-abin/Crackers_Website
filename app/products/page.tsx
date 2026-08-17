@@ -69,7 +69,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
       }),
       prisma.category.findMany({
         where: { active: true },
-        orderBy: { name: "asc" },
+        orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
       }),
     ]);
     products = fetchedProducts;
@@ -144,10 +144,10 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
                 <div className="space-y-1 max-h-60 overflow-y-auto pr-1">
                   <Link
                     href="/products"
-                    className={`block px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                    className={`block px-3 py-2 rounded-xl text-sm font-bold transition-colors ${
                       selectedCategory === ""
-                        ? "bg-purple-50 text-[#6D3FD6] font-bold border border-purple-200"
-                        : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                        ? "bg-purple-50 text-[#6D3FD6] border border-purple-200"
+                        : "text-slate-700 hover:bg-slate-50 hover:text-slate-900"
                     }`}
                   >
                     All Categories
@@ -156,10 +156,10 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
                     <Link
                       key={cat.id}
                       href={`/products?category=${cat.slug}&sort=${sortOption}`}
-                      className={`block px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                      className={`block px-3 py-2 rounded-xl text-sm font-bold transition-colors ${
                         selectedCategory === cat.slug
-                          ? "bg-purple-50 text-[#6D3FD6] font-bold border border-purple-200"
-                          : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                          ? "bg-purple-50 text-[#6D3FD6] border border-purple-200"
+                          : "text-slate-700 hover:bg-slate-50 hover:text-slate-900"
                       }`}
                     >
                       {cat.name}

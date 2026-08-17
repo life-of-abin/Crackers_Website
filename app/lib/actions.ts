@@ -499,7 +499,8 @@ export async function createProductAction(formData: FormData) {
     const packSize = (formData.get("packSize") as string) || quantity || "10 Pieces";
     const stock = parseInt((formData.get("stock") as string) || "100");
     const description = (formData.get("description") as string) || null;
-    const image = (formData.get("image") as string) || null;
+    const rawImage = (formData.get("image") as string)?.trim();
+    const image = rawImage ? rawImage : "/placeholder.png";
     const badge = (formData.get("badge") as string) || null;
     const featured = formData.get("featured") === "true";
     const active = formData.get("active") !== "false";
@@ -560,7 +561,8 @@ export async function updateProductAction(productId: number, formData: FormData)
     const packSize = (formData.get("packSize") as string) || quantity || "10 Pieces";
     const stock = parseInt(formData.get("stock") as string);
     const description = (formData.get("description") as string) || null;
-    const image = (formData.get("image") as string) || null;
+    const rawImage = (formData.get("image") as string)?.trim();
+    const image = rawImage ? rawImage : "/placeholder.png";
     const badge = (formData.get("badge") as string) || null;
     const featured = formData.get("featured") === "true";
     const active = formData.get("active") === "true";
@@ -656,10 +658,16 @@ export async function createCategoryAction(formData: FormData) {
     const name = formData.get("name") as string;
     const description = (formData.get("description") as string) || null;
     const icon = (formData.get("icon") as string) || null;
+    const image = (formData.get("image") as string) || null;
+    const sortOrder = parseInt((formData.get("sortOrder") as string) || "0");
 
     if (!name) return { error: "Category name is required." };
 
-    const slug = slugify(name);
+    let slug = slugify(name);
+    const existing = await prisma.category.findUnique({ where: { slug } });
+    if (existing) {
+      slug = `${slug}-${Date.now().toString().slice(-4)}`;
+    }
 
     await prisma.category.create({
       data: {
@@ -667,6 +675,8 @@ export async function createCategoryAction(formData: FormData) {
         slug,
         description,
         icon,
+        image,
+        sortOrder: isNaN(sortOrder) ? 0 : sortOrder,
         active: true,
       },
     });
@@ -688,6 +698,8 @@ export async function updateCategoryAction(categoryId: number, formData: FormDat
     const name = formData.get("name") as string;
     const description = (formData.get("description") as string) || null;
     const icon = (formData.get("icon") as string) || null;
+    const image = (formData.get("image") as string) || null;
+    const sortOrder = parseInt((formData.get("sortOrder") as string) || "0");
     const active = formData.get("active") === "true";
 
     await prisma.category.update({
@@ -696,12 +708,15 @@ export async function updateCategoryAction(categoryId: number, formData: FormDat
         name,
         description,
         icon,
+        image,
+        sortOrder: isNaN(sortOrder) ? 0 : sortOrder,
         active,
       },
     });
 
     revalidatePath("/admin/categories");
     revalidatePath("/products");
+    revalidatePath("/");
     return { success: true };
   } catch (error: any) {
     return { error: error.message || "Failed to update category." };
@@ -712,13 +727,11 @@ export async function deleteCategoryAction(categoryId: number) {
   try {
     await requireAdmin();
 
-    const productsCount = await prisma.product.count({
+    // Safely unassign products from this category before deletion so products are NEVER deleted
+    await prisma.product.updateMany({
       where: { categoryId },
+      data: { categoryId: null },
     });
-
-    if (productsCount > 0) {
-      return { error: `Cannot delete category because it contains ${productsCount} active products.` };
-    }
 
     await prisma.category.delete({
       where: { id: categoryId },
@@ -726,6 +739,7 @@ export async function deleteCategoryAction(categoryId: number) {
 
     revalidatePath("/admin/categories");
     revalidatePath("/products");
+    revalidatePath("/");
 
     return { success: true };
   } catch (error: any) {
