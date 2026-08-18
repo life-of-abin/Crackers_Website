@@ -55,7 +55,12 @@ export default async function OrderConfirmationPage({ params }: OrderConfirmatio
 
   return (
     <OrderConfirmationClient
-      order={order}
+      order={{
+        ...order,
+        orderType: order.orderType ?? "DELIVERY",
+        deliveryCharge: Number(order.deliveryCharge ?? 0),
+        deliveryConfirmed: order.deliveryConfirmed ?? false,
+      }}
       settings={settings}
       formattedId={formattedId}
       displayPaymentMethod={displayPaymentMethod}

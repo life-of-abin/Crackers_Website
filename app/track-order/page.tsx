@@ -32,7 +32,24 @@ const DEFAULT_SETTINGS: StoreSettings = {
   freeShippingThreshold: 3000,
 };
 
-const ORDER_STEPS = [
+const DELIVERY_STEPS = [
+  { key: "AWAITING_DELIVERY_CONFIRMATION", label: "Awaiting Delivery Confirmation", icon: "⏳" },
+  { key: "PROCESSING", label: "Processing", icon: "⚙️" },
+  { key: "PACKED", label: "Packed", icon: "📦" },
+  { key: "SHIPPED", label: "Shipped", icon: "🚚" },
+  { key: "OUT_FOR_DELIVERY", label: "Out for Delivery", icon: "🛵" },
+  { key: "DELIVERED", label: "Delivered", icon: "🎉" },
+];
+
+const PICKUP_STEPS = [
+  { key: "PROCESSING", label: "Processing", icon: "⚙️" },
+  { key: "PACKED", label: "Packed", icon: "📦" },
+  { key: "READY_FOR_PICKUP", label: "Ready for Pickup", icon: "🏪" },
+  { key: "COLLECTED", label: "Collected", icon: "🎉" },
+];
+
+// Legacy Delivery Steps (for orders without orderType field)
+const LEGACY_DELIVERY_STEPS = [
   { key: "PLACED", label: "Order Placed", icon: "📝" },
   { key: "CONFIRMED", label: "Payment Confirmed", icon: "✓" },
   { key: "PROCESSING", label: "Processing", icon: "⚙️" },
@@ -102,20 +119,34 @@ export default function TrackOrderPage() {
     }
   };
 
-  const getActiveStepIndex = (status: string, paymentStatus: string): number => {
+  const getActiveStepIndex = (status: string, paymentStatus: string, orderType: string): number => {
     const s = (status || "").toUpperCase();
-    const p = (paymentStatus || "").toUpperCase();
 
-    if (s === "DELIVERED") return 6;
-    if (s === "OUT_FOR_DELIVERY") return 5;
-    if (s === "SHIPPED") return 4;
-    if (s === "PACKED") return 3;
-    if (s === "PROCESSING" || s === "READY") return 2;
-    if (s === "CONFIRMED" || p === "PAID" || p === "COMPLETED") return 1;
-    return 0;
+    if (orderType === "PICKUP") {
+      if (s === "COLLECTED") return 3;
+      if (s === "READY_FOR_PICKUP") return 2;
+      if (s === "PACKED") return 1;
+      return 0; // PROCESSING
+    }
+
+    // DELIVERY steps
+    if (s === "DELIVERED") return 5;
+    if (s === "OUT_FOR_DELIVERY") return 4;
+    if (s === "SHIPPED") return 3;
+    if (s === "PACKED") return 2;
+    if (s === "PROCESSING" || s === "CONFIRMED") return 1;
+    return 0; // AWAITING_DELIVERY_CONFIRMATION or PLACED
   };
 
-  const activeIndex = order ? getActiveStepIndex(order.orderStatus, order.paymentStatus) : 0;
+  const currentOrderType = order?.orderType ?? "DELIVERY";
+  const isPickup = currentOrderType === "PICKUP";
+  const currentSteps = isPickup
+    ? PICKUP_STEPS
+    : (order?.orderStatus === "AWAITING_DELIVERY_CONFIRMATION" || order?.orderStatus === "PLACED")
+    ? DELIVERY_STEPS
+    : DELIVERY_STEPS;
+
+  const activeIndex = order ? getActiveStepIndex(order.orderStatus, order.paymentStatus, currentOrderType) : 0;
   const isCancelled = order?.orderStatus?.toUpperCase() === "CANCELLED";
 
   return (
@@ -227,7 +258,7 @@ export default function TrackOrderPage() {
         {order && (
           <div className="bg-white border border-slate-200 p-6 sm:p-8 rounded-3xl shadow-xl space-y-8 animate-fadeIn">
             
-            {/* Header Status Bar */}
+            {/* Status Header Bar */}
             <div className="flex flex-wrap items-center justify-between gap-4 pb-6 border-b border-slate-200">
               <div>
                 <span className="text-[10px] text-[#6D3FD6] font-extrabold uppercase tracking-widest block">
@@ -240,10 +271,19 @@ export default function TrackOrderPage() {
               </div>
 
               <div className="flex items-center gap-3">
+                {/* Order Type Badge */}
+                <span className={`px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider border ${
+                  isPickup
+                    ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                    : "bg-purple-50 text-[#6D3FD6] border-purple-200"
+                }`}>
+                  {isPickup ? "🏪 Store Pickup" : "🚚 Home Delivery"}
+                </span>
+
                 <span className={`px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-wider border ${
                   isCancelled
                     ? "bg-red-50 text-red-700 border-red-200"
-                    : order.orderStatus === "DELIVERED"
+                    : order.orderStatus === "DELIVERED" || order.orderStatus === "COLLECTED"
                     ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                     : "bg-purple-50 text-[#6D3FD6] border-purple-200"
                 }`}>
@@ -251,6 +291,19 @@ export default function TrackOrderPage() {
                 </span>
               </div>
             </div>
+
+            {/* Delivery Charge Banner (Delivery only) */}
+            {!isPickup && (
+              <div className={`p-3 rounded-2xl border text-xs font-medium ${
+                order.deliveryConfirmed
+                  ? "bg-emerald-50 border-emerald-200 text-emerald-700"
+                  : "bg-amber-50 border-amber-200 text-amber-700"
+              }`}>
+                {order.deliveryConfirmed
+                  ? `✅ Delivery Charge Confirmed: ₹${Number(order.deliveryCharge).toLocaleString("en-IN")} | Final Total: ₹${Number(order.totalAmount).toLocaleString("en-IN")}`
+                  : `⏳ Delivery Charge: Awaiting confirmation from our team. We'll contact you at ${order.phone || "your registered number"}.`}
+              </div>
+            )}
 
             {/* Stepper Timeline */}
             {isCancelled ? (
@@ -263,7 +316,7 @@ export default function TrackOrderPage() {
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <h3 className="text-xs font-black text-[#6D3FD6] uppercase tracking-widest font-display">
-                    Live Real-Time Dispatch Stepper
+                    {isPickup ? "Store Pickup Status" : "Delivery Tracking"}
                   </h3>
                   {order.paymentStatus === "PAID" && (
                     <span className="bg-emerald-100 text-emerald-800 font-extrabold text-[10px] px-2.5 py-0.5 rounded-full border border-emerald-300">
@@ -272,13 +325,11 @@ export default function TrackOrderPage() {
                   )}
                 </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-7 gap-2 pt-2">
-                  {ORDER_STEPS.map((step, idx) => {
-                    const isPaymentStep = step.key === "CONFIRMED";
-                    const isDeliveredStep = step.key === "DELIVERED";
-                    const isPaid = order.paymentStatus === "PAID";
-                    
-                    const isCompleted = isPaymentStep ? (isPaid || idx <= activeIndex) : (idx <= activeIndex);
+                <div className={`grid gap-2 pt-2 ${
+                  isPickup ? "grid-cols-2 sm:grid-cols-4" : "grid-cols-2 sm:grid-cols-6"
+                }`}>
+                  {currentSteps.map((step, idx) => {
+                    const isCompleted = idx <= activeIndex;
                     const isCurrent = idx === activeIndex;
 
                     return (
@@ -294,21 +345,7 @@ export default function TrackOrderPage() {
                       >
                         <span className="text-lg mb-1">{step.icon}</span>
                         <span className="text-[10px] font-extrabold leading-tight">{step.label}</span>
-                        {isPaymentStep ? (
-                          isPaid ? (
-                            <span className="text-[9px] text-emerald-700 font-black mt-1 bg-emerald-100 px-1.5 py-0.5 rounded">
-                              ✓ Paid
-                            </span>
-                          ) : (
-                            <span className="text-[9px] text-amber-700 font-bold mt-1">
-                              ⏳ Pending
-                            </span>
-                          )
-                        ) : isDeliveredStep && isCompleted ? (
-                          <span className="text-[9px] text-emerald-700 font-black mt-1">
-                            🎉 Handed Over
-                          </span>
-                        ) : isCompleted ? (
+                        {isCompleted ? (
                           <span className="text-[9px] text-emerald-700 font-bold mt-1">✓ Done</span>
                         ) : null}
                       </div>

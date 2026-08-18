@@ -51,9 +51,9 @@ export default function ContactClient({ settings, user }: ContactClientProps) {
     setOpenFaq(openFaq === id ? null : id);
   };
 
-  const storePhone = settings.supportPhone || "9629525907";
+  const storePhone = settings.phone || "9629525907";
   const whatsappPhone = settings.whatsappNumber || storePhone;
-  const storeEmail = settings.supportEmail || "abinesh.ece2003@gmail.com";
+  const storeEmail = settings.email || "abinesh.ece2003@gmail.com";
 
   return (
     <div className="min-h-screen flex flex-col bg-[#F8FAFC] text-slate-900 font-sans">

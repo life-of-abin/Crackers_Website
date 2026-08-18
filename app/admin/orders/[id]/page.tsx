@@ -58,6 +58,9 @@ export default async function AdminOrderDetailPage({ params }: AdminOrderDetailP
             paymentMethod: order.paymentMethod,
             paymentId: order.paymentId,
             orderStatus: order.orderStatus,
+            orderType: (order as any).orderType ?? "DELIVERY",
+            deliveryCharge: Number((order as any).deliveryCharge ?? 0),
+            deliveryConfirmed: (order as any).deliveryConfirmed ?? false,
             createdAt: order.createdAt.toISOString(),
             items: order.items.map((i) => ({
               id: i.id,

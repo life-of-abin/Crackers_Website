@@ -178,12 +178,15 @@ export async function createOrderAction(data: {
   state: string;
   pincode: string;
   paymentMethod?: string;
+  orderType?: "DELIVERY" | "PICKUP";
   cartItems: { productId: number; quantity: number }[];
 }) {
   try {
-    // 1. Mandatory delivery fields check
-    if (!data.customerName || !data.phone || !data.address || !data.city || !data.pincode || !data.state) {
-      return { error: "Please complete all mandatory delivery address fields." };
+    const orderType: "DELIVERY" | "PICKUP" = data.orderType === "PICKUP" ? "PICKUP" : "DELIVERY";
+
+    // 1. Mandatory customer fields check
+    if (!data.customerName || !data.phone) {
+      return { error: "Please provide your name and phone number." };
     }
 
     if (!isValidCustomerName(data.customerName)) {
@@ -201,21 +204,45 @@ export async function createOrderAction(data: {
       return { error: "Please enter a valid 10-digit Indian mobile number." };
     }
 
-    // 4. India Post PIN Code Verification & State Cross-Validation (Tamil Nadu Only)
-    const pinCheck = await verifyIndianPincode(data.pincode, data.state, true);
-    if (!pinCheck.valid) {
-      return { error: pinCheck.error || "Please enter a valid Tamil Nadu PIN code." };
+    // 4. Address & Pincode validation — only required for DELIVERY orders
+    let resolvedCity = data.city?.trim() || "";
+    let resolvedDistrict = data.district?.trim() || null;
+    let resolvedState = data.state?.trim() || "Tamil Nadu";
+    let resolvedPincode = data.pincode?.trim() || "000000";
+    let resolvedAddress = data.address?.trim() || "";
+
+    if (orderType === "DELIVERY") {
+      if (!data.address || !data.city || !data.pincode || !data.state) {
+        return { error: "Please complete all mandatory delivery address fields." };
+      }
+
+      // India Post PIN Code Verification & State Cross-Validation (Tamil Nadu Only)
+      const pinCheck = await verifyIndianPincode(data.pincode, data.state, true);
+      if (!pinCheck.valid) {
+        return { error: pinCheck.error || "Please enter a valid Tamil Nadu PIN code." };
+      }
+
+      resolvedCity = pinCheck.city || data.city.trim();
+      resolvedDistrict = pinCheck.district || data.district?.trim() || null;
+      resolvedState = pinCheck.state || data.state.trim();
+      resolvedPincode = pinCheck.pincode;
+      resolvedAddress = data.address.trim();
+    } else {
+      // PICKUP: use store address placeholder
+      const settings = await prisma.settings.findFirst({ where: { id: 1 } });
+      resolvedAddress = data.address?.trim() || "Store Pickup";
+      resolvedCity = "Sivakasi";
+      resolvedDistrict = "Virudhunagar";
+      resolvedState = "Tamil Nadu";
+      resolvedPincode = "626123";
     }
 
     if (!data.cartItems || data.cartItems.length === 0) {
       return { error: "Your shopping cart is empty." };
     }
 
-    // 5. Load store settings for shipping thresholds
+    // 5. Load store settings
     const settings = await prisma.settings.findFirst({ where: { id: 1 } });
-    const minOrder = settings ? Number(settings.minOrderAmount) : 500;
-    const flatFee = settings ? Number(settings.flatShippingFee) : 100;
-    const freeThreshold = settings ? Number(settings.freeShippingThreshold) : 3000;
 
     // 6. ATOMIC POSTGRESQL TRANSACTION: Verify Latest Stock, Deduct Stock, Create Order
     const resultOrder = await prisma.$transaction(async (tx) => {
@@ -275,28 +302,35 @@ export async function createOrderAction(data: {
         });
       }
 
-      const shippingFee = 0; // Shipping/transport charges discussed via WhatsApp or free store pickup
       const grandTotal = calculatedSubtotal;
       const selectedPayMethod = data.paymentMethod || "DIRECT_ORDER";
 
-      // Create Order & OrderItems with packSize & unitType
+      // Set initial order status based on type
+      // DELIVERY: await admin confirmation of delivery charge
+      // PICKUP: go straight to PROCESSING
+      const initialOrderStatus = orderType === "PICKUP" ? "PROCESSING" : "AWAITING_DELIVERY_CONFIRMATION";
+
+      // Create Order & OrderItems
       const createdOrder = await tx.order.create({
         data: {
           customerName: data.customerName.trim(),
           phone: phoneResult.phone,
           email: data.email ? data.email.toLowerCase().trim() : null,
-          address: data.address.trim(),
+          address: resolvedAddress,
           landmark: data.landmark ? data.landmark.trim() : null,
-          city: pinCheck.city || data.city.trim(),
-          district: pinCheck.district || data.district?.trim() || null,
-          state: pinCheck.state || data.state.trim(),
-          pincode: pinCheck.pincode,
+          city: resolvedCity,
+          district: resolvedDistrict,
+          state: resolvedState,
+          pincode: resolvedPincode,
           subtotal: calculatedSubtotal,
           discount: 0,
-          shipping: shippingFee,
+          shipping: 0,
           totalAmount: grandTotal,
+          orderType: orderType,
+          deliveryCharge: 0,
+          deliveryConfirmed: orderType === "PICKUP", // PICKUP: no delivery charge needed
           paymentStatus: "PENDING",
-          orderStatus: "PLACED",
+          orderStatus: initialOrderStatus,
           paymentMethod: selectedPayMethod,
           paidAt: null,
           items: {
@@ -313,22 +347,9 @@ export async function createOrderAction(data: {
         },
       });
 
-      // Generate & set invoice number
-      const invoiceNumber = generateInvoiceNumber(createdOrder.id, createdOrder.createdAt);
-      await tx.order.update({
-        where: { id: createdOrder.id },
-        data: { invoiceNumber },
-      });
-
-      // Record successful payment entry
-      await tx.payment.create({
-        data: {
-          orderId: createdOrder.id,
-          paymentMethod: selectedPayMethod,
-          amount: grandTotal,
-          status: "SUCCESS",
-        },
-      });
+      // NOTE: Invoice number is NOT generated at order creation.
+      // It is only generated when payment/delivery is confirmed.
+      // This prevents premature invoice assignment.
 
       // Deduct stock for each item atomically inside transaction
       for (const item of validatedItems) {
@@ -343,10 +364,9 @@ export async function createOrderAction(data: {
 
       return {
         orderId: createdOrder.id,
-        invoiceNumber,
+        orderType,
         grandTotal,
         subtotal: calculatedSubtotal,
-        shippingFee,
       };
     });
 
@@ -358,13 +378,64 @@ export async function createOrderAction(data: {
     return {
       success: true,
       orderId: resultOrder.orderId,
+      orderType: resultOrder.orderType,
       totalAmount: resultOrder.grandTotal,
       subtotal: resultOrder.subtotal,
-      shipping: resultOrder.shippingFee,
     };
   } catch (error: any) {
     console.error("Order creation error:", error);
     return { error: error.message || "Failed to process order. Please try again." };
+  }
+}
+
+// ==========================================
+// 2b. ADMIN: CONFIRM DELIVERY CHARGE
+// ==========================================
+
+export async function confirmDeliveryChargeAction(orderId: number, deliveryCharge: number) {
+  try {
+    await requireAdmin();
+
+    if (!orderId || isNaN(orderId)) {
+      return { error: "Invalid order ID." };
+    }
+
+    if (isNaN(deliveryCharge) || deliveryCharge < 0) {
+      return { error: "Delivery charge must be a valid non-negative number." };
+    }
+
+    const existingOrder = await prisma.order.findUnique({
+      where: { id: orderId },
+    });
+
+    if (!existingOrder) {
+      return { error: "Order not found." };
+    }
+
+    if (existingOrder.orderType !== "DELIVERY") {
+      return { error: "Delivery charge can only be set for DELIVERY orders." };
+    }
+
+    const newTotal = Number(existingOrder.subtotal) - Number(existingOrder.discount) + deliveryCharge;
+
+    await prisma.order.update({
+      where: { id: orderId },
+      data: {
+        deliveryCharge: deliveryCharge,
+        deliveryConfirmed: true,
+        totalAmount: newTotal,
+        orderStatus: existingOrder.orderStatus === "AWAITING_DELIVERY_CONFIRMATION" ? "PROCESSING" : existingOrder.orderStatus,
+      },
+    });
+
+    revalidatePath("/admin/orders");
+    revalidatePath(`/admin/orders/${orderId}`);
+    revalidatePath(`/order-confirmation/${orderId}`);
+
+    return { success: true, newTotal, deliveryCharge };
+  } catch (error: any) {
+    console.error("confirmDeliveryChargeAction error:", error);
+    return { error: error.message || "Failed to confirm delivery charge." };
   }
 }
 
@@ -406,8 +477,14 @@ export async function verifyAndConfirmPaymentAction(
       };
     }
 
-    // Generate unique invoice number if not already assigned
+    // DELIVERY orders must have delivery charge confirmed before invoice can be generated
+    if (existingOrder.orderType === "DELIVERY" && !existingOrder.deliveryConfirmed) {
+      return { error: "Delivery charge must be confirmed before payment can be processed for this order." };
+    }
+
+    // Generate unique invoice number if not already assigned (locked once generated)
     const invoiceNumber = existingOrder.invoiceNumber || generateInvoiceNumber(existingOrder.id, existingOrder.createdAt);
+    const now = new Date();
 
     // Update order status atomically
     await prisma.order.update({
@@ -418,7 +495,8 @@ export async function verifyAndConfirmPaymentAction(
         paymentId: transactionRef.trim(),
         orderStatus: "CONFIRMED",
         invoiceNumber: invoiceNumber,
-        paidAt: new Date(),
+        invoiceGeneratedAt: existingOrder.invoiceGeneratedAt ?? now,
+        paidAt: now,
       },
     });
 
@@ -760,6 +838,7 @@ export async function updateOrderStatusAction(orderId: number, orderStatus: stri
     });
     revalidatePath("/admin/orders");
     revalidatePath(`/admin/orders/${orderId}`);
+    revalidatePath(`/order-confirmation/${orderId}`);
     return { success: true };
   } catch (error: any) {
     return { error: error.message };
@@ -769,12 +848,30 @@ export async function updateOrderStatusAction(orderId: number, orderStatus: stri
 export async function updatePaymentStatusAction(orderId: number, paymentStatus: string) {
   try {
     await requireAdmin();
+
+    const existingOrder = await prisma.order.findUnique({ where: { id: orderId } });
+    if (!existingOrder) return { error: "Order not found." };
+
+    // When marking as PAID, generate and lock invoice number if not set
+    let invoiceNumber = existingOrder.invoiceNumber;
+    let invoiceGeneratedAt = existingOrder.invoiceGeneratedAt;
+    if (paymentStatus === "PAID" && !invoiceNumber) {
+      invoiceNumber = generateInvoiceNumber(orderId, existingOrder.createdAt);
+      invoiceGeneratedAt = new Date();
+    }
+
     await prisma.order.update({
       where: { id: orderId },
-      data: { paymentStatus },
+      data: {
+        paymentStatus,
+        ...(invoiceNumber ? { invoiceNumber } : {}),
+        ...(invoiceGeneratedAt ? { invoiceGeneratedAt } : {}),
+        ...(paymentStatus === "PAID" ? { paidAt: existingOrder.paidAt ?? new Date() } : {}),
+      },
     });
     revalidatePath("/admin/orders");
     revalidatePath(`/admin/orders/${orderId}`);
+    revalidatePath(`/order-confirmation/${orderId}`);
     return { success: true };
   } catch (error: any) {
     return { error: error.message };

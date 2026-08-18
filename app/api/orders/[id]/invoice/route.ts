@@ -40,6 +40,18 @@ export async function GET(
       );
     }
 
+    // For DELIVERY orders: require delivery charge to be confirmed first
+    const orderType = (order as any).orderType ?? "DELIVERY";
+    const deliveryConfirmed = (order as any).deliveryConfirmed ?? false;
+    const deliveryCharge = Number((order as any).deliveryCharge ?? 0);
+
+    if (orderType === "DELIVERY" && !deliveryConfirmed) {
+      return NextResponse.json(
+        { error: "Invoice cannot be generated until the delivery charge has been confirmed by the admin." },
+        { status: 403 }
+      );
+    }
+
     const invoiceNumber = order.invoiceNumber || generateInvoiceNumber(order.id, order.createdAt);
     const orderNumber = `ORD-${new Date(order.createdAt).getFullYear()}-${String(order.id).padStart(6, "0")}`;
     const orderDateStr = new Date(order.createdAt).toLocaleDateString("en-IN", {
@@ -106,7 +118,14 @@ export async function GET(
     doc.setFont("helvetica", "bold");
     doc.setFontSize(10);
     doc.setTextColor(primaryPurple[0], primaryPurple[1], primaryPurple[2]);
-    doc.text("BILLED & DELIVERED TO", 14, 69);
+    doc.text(orderType === "PICKUP" ? "BILLED TO / STORE PICKUP" : "BILLED & DELIVERED TO", 14, 69);
+
+    // Order type badge text
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7.5);
+    const orderTypeBadge = orderType === "PICKUP" ? "[ STORE PICKUP — FREE ]" : `[ HOME DELIVERY — Delivery Charge: ${deliveryCharge > 0 ? `Rs.${deliveryCharge.toLocaleString("en-IN")}` : "FREE"}  ]`;
+    doc.setTextColor(orderType === "PICKUP" ? 5 : 109, orderType === "PICKUP" ? 150 : 63, orderType === "PICKUP" ? 105 : 214);
+    doc.text(orderTypeBadge, 196, 69, { align: "right" });
 
     doc.setTextColor(textNavy[0], textNavy[1], textNavy[2]);
     doc.setFont("helvetica", "bold");
@@ -176,8 +195,12 @@ export async function GET(
       yPos += 5;
     }
 
-    doc.text("Shipping & Delivery:", 140, yPos);
-    doc.text(Number(order.shipping) === 0 ? "FREE" : `₹${Number(order.shipping).toLocaleString("en-IN")}`, 192, yPos, { align: "right" });
+    doc.text(orderType === "PICKUP" ? "Pickup Charge:" : "Delivery Charge:", 140, yPos);
+    if (orderType === "PICKUP") {
+      doc.text("FREE", 192, yPos, { align: "right" });
+    } else {
+      doc.text(deliveryCharge > 0 ? `Rs.${deliveryCharge.toLocaleString("en-IN")}` : "FREE", 192, yPos, { align: "right" });
+    }
 
     yPos += 7;
     doc.setFont("helvetica", "bold");
@@ -199,7 +222,8 @@ export async function GET(
       status: 200,
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename="Sivakasi-Crackers-Invoice-${invoiceNumber}.pdf"`,
+        // ✅ CORRECT filename: {invoiceNumber}.pdf
+        "Content-Disposition": `attachment; filename="${invoiceNumber}.pdf"`,
       },
     });
   } catch (error: any) {

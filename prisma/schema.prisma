@@ -108,18 +108,22 @@ model Order {
   billingPincode String?
   customerGstin  String?
   placeOfSupply  String?
-  invoiceNumber  String?     @unique
-  subtotal       Decimal     @default(0)
-  discount      Decimal     @default(0)
-  shipping      Decimal     @default(0)
-  totalAmount   Decimal
-  paymentStatus String      @default("PENDING_PAYMENT")
-  paymentMethod String?
-  orderStatus   String      @default("PLACED") // PLACED, CONFIRMED, PROCESSING, PACKED, SHIPPED, OUT_FOR_DELIVERY, DELIVERED, CANCELLED
-  paymentId     String?
-  paidAt        DateTime?
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
+  invoiceNumber       String?     @unique
+  subtotal            Decimal     @default(0)
+  discount            Decimal     @default(0)
+  shipping            Decimal     @default(0)
+  totalAmount         Decimal
+  orderType           String      @default("DELIVERY") // DELIVERY, PICKUP
+  deliveryCharge      Decimal     @default(0) // Set by admin for DELIVERY orders
+  deliveryConfirmed   Boolean     @default(false) // Admin confirms delivery charge
+  invoiceGeneratedAt  DateTime?   // When invoice was first locked/generated
+  paymentStatus       String      @default("PENDING_PAYMENT")
+  paymentMethod       String?
+  orderStatus         String      @default("PLACED") // PLACED, AWAITING_DELIVERY_CONFIRMATION, CONFIRMED, PROCESSING, PACKED, SHIPPED, OUT_FOR_DELIVERY, DELIVERED, READY_FOR_PICKUP, COLLECTED, CANCELLED
+  paymentId           String?
+  paidAt              DateTime?
+  createdAt           DateTime    @default(now())
+  updatedAt           DateTime    @updatedAt
 
   user          User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
   items         OrderItem[]

@@ -24,7 +24,7 @@ export default async function AdminOrdersPage({ searchParams }: AdminOrdersPageP
     orderBy: { createdAt: "desc" },
   });
 
-  const statusOptions = ["ALL", "PLACED", "CONFIRMED", "PROCESSING", "READY", "SHIPPED", "DELIVERED", "CANCELLED"];
+  const statusOptions = ["ALL", "AWAITING_DELIVERY_CONFIRMATION", "PLACED", "CONFIRMED", "PROCESSING", "PACKED", "SHIPPED", "READY_FOR_PICKUP", "DELIVERED", "COLLECTED", "CANCELLED"];
 
   return (
     <AdminNav user={session}>
@@ -68,6 +68,7 @@ export default async function AdminOrdersPage({ searchParams }: AdminOrdersPageP
                   <tr className="border-b border-slate-100 text-slate-400 font-extrabold text-[10px] uppercase">
                     <th className="pb-3">Order ID</th>
                     <th className="pb-3">Customer & Phone</th>
+                    <th className="pb-3">Type</th>
                     <th className="pb-3">City & Pincode</th>
                     <th className="pb-3">Amount</th>
                     <th className="pb-3">Payment</th>
@@ -82,6 +83,15 @@ export default async function AdminOrdersPage({ searchParams }: AdminOrdersPageP
                       <td className="py-3.5">
                         <span className="font-bold text-slate-900 block">{ord.customerName}</span>
                         <span className="text-[10px] text-slate-500">{ord.phone}</span>
+                      </td>
+                      <td className="py-3.5">
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase ${
+                          (ord as any).orderType === "PICKUP"
+                            ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
+                            : "bg-purple-100 text-purple-800 border border-purple-300"
+                        }`}>
+                          {(ord as any).orderType === "PICKUP" ? "🏪 Pickup" : "🚚 Delivery"}
+                        </span>
                       </td>
                       <td className="py-3.5 text-slate-600">
                         {ord.city}, {ord.pincode}
@@ -110,8 +120,16 @@ export default async function AdminOrdersPage({ searchParams }: AdminOrdersPageP
                         </div>
                       </td>
                       <td className="py-3.5">
-                        <span className="px-2.5 py-1 rounded-md text-[10px] font-black uppercase bg-slate-100 text-slate-800 border border-slate-200">
-                          {ord.orderStatus}
+                        <span className={`px-2.5 py-1 rounded-md text-[10px] font-black uppercase ${
+                          ord.orderStatus === "AWAITING_DELIVERY_CONFIRMATION"
+                            ? "bg-amber-100 text-amber-800 border border-amber-300"
+                            : ord.orderStatus === "DELIVERED" || ord.orderStatus === "COLLECTED"
+                            ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
+                            : ord.orderStatus === "CANCELLED"
+                            ? "bg-red-100 text-red-800 border border-red-300"
+                            : "bg-slate-100 text-slate-800 border border-slate-200"
+                        }`}>
+                          {ord.orderStatus.replace(/_/g, " ")}
                         </span>
                       </td>
                       <td className="py-3.5 text-right">
