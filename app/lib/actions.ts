@@ -352,15 +352,18 @@ export async function createOrderAction(data: {
       // This prevents premature invoice assignment.
 
       // Deduct stock for each item atomically inside transaction
-      for (const item of validatedItems) {
-        await tx.product.update({
-          where: { id: item.productId },
-          data: {
-            stock: { decrement: item.quantity },
-            purchases: { increment: item.quantity },
-          },
-        });
-      }
+      // Use Promise.all to batch all updates in parallel — avoids N serial round-trips
+      await Promise.all(
+        validatedItems.map((item) =>
+          tx.product.update({
+            where: { id: item.productId },
+            data: {
+              stock: { decrement: item.quantity },
+              purchases: { increment: item.quantity },
+            },
+          })
+        )
+      );
 
       return {
         orderId: createdOrder.id,
@@ -368,6 +371,8 @@ export async function createOrderAction(data: {
         grandTotal,
         subtotal: calculatedSubtotal,
       };
+    }, {
+      timeout: 15000, // 15s — gives headroom for large carts (default is 5s)
     });
 
     // Invalidate Next.js Server Caches

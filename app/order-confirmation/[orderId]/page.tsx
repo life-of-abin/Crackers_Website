@@ -53,14 +53,45 @@ export default async function OrderConfirmationPage({ params }: OrderConfirmatio
     minute: "2-digit",
   });
 
+  // Serialize all Prisma Decimal fields before passing to the Client Component.
+  // Next.js cannot serialize Decimal objects across the Server→Client boundary.
+  const plainOrder = {
+    ...order,
+    subtotal: Number(order.subtotal),
+    discount: Number(order.discount),
+    shipping: Number(order.shipping),
+    totalAmount: Number(order.totalAmount),
+    orderType: order.orderType ?? "DELIVERY",
+    deliveryCharge: Number(order.deliveryCharge ?? 0),
+    deliveryConfirmed: order.deliveryConfirmed ?? false,
+    createdAt: order.createdAt.toISOString(),
+    updatedAt: order.updatedAt.toISOString(),
+    paidAt: order.paidAt?.toISOString() ?? null,
+    items: order.items.map((item) => ({
+      ...item,
+      price: Number(item.price),
+      total: Number(item.total),
+      taxRate: item.taxRate != null ? Number(item.taxRate) : null,
+      taxableValue: item.taxableValue != null ? Number(item.taxableValue) : null,
+      cgstAmount: item.cgstAmount != null ? Number(item.cgstAmount) : null,
+      sgstAmount: item.sgstAmount != null ? Number(item.sgstAmount) : null,
+      igstAmount: item.igstAmount != null ? Number(item.igstAmount) : null,
+    })),
+    payments: order.payments.map((pay) => ({
+      id: pay.id,
+      orderId: pay.orderId,
+      paymentMethod: pay.paymentMethod,
+      paymentRef: pay.paymentRef,
+      amount: Number(pay.amount),
+      status: pay.status,
+      createdAt: pay.createdAt.toISOString(),
+      updatedAt: pay.updatedAt.toISOString(),
+    })),
+  };
+
   return (
     <OrderConfirmationClient
-      order={{
-        ...order,
-        orderType: order.orderType ?? "DELIVERY",
-        deliveryCharge: Number(order.deliveryCharge ?? 0),
-        deliveryConfirmed: order.deliveryConfirmed ?? false,
-      }}
+      order={plainOrder}
       settings={settings}
       formattedId={formattedId}
       displayPaymentMethod={displayPaymentMethod}

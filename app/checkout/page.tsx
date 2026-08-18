@@ -821,37 +821,43 @@ export default function CheckoutPage() {
 
       <Footer settings={settings} />
 
-      {/* Processing Overlay */}
+      {/* Processing Overlay — Premium Light Theme */}
       {processingOverlay.active && (
-        <div className="fixed inset-0 z-50 bg-[#080B1A]/95 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center text-white space-y-6">
+        <div className="fixed inset-0 z-50 bg-white/95 backdrop-blur-xl flex flex-col items-center justify-center p-6 text-center space-y-7">
+
+          {/* Animated icon */}
           <div className="relative">
-            <div className="w-24 h-24 rounded-full bg-gradient-to-tr from-[#6D3FD6] via-[#8B5CF6] to-[#F5C451] flex items-center justify-center text-5xl shadow-2xl animate-bounce">
+            <div className="w-28 h-28 rounded-full bg-gradient-to-tr from-[#5B21B6] via-[#6D3FD6] to-[#F5C451] flex items-center justify-center text-5xl shadow-2xl shadow-purple-200 animate-bounce">
               🎆
             </div>
-            <span className="absolute -top-2 -right-2 w-7 h-7 rounded-full bg-emerald-500 border-2 border-white flex items-center justify-center text-xs font-bold text-white animate-pulse">✓</span>
+            <span className="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-emerald-500 border-4 border-white flex items-center justify-center text-xs font-black text-white animate-pulse shadow-md">✓</span>
           </div>
 
+          {/* Heading */}
           <div className="space-y-2 max-w-sm">
-            <h2 className="text-2xl sm:text-3xl font-black text-[#F5C451] uppercase font-display tracking-tight">
+            <h2 className="text-2xl sm:text-3xl font-black text-[#6D3FD6] uppercase font-display tracking-tight">
               Order Placed! 🎉
             </h2>
-            <p className="text-xs text-slate-300 font-bold animate-pulse">{processingOverlay.stepText}</p>
+            <p className="text-sm text-slate-500 font-bold animate-pulse">{processingOverlay.stepText}</p>
           </div>
 
-          <div className="w-full max-w-xs space-y-1.5">
-            <div className="w-full bg-slate-800 rounded-full h-3 overflow-hidden p-0.5 border border-white/10">
+          {/* Premium Progress Bar */}
+          <div className="w-full max-w-sm space-y-2">
+            <div className="w-full bg-slate-100 rounded-full h-3.5 overflow-hidden border border-slate-200 shadow-inner">
               <div
-                className="bg-gradient-to-r from-[#6D3FD6] via-purple-400 to-[#F5C451] h-full rounded-full transition-all duration-75 ease-linear"
+                className="bg-gradient-to-r from-[#6D3FD6] via-purple-400 to-[#F5C451] h-full rounded-full transition-all duration-75 ease-linear shadow-sm"
                 style={{ width: `${processingOverlay.progress}%` }}
               />
             </div>
             <div className="flex justify-between text-[11px] font-mono text-slate-400 font-bold px-1">
               <span>Preparing Order Summary</span>
-              <span className="text-[#F5C451]">{processingOverlay.progress}%</span>
+              <span className="text-[#6D3FD6] font-black">{processingOverlay.progress}%</span>
             </div>
           </div>
 
-          <p className="text-[10px] text-slate-500 font-medium pt-2">Redirecting to Order Confirmation...</p>
+          <p className="text-[10px] text-slate-400 font-medium">
+            Redirecting to Order Confirmation...
+          </p>
         </div>
       )}
     </div>
