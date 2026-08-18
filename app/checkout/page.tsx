@@ -86,6 +86,7 @@ export default function CheckoutPage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [globalError, setGlobalError] = useState("");
+  const [isOrderComplete, setIsOrderComplete] = useState(false);
 
   // ─── Settings Load ────────────────────────────────────────────────────────
   useEffect(() => {
@@ -97,13 +98,13 @@ export default function CheckoutPage() {
 
   // ─── Cart Guard ───────────────────────────────────────────────────────────
   useEffect(() => {
-    if (!isMounted) return;
+    if (!isMounted || isOrderComplete) return;
     const rawMin = Number(settings.minOrderAmount);
     const minOrder = !isNaN(rawMin) && rawMin >= 0 ? rawMin : 500;
     if (items.length === 0 || subtotal < minOrder) {
       router.push("/cart");
     }
-  }, [isMounted, items, subtotal, settings.minOrderAmount, router]);
+  }, [isMounted, items, subtotal, settings.minOrderAmount, router, isOrderComplete]);
 
   // ─── PIN Code Lookup (DELIVERY only) ─────────────────────────────────────
   useEffect(() => {
@@ -262,14 +263,6 @@ export default function CheckoutPage() {
     return true;
   };
 
-  // ─── Processing Overlay ───────────────────────────────────────────────────
-  const [processingOverlay, setProcessingOverlay] = useState<{
-    active: boolean;
-    orderId: number | null;
-    progress: number;
-    stepText: string;
-  }>({ active: false, orderId: null, progress: 0, stepText: "Processing & Verifying Order..." });
-
   // ─── Submit Handler ───────────────────────────────────────────────────────
   const handleSubmitOrder = async (selectedOrderType: "DELIVERY" | "PICKUP") => {
     setGlobalError("");
@@ -303,35 +296,9 @@ export default function CheckoutPage() {
       if (result.error) { setGlobalError(result.error); return; }
 
       if (result.success && result.orderId) {
-        setProcessingOverlay({
-          active: true,
-          orderId: result.orderId,
-          progress: 0,
-          stepText: "Processing & Verifying Order Details...",
-        });
-
-        const startTime = Date.now();
-        const duration = 3000;
-
-        const interval = setInterval(() => {
-          const elapsed = Date.now() - startTime;
-          const pct = Math.min(100, Math.floor((elapsed / duration) * 100));
-
-          let currentStep = "Processing & Verifying Order Details...";
-          if (pct >= 33 && pct < 66) {
-            currentStep = `Registering Order #${result.orderId}...`;
-          } else if (pct >= 66) {
-            currentStep = "Generating Order Summary Image...";
-          }
-
-          setProcessingOverlay({ active: true, orderId: result.orderId, progress: pct, stepText: currentStep });
-
-          if (elapsed >= duration) {
-            clearInterval(interval);
-            clearCart();
-            router.push(`/order-confirmation/${result.orderId}?autoWhatsapp=true`);
-          }
-        }, 50);
+        setIsOrderComplete(true);
+        // Force a hard redirect to bypass any Next.js soft-navigation quirks or React state batching issues
+        window.location.href = `/order-confirmation/${result.orderId}`;
         return;
       }
 
@@ -821,45 +788,7 @@ export default function CheckoutPage() {
 
       <Footer settings={settings} />
 
-      {/* Processing Overlay — Premium Light Theme */}
-      {processingOverlay.active && (
-        <div className="fixed inset-0 z-50 bg-white/95 backdrop-blur-xl flex flex-col items-center justify-center p-6 text-center space-y-7">
 
-          {/* Animated icon */}
-          <div className="relative">
-            <div className="w-28 h-28 rounded-full bg-gradient-to-tr from-[#5B21B6] via-[#6D3FD6] to-[#F5C451] flex items-center justify-center text-5xl shadow-2xl shadow-purple-200 animate-bounce">
-              🎆
-            </div>
-            <span className="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-emerald-500 border-4 border-white flex items-center justify-center text-xs font-black text-white animate-pulse shadow-md">✓</span>
-          </div>
-
-          {/* Heading */}
-          <div className="space-y-2 max-w-sm">
-            <h2 className="text-2xl sm:text-3xl font-black text-[#6D3FD6] uppercase font-display tracking-tight">
-              Order Placed! 🎉
-            </h2>
-            <p className="text-sm text-slate-500 font-bold animate-pulse">{processingOverlay.stepText}</p>
-          </div>
-
-          {/* Premium Progress Bar */}
-          <div className="w-full max-w-sm space-y-2">
-            <div className="w-full bg-slate-100 rounded-full h-3.5 overflow-hidden border border-slate-200 shadow-inner">
-              <div
-                className="bg-gradient-to-r from-[#6D3FD6] via-purple-400 to-[#F5C451] h-full rounded-full transition-all duration-75 ease-linear shadow-sm"
-                style={{ width: `${processingOverlay.progress}%` }}
-              />
-            </div>
-            <div className="flex justify-between text-[11px] font-mono text-slate-400 font-bold px-1">
-              <span>Preparing Order Summary</span>
-              <span className="text-[#6D3FD6] font-black">{processingOverlay.progress}%</span>
-            </div>
-          </div>
-
-          <p className="text-[10px] text-slate-400 font-medium">
-            Redirecting to Order Confirmation...
-          </p>
-        </div>
-      )}
     </div>
   );
 }

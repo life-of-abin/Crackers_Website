@@ -6,13 +6,13 @@ import AdminNav from "../AdminNav";
 import AdminProductTable from "./AdminProductTable";
 
 interface AdminProductsPageProps {
-  searchParams: Promise<{ q?: string; categoryId?: string }>;
+  searchParams: Promise<{ q?: string; categoryId?: string; stockStatus?: string }>;
 }
 
 export default async function AdminProductsPage({ searchParams }: AdminProductsPageProps) {
   const session = await requireAdmin();
 
-  const { q = "", categoryId = "" } = await searchParams;
+  const { q = "", categoryId = "", stockStatus = "" } = await searchParams;
 
   const whereClause: any = {};
   if (q) {
@@ -23,6 +23,19 @@ export default async function AdminProductsPage({ searchParams }: AdminProductsP
   }
   if (categoryId) {
     whereClause.categoryId = parseInt(categoryId);
+  }
+
+  if (stockStatus === "in_stock") {
+    whereClause.stock = { gt: 20 };
+    whereClause.active = true;
+  } else if (stockStatus === "low_stock") {
+    whereClause.stock = { lte: 20, gt: 0 };
+    whereClause.active = true;
+  } else if (stockStatus === "out_of_stock") {
+    whereClause.stock = 0;
+    whereClause.active = true;
+  } else if (stockStatus === "inactive") {
+    whereClause.active = false;
   }
 
   const [products, categories] = await Promise.all([
@@ -77,6 +90,7 @@ export default async function AdminProductsPage({ searchParams }: AdminProductsP
           categories={categories.map((c) => ({ id: c.id, name: c.name }))}
           initialSearch={q}
           initialCategoryId={categoryId}
+          initialStockStatus={stockStatus}
         />
 
       </div>

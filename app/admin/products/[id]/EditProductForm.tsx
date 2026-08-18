@@ -96,14 +96,9 @@ export default function EditProductForm({ product, categories }: EditProductForm
             <span className="text-[#6D3FD6] font-black text-sm">{discountPercent}% OFF</span>
           </div>
 
-          <div>
+          <div className="sm:col-span-2">
             <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">Stock Count *</label>
             <input type="number" name="stock" required defaultValue={product.stock} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#6D3FD6]" />
-          </div>
-
-          <div>
-            <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">Badge</label>
-            <input type="text" name="badge" defaultValue={product.badge || ""} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#6D3FD6]" />
           </div>
 
           <div className="sm:col-span-2">
@@ -114,18 +109,6 @@ export default function EditProductForm({ product, categories }: EditProductForm
           <div className="sm:col-span-2">
             <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">Description</label>
             <textarea name="description" rows={3} defaultValue={product.description || ""} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#6D3FD6]" />
-          </div>
-
-          <div className="sm:col-span-2 flex items-center gap-6 pt-2">
-            <label className="flex items-center gap-2 cursor-pointer font-bold text-slate-800">
-              <input type="checkbox" name="featured" value="true" defaultChecked={product.featured} className="rounded text-[#6D3FD6] w-4 h-4" />
-              <span>Featured Product</span>
-            </label>
-
-            <label className="flex items-center gap-2 cursor-pointer font-bold text-slate-800">
-              <input type="checkbox" name="active" value="true" defaultChecked={product.active} className="rounded text-[#6D3FD6] w-4 h-4" />
-              <span>Active on Storefront</span>
-            </label>
           </div>
         </div>
 

@@ -157,7 +157,7 @@ export default function InvoiceDocument({ order, settings, products }: InvoiceDo
               background-color: white !important;
               color: black !important;
             }
-            .no-print {
+            .no-print, header, footer, nav, iframe, button, a[href*="wa.me"], [class*="WhatsApp"], [class*="whatsapp"] {
               display: none !important;
             }
             .print-full-width {
@@ -180,7 +180,10 @@ export default function InvoiceDocument({ order, settings, products }: InvoiceDo
       {/* Action Buttons Container */}
       <div className="w-full max-w-[210mm] flex justify-between items-center px-4 md:px-0 mb-6 no-print">
         <button
-          onClick={() => window.history.back()}
+          onClick={() => {
+            const isAdmin = window.location.pathname.startsWith("/admin");
+            window.location.href = isAdmin ? `/admin/orders/${order.id}` : `/orders/${order.id}`;
+          }}
           className="flex items-center gap-2 px-4 py-2 border border-slate-300 bg-white text-slate-700 hover:text-[#6D3FD6] rounded-xl text-sm font-bold transition-all hover:border-purple-300 shadow-xs cursor-pointer"
         >
           ← Back to Order
@@ -277,41 +280,39 @@ export default function InvoiceDocument({ order, settings, products }: InvoiceDo
           </div>
         </div>
 
-        {/* Shipping details (only if different) */}
-        <div className="mb-6 bg-slate-50 border border-slate-100 rounded-xl p-4 print:bg-white print:border-slate-200">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">
-                SHIP TO (Delivery Destination)
-              </h4>
-              {hasDifferentBilling ? (
-                <div className="text-xs text-slate-600">
-                  <p className="font-bold text-[#080B1A]">{order.customerName}</p>
-                  <p className="leading-relaxed">
-                    {order.address}{order.landmark ? `, ${order.landmark}` : ""}, {order.city}, {order.district ? `${order.district}, ` : ""}{order.state} - {order.pincode}
-                  </p>
-                </div>
-              ) : (
-                <p className="text-xs font-semibold text-slate-500 italic">
-                  Shipping address same as billing address
+        {/* Shipping details and Order Info */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+          <div className="relative">
+            <h3 className="text-xs font-black text-[#080B1A] uppercase tracking-wider mb-2 pb-1 border-b border-slate-100">
+              SHIP TO (DELIVERY DESTINATION)
+            </h3>
+            {hasDifferentBilling ? (
+              <div className="text-xs text-slate-600">
+                <p className="font-bold text-[#080B1A]">{order.customerName}</p>
+                <p className="leading-relaxed">
+                  {order.address}{order.landmark ? `, ${order.landmark}` : ""}, {order.city}, {order.district ? `${order.district}, ` : ""}{order.state} - {order.pincode}
                 </p>
-              )}
-            </div>
-            <div className="text-left md:text-right border-t md:border-t-0 md:border-l border-slate-200 md:pl-4 pt-3 md:pt-0 print:border-t-0 print:pt-0">
-              <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">
-                ORDER INFORMATION
-              </h4>
-              <div className="text-xs text-slate-600 grid grid-cols-2 gap-x-2 md:inline-grid text-left md:grid-cols-2">
-                <span className="font-bold text-slate-800">Order ID:</span> <span>#{order.id}</span>
-                <span className="font-bold text-slate-800">Order Date:</span> <span>{orderDate.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}</span>
-                <span className="font-bold text-slate-800">Payment Method:</span> <span>{paymentMethod}</span>
-                {isGst && (
-                  <>
-                    <span className="font-bold text-slate-800">Place of Supply:</span> <span>{order.placeOfSupply || `${order.state}`}</span>
-                    <span className="font-bold text-slate-800">Reverse Charge:</span> <span>No</span>
-                  </>
-                )}
               </div>
+            ) : (
+              <p className="text-xs font-semibold text-slate-500 italic">
+                Shipping address same as billing address
+              </p>
+            )}
+            <div className="hidden md:block absolute right-0 top-0 bottom-0 w-px bg-slate-100 transform translate-x-4 print:block print:bg-slate-200 print:translate-x-4" />
+          </div>
+          <div>
+            <h3 className="text-xs font-black text-[#080B1A] uppercase tracking-wider mb-2 pb-1 border-b border-slate-100">
+              ORDER INFORMATION
+            </h3>
+            <div className="text-xs text-slate-600 grid grid-cols-2 gap-x-2 w-fit">
+              <span className="font-bold text-[#080B1A]">Order ID:</span> <span>#{order.id}</span>
+              <span className="font-bold text-[#080B1A]">Order Date:</span> <span>{orderDate.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}</span>
+              {isGst && (
+                <>
+                  <span className="font-bold text-[#080B1A]">Place of Supply:</span> <span>{order.placeOfSupply || `${order.state}`}</span>
+                  <span className="font-bold text-[#080B1A]">Reverse Charge:</span> <span>No</span>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -381,30 +382,8 @@ export default function InvoiceDocument({ order, settings, products }: InvoiceDo
 
         {/* Totals, Payment Info & Amount in Words */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 border-b border-slate-200 pb-6 mb-6">
-          {/* Left Block: Payment info & Amount in words */}
+          {/* Left Block: Amount in words */}
           <div className="space-y-4">
-            <div className="bg-slate-50 border border-slate-200/50 rounded-xl p-4 print:bg-white print:border-slate-200">
-              <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
-                PAYMENT INFORMATION
-              </h4>
-              <div className="text-xs text-slate-600 space-y-1">
-                <p>
-                  <span className="font-bold text-slate-800">Status:</span>{" "}
-                  <span
-                    className={`inline-block px-2 py-0.5 rounded-full font-extrabold text-[10px] ${
-                      displayPaymentStatus(order.paymentStatus) === "PAID"
-                        ? "bg-emerald-100 text-emerald-800"
-                        : "bg-amber-100 text-amber-800"
-                    }`}
-                  >
-                    {displayPaymentStatus(order.paymentStatus)}
-                  </span>
-                </p>
-                <p><span className="font-bold text-slate-800">Method:</span> {paymentMethod}</p>
-                <p><span className="font-bold text-slate-800">Transaction ID:</span> <span className="font-mono text-[10px]">{paymentId}</span></p>
-              </div>
-            </div>
-
             <div className="text-xs">
               <span className="font-black text-[#080B1A] uppercase tracking-wider block mb-1">
                 Amount in Words
@@ -458,9 +437,9 @@ export default function InvoiceDocument({ order, settings, products }: InvoiceDo
                 </>
               )}
               <div className="flex justify-between pt-1.5 border-t border-slate-200/60">
-                <span>Shipping / Delivery Charges:</span>
+                <span>{order.orderType === "PICKUP" ? "Pickup Charge:" : "Shipping / Delivery Charges:"}</span>
                 <span className="font-semibold text-slate-800">
-                  {Number(order.shipping) === 0 ? "FREE" : `₹${Number(order.shipping).toFixed(2)}`}
+                  {order.orderType === "PICKUP" ? "FREE" : (Number((order as any).deliveryCharge) || Number(order.shipping)) === 0 ? "FREE" : `₹${(Number((order as any).deliveryCharge) || Number(order.shipping)).toFixed(2)}`}
                 </span>
               </div>
             </div>

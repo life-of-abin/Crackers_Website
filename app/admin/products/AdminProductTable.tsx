@@ -26,18 +26,29 @@ interface TableProps {
   categories: { id: number; name: string }[];
   initialSearch: string;
   initialCategoryId: string;
+  initialStockStatus?: string;
 }
 
-export default function AdminProductTable({ initialProducts, categories, initialSearch, initialCategoryId }: TableProps) {
+export default function AdminProductTable({
+  initialProducts,
+  categories,
+  initialSearch,
+  initialCategoryId,
+  initialStockStatus = "",
+}: TableProps) {
   const router = useRouter();
   const [search, setSearch] = useState(initialSearch);
   const [selectedCat, setSelectedCat] = useState(initialCategoryId);
+  const [stockStatus, setStockStatus] = useState(initialStockStatus);
   const [loadingId, setLoadingId] = useState<number | null>(null);
 
-  const handleFilter = () => {
+  const applyFilters = (newStockStatus?: string, newCat?: string) => {
+    const targetStock = newStockStatus !== undefined ? newStockStatus : stockStatus;
+    const targetCat = newCat !== undefined ? newCat : selectedCat;
     const params = new URLSearchParams();
     if (search) params.set("q", search);
-    if (selectedCat) params.set("categoryId", selectedCat);
+    if (targetCat) params.set("categoryId", targetCat);
+    if (targetStock) params.set("stockStatus", targetStock);
     router.push(`/admin/products?${params.toString()}`);
   };
 
@@ -68,9 +79,54 @@ export default function AdminProductTable({ initialProducts, categories, initial
     }
   };
 
+  const stockTabs = [
+    { label: "All Products", value: "", color: "bg-slate-100 text-slate-700 hover:bg-slate-200" },
+    { label: "🟢 In Stock", value: "in_stock", color: "bg-emerald-100 text-emerald-800 hover:bg-emerald-200" },
+    { label: "🟡 Low Stock", value: "low_stock", color: "bg-amber-100 text-amber-800 hover:bg-amber-200" },
+    { label: "🔴 Out of Stock", value: "out_of_stock", color: "bg-red-100 text-red-800 hover:bg-red-200" },
+    { label: "⚪ Inactive", value: "inactive", color: "bg-slate-200 text-slate-700 hover:bg-slate-300" },
+  ];
+
   return (
     <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 space-y-6">
       
+      {/* Stock Status Quick Filter Tabs */}
+      <div className="flex flex-wrap items-center gap-2 pb-4 border-b border-slate-100">
+        <span className="text-xs font-black text-slate-400 uppercase tracking-wider mr-2">
+          Filter by Status:
+        </span>
+        {stockTabs.map((tab) => {
+          const isActive = stockStatus === tab.value;
+          return (
+            <button
+              key={tab.value}
+              onClick={() => {
+                setStockStatus(tab.value);
+                applyFilters(tab.value);
+              }}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
+                isActive
+                  ? "bg-[#6D3FD6] text-white shadow-sm shadow-purple-200 scale-105"
+                  : tab.color
+              }`}
+            >
+              {tab.label}
+            </button>
+          );
+        })}
+        {stockStatus && (
+          <button
+            onClick={() => {
+              setStockStatus("");
+              applyFilters("");
+            }}
+            className="text-[11px] font-bold text-slate-400 hover:text-slate-700 underline ml-2 cursor-pointer"
+          >
+            Clear Filter
+          </button>
+        )}
+      </div>
+
       {/* Filter Bar */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
         
@@ -80,7 +136,7 @@ export default function AdminProductTable({ initialProducts, categories, initial
             placeholder="Search by product name..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleFilter()}
+            onKeyDown={(e) => e.key === "Enter" && applyFilters()}
             className="flex-1 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#6D3FD6]"
           />
 
@@ -88,10 +144,7 @@ export default function AdminProductTable({ initialProducts, categories, initial
             value={selectedCat}
             onChange={(e) => {
               setSelectedCat(e.target.value);
-              const params = new URLSearchParams();
-              if (search) params.set("q", search);
-              if (e.target.value) params.set("categoryId", e.target.value);
-              router.push(`/admin/products?${params.toString()}`);
+              applyFilters(undefined, e.target.value);
             }}
             className="px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#6D3FD6] cursor-pointer"
           >
@@ -102,7 +155,7 @@ export default function AdminProductTable({ initialProducts, categories, initial
           </select>
 
           <button
-            onClick={handleFilter}
+            onClick={() => applyFilters()}
             className="px-5 py-2.5 bg-[#6D3FD6] hover:bg-[#5B21B6] text-white font-extrabold text-xs rounded-xl shadow-xs transition-all cursor-pointer"
           >
             Filter

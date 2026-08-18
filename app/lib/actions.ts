@@ -648,7 +648,7 @@ export async function updateProductAction(productId: number, formData: FormData)
     const image = rawImage ? rawImage : "/placeholder.png";
     const badge = (formData.get("badge") as string) || null;
     const featured = formData.get("featured") === "true";
-    const active = formData.get("active") === "true";
+    const active = formData.has("active") ? formData.get("active") === "true" : true;
 
     const discountPercentage = Math.round(((mrp - price) / mrp) * 100);
     const discountText = discountPercentage > 0 ? `${discountPercentage}% OFF` : null;
@@ -897,14 +897,10 @@ export async function updateSettingsAction(formData: FormData) {
     const address = formData.get("address") as string;
     const googleMapsUrl = formData.get("googleMapsUrl") as string;
     const whatsappNumber = formData.get("whatsappNumber") as string;
-    const minOrderAmount = parseFloat((formData.get("minOrderAmount") as string) || "500");
-    const flatShippingFeeStr = (formData.get("flatShippingFee") as string) || "100";
-    const flatShippingFee = parseFloat(flatShippingFeeStr);
-    const freeShippingThreshold = parseFloat((formData.get("freeShippingThreshold") as string) || "3000");
-
-    if (isNaN(flatShippingFee) || flatShippingFee < 0) {
-      return { error: "Shipping Fee must be a valid non-negative number." };
-    }
+    const minOrderAmount = parseFloat((formData.get("minOrderAmount") as string) || "300");
+    const flatShippingFeeStr = (formData.get("flatShippingFee") as string) || "0";
+    const flatShippingFee = parseFloat(flatShippingFeeStr) || 0;
+    const freeShippingThreshold = parseFloat((formData.get("freeShippingThreshold") as string) || "0");
 
     const legalName = (formData.get("legalName") as string) || null;
     const gstin = (formData.get("gstin") as string) || null;
@@ -1097,6 +1093,138 @@ export async function deletePaymentAccountAction(id: number) {
     return { success: true };
   } catch (error: any) {
     return { error: error.message };
+  }
+}
+
+export interface OfflineCartItemInput {
+  productId: number;
+  quantity: number;
+}
+
+export async function createOfflineBillAction(input: {
+  customerName?: string;
+  phone?: string;
+  paymentMethod: string;
+  discountAmount?: number;
+  items: OfflineCartItemInput[];
+}) {
+  try {
+    const admin = await requireAdmin();
+
+    if (!input.items || input.items.length === 0) {
+      return { error: "Please add at least one product to the bill." };
+    }
+
+    const result = await prisma.$transaction(async (tx) => {
+      // 1. Fetch & validate products & stock
+      const productIds = input.items.map((i) => i.productId);
+      const dbProducts = await tx.product.findMany({
+        where: { id: { in: productIds } },
+      });
+
+      const productMap = new Map(dbProducts.map((p) => [p.id, p]));
+
+      let subtotal = 0;
+      const orderItemsToCreate = [];
+
+      for (const item of input.items) {
+        const prod = productMap.get(item.productId);
+        if (!prod) {
+          throw new Error(`Product #${item.productId} not found.`);
+        }
+        if (prod.stock < item.quantity) {
+          throw new Error(`Insufficient stock for "${prod.name}". Available: ${prod.stock}, Requested: ${item.quantity}`);
+        }
+
+        const itemPrice = Number(prod.price);
+        const itemTotal = itemPrice * item.quantity;
+        subtotal += itemTotal;
+
+        orderItemsToCreate.push({
+          productId: prod.id,
+          productName: prod.name,
+          quantity: item.quantity,
+          unitType: prod.unitType || "BOX",
+          packSize: prod.packSize || prod.quantity || "10 Pieces",
+          price: itemPrice,
+          total: itemTotal,
+        });
+
+        // Atomic stock decrement & purchases increment
+        await tx.product.update({
+          where: { id: prod.id },
+          data: {
+            stock: { decrement: item.quantity },
+            purchases: { increment: item.quantity },
+          },
+        });
+      }
+
+      const discount = Math.max(0, input.discountAmount || 0);
+      const totalAmount = Math.max(0, subtotal - discount);
+
+      // 2. Generate sequential offline bill number (OFF-2026-0001)
+      const year = new Date().getFullYear();
+      const offlineCount = await tx.order.count({
+        where: { orderType: "OFFLINE" },
+      });
+      const nextSeq = (offlineCount + 1).toString().padStart(4, "0");
+      const offlineBillNumber = `OFF-${year}-${nextSeq}`;
+
+      // 3. Create Order record
+      const order = await tx.order.create({
+        data: {
+          customerName: input.customerName?.trim() || "Walk-in Customer",
+          phone: input.phone?.trim() || "N/A",
+          address: "In-Store Purchase (Sivakasi Shop)",
+          city: "Sivakasi",
+          state: "Tamil Nadu",
+          pincode: "626123",
+          subtotal,
+          discount,
+          shipping: 0,
+          totalAmount,
+          orderType: "OFFLINE",
+          invoiceNumber: offlineBillNumber,
+          paymentStatus: "PAID",
+          paymentMethod: input.paymentMethod || "Cash",
+          orderStatus: "COLLECTED",
+          paidAt: new Date(),
+          items: {
+            create: orderItemsToCreate,
+          },
+        },
+        include: {
+          items: true,
+        },
+      });
+
+      // Audit Log
+      await tx.adminAuditLog.create({
+        data: {
+          adminEmail: admin.email,
+          action: "CREATE_OFFLINE_BILL",
+          details: `Created Offline Store Bill ${offlineBillNumber} for ₹${totalAmount}`,
+        },
+      });
+
+      return order;
+    });
+
+    revalidatePath("/", "layout");
+    revalidatePath("/admin/dashboard");
+    revalidatePath("/admin/products");
+    revalidatePath("/admin/orders");
+    revalidatePath("/products");
+
+    return {
+      success: true,
+      orderId: result.id,
+      offlineBillNumber: result.invoiceNumber || offlineBillNumber,
+      totalAmount: Number(result.totalAmount),
+    };
+  } catch (error: any) {
+    return { error: error.message || "Failed to create offline bill." };
   }
 }
 

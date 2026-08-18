@@ -112,11 +112,6 @@ export default async function AdminOrdersPage({ searchParams }: AdminOrdersPageP
                           }`}>
                             {ord.paymentStatus === "TEST_PAID" ? "PAID" : ord.paymentStatus}
                           </span>
-                          {ord.paymentMethod && (
-                            <span className="block text-[10px] font-bold text-slate-500">
-                              {ord.paymentMethod}
-                            </span>
-                          )}
                         </div>
                       </td>
                       <td className="py-3.5">

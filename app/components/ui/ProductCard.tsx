@@ -90,12 +90,12 @@ export default function ProductCard({ product }: { product: ProductCardData }) {
           {/* Badges Overlay */}
           <div className="absolute top-2 left-2 flex flex-col gap-1 z-10">
             {product.discount && (
-              <span className="bg-[#6D3FD6] text-white font-black text-[10px] px-2.5 py-0.5 rounded-lg shadow-md uppercase tracking-wider">
+              <span className="bg-[#6D3FD6] text-white font-black text-xs px-2.5 py-0.5 rounded-lg shadow-md uppercase tracking-wider">
                 {product.discount}
               </span>
             )}
             {product.badge && (
-              <span className="bg-[#F5C451] text-amber-950 font-black text-[10px] px-2.5 py-0.5 rounded-lg shadow-md uppercase tracking-wider">
+              <span className="bg-[#F5C451] text-amber-950 font-black text-xs px-2.5 py-0.5 rounded-lg shadow-md uppercase tracking-wider">
                 BEST SELLER
               </span>
             )}
@@ -104,15 +104,15 @@ export default function ProductCard({ product }: { product: ProductCardData }) {
           {/* Stock Tag Overlay */}
           <div className="absolute bottom-2 right-2 z-10">
             {isOutOfStock ? (
-              <span className="bg-white/90 backdrop-blur-md text-slate-500 font-bold text-[10px] px-2.5 py-1 rounded-full uppercase border border-slate-200 shadow-xs">
+              <span className="bg-white/90 backdrop-blur-md text-slate-600 font-bold text-xs px-2.5 py-1 rounded-full uppercase border border-slate-200 shadow-xs">
                 Sold Out
               </span>
             ) : isLowStock ? (
-              <span className="bg-amber-500/95 backdrop-blur-md text-white font-bold text-[10px] px-2.5 py-1 rounded-full shadow-xs animate-pulse">
+              <span className="bg-amber-500/95 backdrop-blur-md text-white font-bold text-xs px-2.5 py-1 rounded-full shadow-xs animate-pulse">
                 Only {product.stock} left
               </span>
             ) : (
-              <span className="bg-emerald-500/95 backdrop-blur-md text-white font-bold text-[10px] px-2.5 py-0.5 rounded-full shadow-xs">
+              <span className="bg-emerald-500/95 backdrop-blur-md text-white font-bold text-xs px-2.5 py-0.5 rounded-full shadow-xs">
                 In Stock
               </span>
             )}
@@ -122,29 +122,29 @@ export default function ProductCard({ product }: { product: ProductCardData }) {
         {/* Card Content */}
         <div className="p-3.5 sm:p-4 space-y-2">
           {product.category && (
-            <span className="text-[10px] font-extrabold text-[#6D3FD6] uppercase tracking-widest block truncate">
+            <span className="text-xs font-black text-[#6D3FD6] uppercase tracking-widest block truncate">
               {product.category.name}
             </span>
           )}
 
           <Link href={`/products/${product.slug}`} className="block">
-            <h3 className="text-xs sm:text-sm font-bold text-slate-900 font-display group-hover:text-[#6D3FD6] transition-colors line-clamp-2 leading-snug">
+            <h3 className="text-sm sm:text-base font-black text-slate-900 font-display group-hover:text-[#6D3FD6] transition-colors line-clamp-2 leading-snug">
               {product.name}
             </h3>
           </Link>
 
           {/* Package Info Tag */}
-          <div className="inline-flex items-center gap-1 bg-slate-100 text-slate-700 font-semibold text-[10px] sm:text-[11px] px-2.5 py-0.5 rounded-md border border-slate-200">
-            <span>📦</span> <span>1 {unitLabel}</span> <span className="text-slate-500 font-medium">({packSizeText})</span>
+          <div className="inline-flex items-center gap-1 bg-slate-100 text-slate-800 font-bold text-xs px-2.5 py-1 rounded-md border border-slate-200">
+            <span>📦</span> <span>1 {unitLabel}</span> <span className="text-slate-600 font-semibold">({packSizeText})</span>
           </div>
 
           {/* Price Section */}
           <div className="pt-1 flex items-baseline gap-1.5 flex-wrap">
-            <span className="text-base sm:text-lg font-black text-[#6D3FD6] font-display">
+            <span className="text-lg sm:text-xl font-black text-[#6D3FD6] font-display">
               ₹{Number(product.price).toLocaleString("en-IN")}
             </span>
-            <span className="text-[10px] text-slate-500 font-medium">/ {unitLabel.toLowerCase()}</span>
-            <span className="text-xs text-slate-400 line-through font-normal ml-auto">
+            <span className="text-xs text-slate-600 font-semibold">/ {unitLabel.toLowerCase()}</span>
+            <span className="text-xs sm:text-sm text-slate-400 line-through font-semibold ml-auto">
               ₹{Number(product.mrp).toLocaleString("en-IN")}
             </span>
           </div>

@@ -22,7 +22,15 @@ export async function POST(request: Request) {
       );
     }
 
-    // Extract numeric order ID from strings like "ORD-2026-000123", "#ORD-2026-123", or "123"
+    // Reject offline store bills (OFF-2026-XXXX) explicitly
+    if (rawOrderId.toUpperCase().startsWith("OFF") || rawOrderId.toUpperCase().includes("OFF-")) {
+      return NextResponse.json(
+        { error: "Offline store bills (OFF-...) are in-store counter receipts and cannot be tracked. Track Order is strictly for online website purchases." },
+        { status: 400 }
+      );
+    }
+
+    // Extract numeric order ID from strings like "ORD-2026-000123" or "123"
     const numericMatch = rawOrderId.match(/\d+/g);
     let orderIdNum = 0;
     if (numericMatch && numericMatch.length > 0) {
@@ -36,11 +44,12 @@ export async function POST(request: Request) {
       );
     }
 
-    // Secure database lookup: BOTH Order ID and exact Gmail address must match
+    // Secure database lookup: BOTH Order ID and exact Gmail address must match, and strictly exclude OFFLINE store bills
     const order = await prisma.order.findFirst({
       where: {
         id: orderIdNum,
         email: rawEmail,
+        orderType: { not: "OFFLINE" },
       },
       include: {
         items: {
@@ -68,7 +77,7 @@ export async function POST(request: Request) {
       success: true,
       order: {
         id: order.id,
-        formattedId: `#ORD-2026-${String(order.id).padStart(6, "0")}`,
+        formattedId: `ORD-2026-${String(order.id).padStart(6, "0")}`,
         createdAt: order.createdAt,
         paymentStatus: order.paymentStatus,
         orderStatus: order.orderStatus,

@@ -189,47 +189,11 @@ export default function AdminSettingsForm({ settings }: { settings: StoreSetting
           {/* SHIPPING & DELIVERY SECTION */}
           <div className="sm:col-span-2 pt-4 border-t border-slate-200">
             <h3 className="font-black text-sm text-slate-900 uppercase tracking-wider font-display">
-              SHIPPING & DELIVERY
+              MINIMUM ORDER CONFIGURATION
             </h3>
             <p className="text-[11px] text-slate-500 mt-0.5">
-              Set the standard shipping fee applied to orders below the free-delivery threshold.
+              Set the minimum order value required for customer purchases.
             </p>
-          </div>
-
-          <div>
-            <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">
-              Shipping Fee (₹) *
-            </label>
-            <input
-              type="number"
-              name="flatShippingFee"
-              required
-              min="0"
-              step="any"
-              defaultValue={settings.flatShippingFee}
-              className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#6D3FD6] focus:border-[#6D3FD6]"
-            />
-            <span className="text-[10px] text-slate-400 mt-1 block">
-              Applied to customer orders below ₹3,000.
-            </span>
-          </div>
-
-          <div>
-            <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">
-              Free Shipping Order Threshold (₹) *
-            </label>
-            <input
-              type="number"
-              name="freeShippingThreshold"
-              required
-              min="0"
-              step="any"
-              defaultValue={settings.freeShippingThreshold}
-              className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#6D3FD6] focus:border-[#6D3FD6]"
-            />
-            <span className="text-[10px] text-slate-400 mt-1 block">
-              Orders at or above this amount receive FREE shipping (Default: ₹3,000).
-            </span>
           </div>
 
           <div className="sm:col-span-2">
@@ -245,6 +209,9 @@ export default function AdminSettingsForm({ settings }: { settings: StoreSetting
               defaultValue={settings.minOrderAmount}
               className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#6D3FD6] focus:border-[#6D3FD6]"
             />
+            <span className="text-[10px] text-slate-400 mt-1 block">
+              Customers cannot place orders below this minimum subtotal amount.
+            </span>
           </div>
 
         </div>

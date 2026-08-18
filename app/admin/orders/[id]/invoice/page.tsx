@@ -77,6 +77,7 @@ export default async function InvoicePage({ params }: InvoicePageProps) {
     subtotal: Number(order.subtotal),
     discount: Number(order.discount),
     shipping: Number(order.shipping),
+    deliveryCharge: Number((order as any).deliveryCharge || 0),
     totalAmount: Number(order.totalAmount),
     items: order.items.map(item => ({
       ...item,

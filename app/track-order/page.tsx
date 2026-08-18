@@ -177,20 +177,35 @@ export default function TrackOrderPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* Order ID Input */}
               <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
+                <label className="block text-xs font-extrabold text-slate-700 uppercase tracking-wider mb-1.5">
                   Order ID *
                 </label>
                 <input
                   type="text"
                   required
-                  placeholder="e.g. ORD-2026-000123 or 123"
+                  placeholder="e.g. ORD-2026-000032 or 32"
                   value={orderId}
-                  onChange={(e) => setOrderId(e.target.value)}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#6D3FD6] transition-all"
+                  onChange={(e) => setOrderId(e.target.value.toUpperCase())}
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-mono font-black text-[#6D3FD6] placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#6D3FD6] transition-all uppercase"
                 />
-                <span className="text-[10px] text-slate-400 mt-1 block">
-                  Found in your order confirmation screen or invoice
-                </span>
+                <div className="flex items-center justify-between mt-1.5">
+                  <span className="text-[11px] text-slate-500 font-semibold">
+                    Format: ORD-2026-XXXXXX or numeric ID
+                  </span>
+                  {orderId.trim() && (
+                    <span className={`text-xs font-black px-2.5 py-0.5 rounded-lg font-mono ${
+                      orderId.trim().startsWith("OFF")
+                        ? "bg-red-100 text-red-700 border border-red-200"
+                        : "bg-purple-100 text-[#6D3FD6]"
+                    }`}>
+                      {orderId.trim().startsWith("OFF")
+                        ? "⚠️ Offline Store Bill"
+                        : orderId.trim().startsWith("ORD-")
+                        ? orderId.trim()
+                        : `ORD-2026-${orderId.replace(/\D/g, "").padStart(6, "0")}`}
+                    </span>
+                  )}
+                </div>
               </div>
 
               {/* Gmail Address Input */}
@@ -409,12 +424,12 @@ export default function TrackOrderPage() {
             {/* Invoice PDF Download Link */}
             <div className="pt-4 border-t border-slate-200 flex justify-center">
               <a
-                href={`/api/orders/${order.id}/invoice`}
+                href={`/orders/${order.id}/invoice`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="px-6 py-3 bg-[#6D3FD6] hover:bg-[#5B21B6] text-white font-extrabold text-xs uppercase tracking-wider rounded-xl shadow-md transition-all flex items-center gap-2 cursor-pointer"
               >
-                <span>📄 Download Official PDF Invoice</span>
+                <span>📄 View / Print Official Tax Invoice</span>
               </a>
             </div>
 

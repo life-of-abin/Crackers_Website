@@ -43,7 +43,7 @@ export async function GET(
     // For DELIVERY orders: require delivery charge to be confirmed first
     const orderType = (order as any).orderType ?? "DELIVERY";
     const deliveryConfirmed = (order as any).deliveryConfirmed ?? false;
-    const deliveryCharge = Number((order as any).deliveryCharge ?? 0);
+    const deliveryCharge = Number((order as any).deliveryCharge?.toString() || (order as any).shipping?.toString() || 0);
 
     if (orderType === "DELIVERY" && !deliveryConfirmed) {
       return NextResponse.json(
@@ -52,7 +52,8 @@ export async function GET(
       );
     }
 
-    const invoiceNumber = order.invoiceNumber || generateInvoiceNumber(order.id, order.createdAt);
+    // Redirect directly to the full responsive InvoiceDocument route
+    return NextResponse.redirect(new URL(`/orders/${orderId}/invoice`, request.url));
     const orderNumber = `ORD-${new Date(order.createdAt).getFullYear()}-${String(order.id).padStart(6, "0")}`;
     const orderDateStr = new Date(order.createdAt).toLocaleDateString("en-IN", {
       day: "2-digit",
@@ -107,8 +108,8 @@ export async function GET(
     doc.setFont("helvetica", "normal");
     doc.text(`Order Reference: ${orderNumber}`, 196, 43, { align: "right" });
     doc.text(`Date: ${orderDateStr}`, 196, 48, { align: "right" });
-    doc.text(`Payment Status: PAID (${paymentMethod})`, 196, 53, { align: "right" });
-    doc.text(`Transaction / UTR: ${paymentTxRef}`, 196, 58, { align: "right" });
+    // Removed payment information display
+
 
     // Divider Line
     doc.setDrawColor(borderGray[0], borderGray[1], borderGray[2]);

@@ -17,8 +17,8 @@ export default function WhatsAppButton({
 }: WhatsAppButtonProps) {
   const pathname = usePathname();
 
-  // Hide floating button on all admin routes
-  if (pathname?.startsWith("/admin")) {
+  // Hide floating button on all admin routes and invoice routes
+  if (pathname?.startsWith("/admin") || pathname?.includes("/invoice")) {
     return null;
   }
 
@@ -30,7 +30,7 @@ export default function WhatsAppButton({
   const whatsappUrl = `https://wa.me/${formattedNumber}?text=${encodedMessage}`;
 
   return (
-    <div className="fixed bottom-5 right-5 sm:bottom-6 sm:right-6 z-50 pointer-events-auto select-none translate-z-0">
+    <div className="fixed bottom-5 right-5 sm:bottom-6 sm:right-6 z-50 pointer-events-auto select-none translate-z-0 print:hidden no-print">
       {/* Continuous glowing pulse aura ring */}
       <span className="absolute inset-0 rounded-full bg-[#25D366]/40 animate-ping pointer-events-none" />
 

@@ -167,7 +167,7 @@ export default function NewProductPage() {
               <span className="text-[#6D3FD6] font-black text-sm">{discountPercent}% OFF</span>
             </div>
 
-            <div>
+            <div className="sm:col-span-2">
               <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">
                 Initial Stock Count *
               </label>
@@ -176,18 +176,6 @@ export default function NewProductPage() {
                 name="stock"
                 required
                 defaultValue="100"
-                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#6D3FD6]"
-              />
-            </div>
-
-            <div>
-              <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">
-                Badge / Tag (Optional e.g. Bestseller)
-              </label>
-              <input
-                type="text"
-                name="badge"
-                placeholder="Bestseller"
                 className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#6D3FD6]"
               />
             </div>
@@ -214,18 +202,6 @@ export default function NewProductPage() {
                 placeholder="Enter description, specifications or safety warnings..."
                 className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#6D3FD6]"
               />
-            </div>
-
-            <div className="sm:col-span-2 flex items-center gap-6 pt-2">
-              <label className="flex items-center gap-2 cursor-pointer font-bold text-slate-800">
-                <input type="checkbox" name="featured" value="true" className="rounded text-[#6D3FD6] w-4 h-4" />
-                <span>Mark as Featured Product</span>
-              </label>
-
-              <label className="flex items-center gap-2 cursor-pointer font-bold text-slate-800">
-                <input type="checkbox" name="active" value="true" defaultChecked className="rounded text-[#6D3FD6] w-4 h-4" />
-                <span>Product Active on Customer Storefront</span>
-              </label>
             </div>
 
           </div>
