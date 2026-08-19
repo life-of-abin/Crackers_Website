@@ -20,7 +20,9 @@ interface OrderUpdaterProps {
     phone: string;
     email: string | null;
     address: string;
+    landmark?: string | null;
     city: string;
+    district?: string | null;
     state: string;
     pincode: string;
     subtotal: number;
@@ -213,6 +215,169 @@ export default function AdminOrderUpdater({ order, minOrderAmount }: OrderUpdate
     window.open(whatsappUrl, "_blank");
   };
 
+  const handlePrintDeliveryAddressSlip = () => {
+    const printWindow = window.open("", "_blank", "width=700,height=700");
+    if (!printWindow) return;
+
+    const fullAddressStr = isPickup
+      ? "STORE PICKUP: Sri Sivakasi Crackers, Main Bazaar, Sivakasi, Tamil Nadu - 626123"
+      : `${order.address}${order.landmark ? `, Near ${order.landmark}` : ""}, ${order.city}, ${
+          order.district ? `${order.district}, ` : ""
+        }${order.state} - ${order.pincode}`;
+
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Delivery Address Slip - Order #${order.id}</title>
+          <style>
+            @page {
+              size: A5 portrait;
+              margin: 10mm;
+            }
+            * {
+              box-sizing: border-box;
+            }
+            body {
+              font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+              color: #0f172a;
+              margin: 0;
+              padding: 24px;
+              background: #ffffff;
+            }
+            .slip-card {
+              border: 3px solid #0f172a;
+              border-radius: 16px;
+              padding: 24px;
+              max-width: 550px;
+              margin: 0 auto;
+              background: #ffffff;
+            }
+            .header-bar {
+              border-bottom: 2px solid #0f172a;
+              padding-bottom: 12px;
+              margin-bottom: 20px;
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+            }
+            .store-name {
+              font-size: 14px;
+              font-weight: 900;
+              text-transform: uppercase;
+              letter-spacing: 0.05em;
+              color: #6d3fd6;
+            }
+            .order-tag {
+              font-size: 16px;
+              font-weight: 900;
+              font-family: monospace;
+              color: #0f172a;
+              background: #f1f5f9;
+              padding: 4px 10px;
+              border-radius: 6px;
+              border: 1px solid #cbd5e1;
+            }
+            .section-label {
+              font-size: 11px;
+              font-weight: 800;
+              text-transform: uppercase;
+              letter-spacing: 0.1em;
+              color: #64748b;
+              margin-bottom: 4px;
+            }
+            .customer-name {
+              font-size: 24px;
+              font-weight: 900;
+              color: #0f172a;
+              margin-bottom: 8px;
+              line-height: 1.2;
+            }
+            .phone-badge {
+              font-size: 20px;
+              font-weight: 900;
+              font-family: monospace;
+              color: #000000;
+              background: #f8fafc;
+              display: inline-block;
+              padding: 6px 14px;
+              border-radius: 8px;
+              border: 2px solid #0f172a;
+              margin-bottom: 20px;
+            }
+            .address-box {
+              background: #f8fafc;
+              border: 2px dashed #94a3b8;
+              border-radius: 12px;
+              padding: 18px;
+              margin-bottom: 20px;
+            }
+            .address-text {
+              font-size: 16px;
+              font-weight: 700;
+              line-height: 1.6;
+              color: #0f172a;
+            }
+            .pincode-box {
+              font-size: 20px;
+              font-weight: 900;
+              color: #6d3fd6;
+              margin-top: 12px;
+              padding-top: 10px;
+              border-top: 1px solid #cbd5e1;
+            }
+            .footer-row {
+              border-top: 2px solid #0f172a;
+              padding-top: 12px;
+              font-size: 12px;
+              color: #475569;
+              font-weight: 700;
+              display: flex;
+              justify-content: space-between;
+            }
+            @media print {
+              body {
+                padding: 0;
+              }
+              .no-print {
+                display: none !important;
+              }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="no-print" style="text-align: center; margin-bottom: 20px;">
+            <button onclick="window.print()" style="background: #6d3fd6; color: #ffffff; border: none; padding: 12px 28px; font-weight: 900; font-size: 14px; border-radius: 12px; cursor: pointer; box-shadow: 0 4px 12px rgba(109,63,214,0.3);">🖨️ Print Delivery Address Slip</button>
+          </div>
+          <div class="slip-card">
+            <div class="header-bar">
+              <span class="store-name">SRI SIVAKASI CRACKERS — DELIVERY SLIP</span>
+            </div>
+
+            <div class="section-label">RECIPIENT / CUSTOMER NAME:</div>
+            <div class="customer-name">${order.customerName}</div>
+
+            <div class="section-label" style="margin-top: 16px;">DELIVERY DESTINATION ADDRESS:</div>
+            <div class="address-box">
+              <div class="address-text">${fullAddressStr}</div>
+              <div class="pincode-box">PINCODE: ${order.pincode}</div>
+            </div>
+          </div>
+
+          <script>
+            window.onload = function() {
+              window.print();
+            };
+          </script>
+        </body>
+      </html>
+    `;
+
+    printWindow.document.open();
+    printWindow.document.write(htmlContent);
+    printWindow.document.close();
+  };
+
   const handleUpdatePaymentStatus = async (newStatus: string) => {
     if (newStatus === "PAID" && isBelowMinOrder) {
       setItemError(
@@ -314,9 +479,18 @@ export default function AdminOrderUpdater({ order, minOrderAmount }: OrderUpdate
 
       {/* 1ST: Customer & Payment Audit Details */}
       <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-4 text-xs">
-        <h3 className="font-black text-sm text-slate-900 uppercase tracking-wider border-b border-slate-100 pb-2">
-          Customer & Payment Audit Details
-        </h3>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+          <h3 className="font-black text-sm text-slate-900 uppercase tracking-wider">
+            Customer & Payment Audit Details
+          </h3>
+          <button
+            type="button"
+            onClick={handlePrintDeliveryAddressSlip}
+            className="bg-[#6D3FD6] hover:bg-[#5B21B6] text-white font-extrabold text-[11px] px-3.5 py-2 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer shadow-md shadow-purple-100 shrink-0 self-start sm:self-auto"
+          >
+            <span>🖨️</span> Print Delivery Address Slip
+          </button>
+        </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>
