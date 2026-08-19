@@ -356,6 +356,7 @@ export default function AdminOrderUpdater({ order, minOrderAmount }: OrderUpdate
 
             <div class="section-label">RECIPIENT / CUSTOMER NAME:</div>
             <div class="customer-name">${order.customerName}</div>
+            <div class="phone-badge">📞 Mobile: ${order.phone}</div>
 
             <div class="section-label" style="margin-top: 16px;">DELIVERY DESTINATION ADDRESS:</div>
             <div class="address-box">
