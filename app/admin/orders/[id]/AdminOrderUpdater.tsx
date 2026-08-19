@@ -109,6 +109,17 @@ export default function AdminOrderUpdater({ order, minOrderAmount }: OrderUpdate
   const isPickup = order.orderType === "PICKUP";
   const isDelivery = order.orderType === "DELIVERY" || !order.orderType;
 
+  const confirmedItems = itemsState.filter((it) => it.isConfirmed !== false);
+  const removedItems = itemsState.filter((it) => it.isConfirmed === false);
+  const allItemsRemoved = itemsState.length > 0 && confirmedItems.length === 0;
+
+  const confirmedSubtotal = confirmedItems.reduce((acc, i) => acc + Number(i.price) * i.quantity, 0);
+  const removedSubtotal = removedItems.reduce((acc, i) => acc + Number(i.price) * i.quantity, 0);
+  const minOrder = minOrderAmount || 500;
+  const isBelowMinOrder = confirmedSubtotal > 0 && confirmedSubtotal < minOrder;
+
+  const liveTotalAmount = confirmedSubtotal + (isDelivery && deliveryConfirmed ? deliveryChargeAmount : 0);
+
   const normalizedPaymentStatus = (paymentStatus || order.paymentStatus || "").toUpperCase().trim();
   const normalizedOrderStatus = (orderStatus || order.orderStatus || "").toUpperCase().trim();
 
@@ -911,7 +922,7 @@ export default function AdminOrderUpdater({ order, minOrderAmount }: OrderUpdate
           </div>
           <div className="text-right">
             <span className={`text-xl ${isBelowMinOrder ? "text-red-400 font-black" : "text-amber-400"}`}>
-              ₹{liveTotalAmount.toLocaleString("en-IN")}
+              ₹{totalAmount.toLocaleString("en-IN")}
             </span>
             {isDelivery && !deliveryConfirmed && (
               <div className="text-[10px] text-amber-300 font-medium">+ delivery charge pending</div>
