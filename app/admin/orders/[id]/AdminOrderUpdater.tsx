@@ -189,9 +189,7 @@ export default function AdminOrderUpdater({ order, minOrderAmount }: OrderUpdate
 
     if (newStatus === "READY_FOR_PICKUP") {
       const phone = formatWhatsAppNumber(order.phone);
-      const origin = typeof window !== "undefined" ? window.location.origin : "";
-      const invoiceUrl = `${origin}/orders/${order.id}/invoice`;
-      const message = `Hello ${order.customerName},\n\nYour order *#${order.id}* is now *READY FOR PICKUP!* 🏪🎉\n\nYou can collect it from our store.\n\n🧾 *View Order & Invoice:*\n${invoiceUrl}\n\nThank you for shopping with us!`;
+      const message = `Hello ${order.customerName},\n\nYour order *#${order.id}* is now *READY FOR PICKUP!* 🏪🎉\n\nYou can collect your packed order from our store at your convenience.\n\nThank you for shopping with us!`;
       const whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
       window.open(whatsappUrl, "_blank");
     } else if (newStatus === "OUT_FOR_DELIVERY") {

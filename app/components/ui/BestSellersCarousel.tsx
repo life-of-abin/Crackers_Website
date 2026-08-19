@@ -53,7 +53,7 @@ export default function BestSellersCarousel({ products }: { products: Product[] 
       ? [...products, ...products, ...products]
       : products;
 
-  // Auto-play logic
+  // Auto-play logic (Continuous automatic scrolling)
   useEffect(() => {
     if (!products || products.length <= 1 || isHovered || isInteracting || isDragging) {
       setProgress(0);
@@ -213,7 +213,9 @@ export default function BestSellersCarousel({ products }: { products: Product[] 
       }}
       onMouseMove={(e) => handleDragMove(e.clientX)}
       onMouseUp={handleDragEnd}
-      onTouchStart={(e) => handleDragStart(e.touches[0].clientX)}
+      onTouchStart={(e) => {
+        handleDragStart(e.touches[0].clientX);
+      }}
       onTouchMove={(e) => handleDragMove(e.touches[0].clientX)}
       onTouchEnd={handleDragEnd}
     >
@@ -421,7 +423,7 @@ export default function BestSellersCarousel({ products }: { products: Product[] 
                     setProgress(0);
                     setIsTransitioning(true);
                     setActiveIndex(i + products.length);
-                    setTimeout(() => setIsInteracting(false), 3000);
+                    setTimeout(() => setIsInteracting(false), 2000);
                   }}
                   className={`transition-all duration-300 rounded-full cursor-pointer ${
                     isActive
