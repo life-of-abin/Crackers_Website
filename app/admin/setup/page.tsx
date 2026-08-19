@@ -80,9 +80,9 @@ export default function AdminSetupPage() {
         <div className="bg-white border border-slate-200 text-slate-900 py-8 px-6 sm:px-10 shadow-xl rounded-3xl space-y-6">
 
           {error && (
-            <div className="p-3.5 bg-red-50 border border-red-200 text-red-700 text-xs font-bold rounded-xl flex items-center justify-between">
-              <span>⚠️ {error}</span>
-              <button onClick={() => setError("")} className="text-red-500 hover:text-red-800 font-black cursor-pointer">
+            <div className="p-3.5 bg-red-50 border border-red-200 text-red-700 text-xs font-bold rounded-xl flex items-start justify-between max-w-full overflow-hidden break-words [overflow-wrap:anywhere] gap-2">
+              <span className="flex-1 break-words [overflow-wrap:anywhere] min-w-0">⚠️ {error}</span>
+              <button onClick={() => setError("")} className="text-red-500 hover:text-red-800 font-black cursor-pointer shrink-0 ml-2">
                 ✕
               </button>
             </div>

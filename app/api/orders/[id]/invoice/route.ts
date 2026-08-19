@@ -94,7 +94,6 @@ export async function GET(
     doc.setFontSize(8.5);
     doc.setFont("helvetica", "normal");
     doc.text("Direct Sivakasi Factory Quality • Festive Fireworks", 14, 21);
-    doc.text("📞 +91 9629525907  |  ✉ abinesh.ece2003@gmail.com", 196, 21, { align: "right" });
 
     // Invoice Header Meta Block
     doc.setTextColor(textNavy[0], textNavy[1], textNavy[2]);

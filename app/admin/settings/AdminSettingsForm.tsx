@@ -5,16 +5,43 @@ import { useRouter } from "next/navigation";
 import { updateSettingsAction } from "@/lib/actions";
 import type { StoreSettings } from "@/lib/settings";
 
+function extract10Digits(val: string): string {
+  if (!val) return "";
+  let digits = val.replace(/[^0-9]/g, "");
+  if (digits.length === 12 && digits.startsWith("91")) {
+    digits = digits.slice(2);
+  } else if (digits.length === 11 && digits.startsWith("0")) {
+    digits = digits.slice(1);
+  } else if (digits.length > 10) {
+    digits = digits.slice(-10);
+  }
+  return digits.slice(0, 10);
+}
+
 export default function AdminSettingsForm({ settings }: { settings: StoreSettings }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
 
+  const [phone, setPhone] = useState(extract10Digits(settings.phone));
+  const [whatsappNumber, setWhatsappNumber] = useState(extract10Digits(settings.whatsappNumber));
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError("");
     setSuccess(false);
+
+    if (phone.length !== 10 || !/^[6-9]\d{9}$/.test(phone)) {
+      setError("Support Phone Helpline must be a valid 10-digit Indian phone number starting with 6, 7, 8, or 9.");
+      return;
+    }
+
+    if (whatsappNumber.length !== 10 || !/^[6-9]\d{9}$/.test(whatsappNumber)) {
+      setError("WhatsApp Support Number must be a valid 10-digit Indian phone number starting with 6, 7, 8, or 9.");
+      return;
+    }
+
     setLoading(true);
 
     const formData = new FormData(e.currentTarget);
@@ -35,7 +62,7 @@ export default function AdminSettingsForm({ settings }: { settings: StoreSetting
     <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-sm">
 
       {error && (
-        <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 text-xs font-bold rounded-2xl">
+        <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 text-xs font-bold rounded-2xl max-w-full overflow-hidden break-words [overflow-wrap:anywhere]">
           ⚠️ {error}
         </div>
       )}
@@ -59,7 +86,7 @@ export default function AdminSettingsForm({ settings }: { settings: StoreSetting
               name="storeName"
               required
               defaultValue={settings.storeName}
-              className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:ring-2 focus:ring-red-600"
+              className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:ring-2 focus:ring-[#6D3FD6]"
             />
           </div>
 
@@ -67,26 +94,48 @@ export default function AdminSettingsForm({ settings }: { settings: StoreSetting
             <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">
               Support Phone Helpline *
             </label>
-            <input
-              type="text"
-              name="phone"
-              required
-              defaultValue={settings.phone}
-              className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:ring-2 focus:ring-red-600"
-            />
+            <div className="flex rounded-xl overflow-hidden border border-slate-200 focus-within:ring-2 focus-within:ring-[#6D3FD6] bg-slate-50">
+              <span className="inline-flex items-center px-3.5 bg-slate-100 border-r border-slate-200 text-slate-700 font-extrabold text-xs select-none">
+                🇮🇳 +91
+              </span>
+              <input
+                type="tel"
+                name="phone"
+                required
+                maxLength={10}
+                placeholder="9876543210"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value.replace(/[^0-9]/g, "").slice(0, 10))}
+                className="w-full px-3.5 py-2.5 bg-slate-50 font-black text-slate-900 text-sm focus:outline-none tracking-wider font-mono"
+              />
+            </div>
+            <p className="text-[10px] text-slate-400 font-medium mt-1">
+              10-digit mobile number (e.g. 9629525907)
+            </p>
           </div>
 
           <div>
             <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">
               WhatsApp Support Number *
             </label>
-            <input
-              type="text"
-              name="whatsappNumber"
-              required
-              defaultValue={settings.whatsappNumber}
-              className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:ring-2 focus:ring-red-600"
-            />
+            <div className="flex rounded-xl overflow-hidden border border-slate-200 focus-within:ring-2 focus-within:ring-[#6D3FD6] bg-slate-50">
+              <span className="inline-flex items-center px-3.5 bg-slate-100 border-r border-slate-200 text-slate-700 font-extrabold text-xs select-none">
+                🇮🇳 +91
+              </span>
+              <input
+                type="tel"
+                name="whatsappNumber"
+                required
+                maxLength={10}
+                placeholder="9876543210"
+                value={whatsappNumber}
+                onChange={(e) => setWhatsappNumber(e.target.value.replace(/[^0-9]/g, "").slice(0, 10))}
+                className="w-full px-3.5 py-2.5 bg-slate-50 font-black text-slate-900 text-sm focus:outline-none tracking-wider font-mono"
+              />
+            </div>
+            <p className="text-[10px] text-slate-400 font-medium mt-1">
+              10-digit mobile number for WhatsApp customer support
+            </p>
           </div>
 
           <div className="sm:col-span-2">

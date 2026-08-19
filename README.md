@@ -25,7 +25,7 @@ A modern, high-performance E-Commerce platform built for fireworks and crackers 
 - **Execution Helper:** `tsx` (for running TypeScript scripts directly)
 
 ### **Deployment & Hosting**
-- **Deployment Platform:** [Netlify](https://www.netlify.com/) (configured via `netlify.toml`)
+- **Deployment Platform:** [Vercel](https://vercel.com/)
 - **Build Optimization:** Node option `--max-old-space-size=4096` enabled for memory management during builds.
 
 ---
@@ -76,7 +76,6 @@ cracker-ecommerce/
 ├── 📄 .gitignore          # Version control ignore definitions
 ├── 📄 AGENTS.md           # Instructions and rules for AI Coding Agents
 ├── 📄 CLAUDE.md           # Claude project rules reference
-├── 📄 netlify.toml        # Netlify deployment configuration & build commands
 ├── 📄 next.config.ts      # Next.js configuration
 ├── 📄 package.json        # NPM dependencies, scripts, and project metadata
 ├── 📄 postcss.config.mjs  # PostCSS plugin settings for Tailwind CSS
@@ -133,7 +132,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ## ☁️ Deployment
 
-This project is configured for deployment on **Netlify** via `netlify.toml`:
-- **Build Command:** `npx prisma generate && npm run build`
-- **Node Options:** `--max-old-space-size=4096`
+This project is configured for seamless deployment on **Vercel**:
+- **Framework Preset:** Next.js
+- **Build Command:** `npx prisma generate && npm run build` or default `npm run build`
 

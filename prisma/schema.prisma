@@ -153,6 +153,8 @@ model OrderItem {
   cgstAmount  Decimal?
   sgstAmount  Decimal?
   igstAmount  Decimal?
+  isConfirmed Boolean   @default(true)
+  removedAt   DateTime?
 
   order       Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
   product     Product   @relation(fields: [productId], references: [id], onDelete: Restrict)

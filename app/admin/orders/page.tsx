@@ -3,19 +3,90 @@ import Link from "next/link";
 import { requireAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import AdminNav from "../AdminNav";
+import AdminOrdersFilterBar from "./AdminOrdersFilterBar";
 
 interface AdminOrdersPageProps {
-  searchParams: Promise<{ status?: string }>;
+  searchParams: Promise<{
+    status?: string;
+    type?: string;
+    payment?: string;
+    query?: string;
+  }>;
+}
+
+function getOrderStatusBadgeClass(status: string) {
+  switch (status) {
+    case "FAILED":
+    case "CANCELLED":
+      return "bg-red-100 text-red-800 border border-red-300";
+    case "DELIVERED":
+    case "COLLECTED":
+      return "bg-emerald-100 text-emerald-800 border border-emerald-300";
+    case "READY_FOR_PICKUP":
+      return "bg-blue-100 text-blue-800 border border-blue-300";
+    case "SHIPPED":
+    case "OUT_FOR_DELIVERY":
+      return "bg-indigo-100 text-indigo-800 border border-indigo-300";
+    case "PACKED":
+      return "bg-sky-100 text-sky-800 border border-sky-300";
+    case "PROCESSING":
+      return "bg-amber-100 text-amber-900 border border-amber-300";
+    case "CONFIRMED":
+      return "bg-teal-100 text-teal-800 border border-teal-300";
+    case "PLACED":
+      return "bg-purple-100 text-purple-800 border border-purple-300";
+    case "AWAITING_DELIVERY_CONFIRMATION":
+      return "bg-orange-100 text-orange-900 border border-orange-300";
+    default:
+      return "bg-slate-100 text-slate-800 border border-slate-200";
+  }
+}
+
+function getPaymentStatusBadgeClass(status: string) {
+  switch (status) {
+    case "PAID":
+    case "TEST_PAID":
+    case "SUCCESS":
+      return "bg-emerald-100 text-emerald-800 border border-emerald-300";
+    case "FAILED":
+      return "bg-red-100 text-red-800 border border-red-300";
+    case "REFUNDED":
+      return "bg-rose-100 text-rose-800 border border-rose-300";
+    case "PENDING":
+    default:
+      return "bg-amber-100 text-amber-900 border border-amber-300";
+  }
 }
 
 export default async function AdminOrdersPage({ searchParams }: AdminOrdersPageProps) {
   const session = await requireAdmin();
 
-  const { status = "ALL" } = await searchParams;
+  const { status = "ALL", type = "ALL", payment = "ALL", query = "" } = await searchParams;
 
   const whereClause: any = {};
   if (status !== "ALL") {
     whereClause.orderStatus = status;
+  }
+  if (type !== "ALL") {
+    whereClause.orderType = type;
+  }
+  if (payment !== "ALL") {
+    if (payment === "PAID") {
+      whereClause.paymentStatus = { in: ["PAID", "TEST_PAID", "SUCCESS"] };
+    } else {
+      whereClause.paymentStatus = payment;
+    }
+  }
+  if (query && query.trim()) {
+    const trimmed = query.trim();
+    const orderIdNum = parseInt(trimmed.replace("#", ""), 10);
+    whereClause.OR = [
+      { customerName: { contains: trimmed, mode: "insensitive" } },
+      { phone: { contains: trimmed, mode: "insensitive" } },
+      { city: { contains: trimmed, mode: "insensitive" } },
+      { pincode: { contains: trimmed, mode: "insensitive" } },
+      ...(isNaN(orderIdNum) ? [] : [{ id: orderIdNum }]),
+    ];
   }
 
   const orders = await prisma.order.findMany({
@@ -23,8 +94,6 @@ export default async function AdminOrdersPage({ searchParams }: AdminOrdersPageP
     include: { items: true },
     orderBy: { createdAt: "desc" },
   });
-
-  const statusOptions = ["ALL", "AWAITING_DELIVERY_CONFIRMATION", "PLACED", "CONFIRMED", "PROCESSING", "PACKED", "SHIPPED", "READY_FOR_PICKUP", "DELIVERED", "COLLECTED", "CANCELLED"];
 
   return (
     <AdminNav user={session}>
@@ -40,27 +109,13 @@ export default async function AdminOrdersPage({ searchParams }: AdminOrdersPageP
           </div>
         </div>
 
-        {/* Status Filter Tabs */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-2 text-xs font-bold">
-          {statusOptions.map((st) => (
-            <Link
-              key={st}
-              href={`/admin/orders?status=${st}`}
-              className={`px-4 py-2.5 rounded-xl border transition-all whitespace-nowrap ${
-                status === st
-                  ? "bg-[#6D3FD6] text-white border-[#6D3FD6] shadow-sm shadow-purple-200"
-                  : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
-              }`}
-            >
-              {st}
-            </Link>
-          ))}
-        </div>
+        {/* Filter Bar Component */}
+        <AdminOrdersFilterBar />
 
         {/* Orders Table */}
         <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6">
           {orders.length === 0 ? (
-            <p className="text-xs text-slate-400 py-8 text-center font-medium">No orders found matching status "{status}".</p>
+            <p className="text-xs text-slate-400 py-8 text-center font-medium">No orders found matching selected filters.</p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
@@ -101,29 +156,13 @@ export default async function AdminOrdersPage({ searchParams }: AdminOrdersPageP
                       </td>
                       <td className="py-3.5">
                         <div className="space-y-1">
-                          <span className={`px-2.5 py-0.5 rounded text-[10px] font-black uppercase ${
-                            ord.paymentStatus === "PAID" || ord.paymentStatus === "TEST_PAID"
-                              ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
-                              : ord.paymentStatus === "FAILED"
-                              ? "bg-red-100 text-red-800 border border-red-300"
-                              : ord.paymentStatus === "CANCELLED"
-                              ? "bg-slate-100 text-slate-600 border border-slate-300"
-                              : "bg-amber-100 text-amber-900 border border-amber-300"
-                          }`}>
+                          <span className={`px-2.5 py-0.5 rounded text-[10px] font-black uppercase ${getPaymentStatusBadgeClass(ord.paymentStatus)}`}>
                             {ord.paymentStatus === "TEST_PAID" ? "PAID" : ord.paymentStatus}
                           </span>
                         </div>
                       </td>
                       <td className="py-3.5">
-                        <span className={`px-2.5 py-1 rounded-md text-[10px] font-black uppercase ${
-                          ord.orderStatus === "AWAITING_DELIVERY_CONFIRMATION"
-                            ? "bg-amber-100 text-amber-800 border border-amber-300"
-                            : ord.orderStatus === "DELIVERED" || ord.orderStatus === "COLLECTED"
-                            ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
-                            : ord.orderStatus === "CANCELLED"
-                            ? "bg-red-100 text-red-800 border border-red-300"
-                            : "bg-slate-100 text-slate-800 border border-slate-200"
-                        }`}>
+                        <span className={`px-2.5 py-1 rounded-md text-[10px] font-black uppercase ${getOrderStatusBadgeClass(ord.orderStatus)}`}>
                           {ord.orderStatus.replace(/_/g, " ")}
                         </span>
                       </td>

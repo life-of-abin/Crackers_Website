@@ -2,9 +2,11 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCart } from "@/lib/cart-context";
 import Header from "@/components/ui/Header";
 import Footer from "@/components/ui/Footer";
+import StockLimitNotice from "@/components/ui/StockLimitNotice";
 
 export interface StoreSettings {
   id: number;
@@ -33,9 +35,48 @@ const DEFAULT_SETTINGS: StoreSettings = {
 };
 
 export default function CartPage() {
-  const { items, updateQuantity, removeFromCart, clearCart, subtotal, mrpTotal, savings, totalQuantity, uniqueItemCount, isMounted } = useCart();
+  const router = useRouter();
+  const { items, updateQuantity, removeFromCart, clearCart, syncFreshStock, subtotal, mrpTotal, savings, totalQuantity, uniqueItemCount, isMounted } = useCart();
   const [settings, setSettings] = useState<StoreSettings>(DEFAULT_SETTINGS);
   const [minOrderAlert, setMinOrderAlert] = useState(false);
+
+  const [cartStockError, setCartStockError] = useState("");
+  const [isCheckingOut, setIsCheckingOut] = useState(false);
+
+  const handleProceedToCheckout = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    setCartStockError("");
+    setIsCheckingOut(true);
+
+    try {
+      const res = await fetch("/api/cart/validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          items: items.map((it) => ({ id: it.id, cartQuantity: it.cartQuantity })),
+        }),
+      });
+      const data = await res.json();
+
+      if (data && data.updatedProducts) {
+        syncFreshStock(data.updatedProducts);
+      }
+
+      if (data && data.hasIssues && Array.isArray(data.issues) && data.issues.length > 0) {
+        const firstIssue = data.issues[0];
+        setCartStockError(firstIssue.message || "Please update your cart quantity before proceeding.");
+        setIsCheckingOut(false);
+        return;
+      }
+
+      router.push("/checkout");
+    } catch (err) {
+      console.error("Cart checkout check failed:", err);
+      router.push("/checkout");
+    } finally {
+      setIsCheckingOut(false);
+    }
+  };
 
   useEffect(() => {
     fetch("/api/settings", { cache: "no-store" })
@@ -45,6 +86,25 @@ export default function CartPage() {
       })
       .catch(console.error);
   }, []);
+
+  // Sync real-time database stock with cart
+  useEffect(() => {
+    if (!isMounted || items.length === 0) return;
+    fetch("/api/cart/validate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        items: items.map((it) => ({ id: it.id, cartQuantity: it.cartQuantity })),
+      }),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data && data.updatedProducts) {
+          syncFreshStock(data.updatedProducts);
+        }
+      })
+      .catch(console.error);
+  }, [isMounted, syncFreshStock]);
 
   if (!isMounted) {
     return (
@@ -141,72 +201,86 @@ export default function CartPage() {
                   {items.map((item) => {
                     const itemTotal = item.price * item.cartQuantity;
                     const fallbackImg = "/placeholder.png";
+                    const isMaxStock = item.stock > 0 && item.cartQuantity >= item.stock;
 
                     return (
-                      <div key={item.id} className="p-3 sm:p-4 flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 hover:bg-slate-100/50 transition-colors">
-                        
-                        {/* Product Image + Details */}
-                        <div className="flex items-center gap-3 w-full sm:w-auto flex-1 min-w-0">
-                          <img
-                            src={item.image || fallbackImg}
-                            alt={item.name}
-                            className="w-14 h-14 sm:w-16 sm:h-16 object-cover rounded-xl border border-slate-200 bg-white flex-shrink-0"
-                          />
-                          <div className="min-w-0 flex-1 space-y-0.5">
-                            <Link href={`/products/${item.slug}`} className="font-bold text-xs sm:text-sm text-slate-900 hover:text-[#6D3FD6] transition-colors line-clamp-1">
-                              {item.name}
-                            </Link>
-                            <div className="flex flex-wrap items-center gap-2 text-[11px] text-slate-500">
-                              <span className="bg-white border border-slate-200 px-2 py-0.5 rounded font-semibold text-slate-800">
-                                📦 {item.packSize || item.quantity || "10 Pieces"} / {item.unitType || "BOX"}
-                              </span>
-                              <span>₹{item.price.toLocaleString("en-IN")} / {item.unitType || "BOX"}</span>
+                      <div key={item.id} className="p-3 sm:p-4 hover:bg-slate-100/50 transition-colors space-y-2">
+                        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4">
+                          {/* Product Image + Details */}
+                          <div className="flex items-center gap-3 w-full sm:w-auto flex-1 min-w-0">
+                            <img
+                              src={item.image || fallbackImg}
+                              alt={item.name}
+                              className="w-14 h-14 sm:w-16 sm:h-16 object-cover rounded-xl border border-slate-200 bg-white flex-shrink-0"
+                            />
+                            <div className="min-w-0 flex-1 space-y-0.5">
+                              <Link href={`/products/${item.slug}`} className="font-bold text-xs sm:text-sm text-slate-900 hover:text-[#6D3FD6] transition-colors line-clamp-1">
+                                {item.name}
+                              </Link>
+                              <div className="flex flex-wrap items-center gap-2 text-[11px] text-slate-500">
+                                <span className="bg-white border border-slate-200 px-2 py-0.5 rounded font-semibold text-slate-800">
+                                  📦 {item.packSize || item.quantity || "10 Pieces"} / {item.unitType || "BOX"}
+                                </span>
+                                <span>₹{item.price.toLocaleString("en-IN")} / {item.unitType || "BOX"}</span>
+                              </div>
                             </div>
                           </div>
+
+                          {/* Controls & Price */}
+                          <div className="flex items-center justify-between sm:justify-end gap-3 sm:gap-5 w-full sm:w-auto border-t sm:border-t-0 border-slate-200 pt-2 sm:pt-0">
+                            
+                            {/* Quantity Selector */}
+                            <div className="flex items-center border border-slate-200 rounded-xl bg-white overflow-hidden text-xs shadow-xs">
+                              <button
+                                onClick={() => updateQuantity(item.id, item.cartQuantity - 1)}
+                                className="w-8 h-8 flex items-center justify-center font-bold text-slate-700 hover:bg-slate-100 touch-target focus:outline-none cursor-pointer"
+                                aria-label="Decrease quantity"
+                              >
+                                -
+                              </button>
+                              <span className="w-8 text-center font-extrabold text-[#6D3FD6] text-xs">
+                                {item.cartQuantity}
+                              </span>
+                              <button
+                                onClick={() => updateQuantity(item.id, item.cartQuantity + 1)}
+                                disabled={isMaxStock}
+                                className="w-8 h-8 flex items-center justify-center font-bold text-slate-700 hover:bg-slate-100 disabled:opacity-40 touch-target focus:outline-none cursor-pointer"
+                                aria-label="Increase quantity"
+                                title={isMaxStock ? "Max stock reached" : "Increase quantity"}
+                              >
+                                +
+                              </button>
+                            </div>
+
+                            {/* Item Total */}
+                            <div className="text-right min-w-[70px]">
+                              <span className="font-black text-xs sm:text-sm text-[#6D3FD6] block">
+                                ₹{itemTotal.toLocaleString("en-IN")}
+                              </span>
+                            </div>
+
+                            {/* Delete Button */}
+                            <button
+                              onClick={() => removeFromCart(item.id)}
+                              className="p-1.5 text-slate-400 hover:text-red-600 transition-colors cursor-pointer"
+                              title="Remove item"
+                            >
+                              🗑️
+                            </button>
+
+                          </div>
                         </div>
 
-                        {/* Controls & Price */}
-                        <div className="flex items-center justify-between sm:justify-end gap-3 sm:gap-5 w-full sm:w-auto border-t sm:border-t-0 border-slate-200 pt-2 sm:pt-0">
-                          
-                          {/* Quantity Selector */}
-                          <div className="flex items-center border border-slate-200 rounded-xl bg-white overflow-hidden text-xs shadow-xs">
-                            <button
-                              onClick={() => updateQuantity(item.id, item.cartQuantity - 1)}
-                              className="w-8 h-8 flex items-center justify-center font-bold text-slate-700 hover:bg-slate-100 touch-target focus:outline-none cursor-pointer"
-                              aria-label="Decrease quantity"
-                            >
-                              -
-                            </button>
-                            <span className="w-8 text-center font-extrabold text-[#6D3FD6] text-xs">
-                              {item.cartQuantity}
-                            </span>
-                            <button
-                              onClick={() => updateQuantity(item.id, item.cartQuantity + 1)}
-                              className="w-8 h-8 flex items-center justify-center font-bold text-slate-700 hover:bg-slate-100 touch-target focus:outline-none cursor-pointer"
-                              aria-label="Increase quantity"
-                            >
-                              +
-                            </button>
-                          </div>
-
-                          {/* Item Total */}
-                          <div className="text-right min-w-[70px]">
-                            <span className="font-black text-xs sm:text-sm text-[#6D3FD6] block">
-                              ₹{itemTotal.toLocaleString("en-IN")}
-                            </span>
-                          </div>
-
-                          {/* Delete Button */}
-                          <button
-                            onClick={() => removeFromCart(item.id)}
-                            className="p-1.5 text-slate-400 hover:text-red-600 transition-colors cursor-pointer"
-                            title="Remove item"
-                          >
-                            🗑️
-                          </button>
-
-                        </div>
-
+                        {/* Inline Stock Limit Notice */}
+                        {isMaxStock && (
+                          <StockLimitNotice
+                            productName={item.name}
+                            stock={item.stock}
+                            whatsappNumber={settings.whatsappNumber}
+                            phoneNumber={settings.phone}
+                            compact
+                          />
+                        )}
                       </div>
                     );
                   })}
@@ -248,7 +322,23 @@ export default function CartPage() {
                 </div>
               </div>
 
-              {/* C. Minimum Purchase Alert & Proceed Button */}
+              {/* C. Minimum Purchase Alert & Stock Warning & Proceed Button */}
+              {cartStockError && (
+                <div className="p-4 rounded-2xl bg-red-50 border-2 border-red-300 text-red-900 shadow-sm animate-fadeIn space-y-2">
+                  <div className="flex items-start gap-2.5">
+                    <span className="text-xl leading-none">⚠️</span>
+                    <div className="space-y-0.5">
+                      <p className="font-extrabold text-xs sm:text-sm text-red-950">
+                        {cartStockError}
+                      </p>
+                      <p className="text-[11px] text-red-800 font-medium">
+                        Please update your cart item quantities above to match available stock before proceeding to checkout.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {!isMinOrderMet && (
                 <div
                   className={`p-4 rounded-2xl bg-amber-50 border transition-all duration-300 ${
@@ -268,12 +358,21 @@ export default function CartPage() {
               )}
 
               {isMinOrderMet ? (
-                <Link
-                  href="/checkout"
-                  className="block w-full py-4 rounded-2xl font-black text-sm text-center uppercase tracking-wider shadow-md transition-all bg-[#6D3FD6] hover:bg-[#5B21B6] text-white shadow-purple-200 touch-target"
+                <button
+                  type="button"
+                  onClick={handleProceedToCheckout}
+                  disabled={isCheckingOut}
+                  className="w-full py-4 rounded-2xl font-black text-sm text-center uppercase tracking-wider shadow-md transition-all bg-[#6D3FD6] hover:bg-[#5B21B6] text-white shadow-purple-200 cursor-pointer touch-target flex items-center justify-center gap-2"
                 >
-                  PROCEED TO CHECKOUT →
-                </Link>
+                  {isCheckingOut ? (
+                    <>
+                      <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <span>Checking Stock...</span>
+                    </>
+                  ) : (
+                    <span>PROCEED TO CHECKOUT →</span>
+                  )}
+                </button>
               ) : (
                 <button
                   type="button"

@@ -1,14 +1,17 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   updateOrderStatusAction,
   updatePaymentStatusAction,
   confirmDeliveryChargeAction,
+  toggleOrderItemConfirmationAction,
+  updateOrderItemQuantityAction,
 } from "@/lib/actions";
 
 interface OrderUpdaterProps {
+  minOrderAmount?: number;
   order: {
     id: number;
     invoiceNumber?: string | null;
@@ -36,11 +39,15 @@ interface OrderUpdaterProps {
       quantity: number;
       price: number;
       total: number;
+      isConfirmed?: boolean;
+      removedAt?: string | null;
+      productStock?: number;
+      maxQuantity?: number;
     }[];
   };
 }
 
-export default function AdminOrderUpdater({ order }: OrderUpdaterProps) {
+export default function AdminOrderUpdater({ order, minOrderAmount }: OrderUpdaterProps) {
   const router = useRouter();
   const [orderStatus, setOrderStatus] = useState(order.orderStatus);
   const [paymentStatus, setPaymentStatus] = useState(order.paymentStatus);
@@ -53,9 +60,122 @@ export default function AdminOrderUpdater({ order }: OrderUpdaterProps) {
   const [deliveryChargeError, setDeliveryChargeError] = useState("");
   const [deliveryChargeSuccess, setDeliveryChargeSuccess] = useState("");
   const [totalAmount, setTotalAmount] = useState(order.totalAmount);
+  const [itemsState, setItemsState] = useState(order.items);
+  const [itemError, setItemError] = useState("");
+
+  const quantityTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const handleUpdateItemQuantity = (itemId: number, newQty: number) => {
+    if (newQty < 1 || isFrozen) return;
+
+    const targetItem = itemsState.find((it) => it.id === itemId);
+    if (targetItem && targetItem.maxQuantity !== undefined && newQty > targetItem.maxQuantity) {
+      setItemError(
+        `Cannot increase quantity of "${targetItem.productName}". Max available inventory stock reached (${targetItem.maxQuantity}).`
+      );
+      return;
+    }
+    setItemError("");
+
+    const previousItemsState = [...itemsState];
+    const previousTotalAmount = totalAmount;
+
+    // Optimistically update quantity and total immediately (0ms UI latency!)
+    setItemsState((prev) => {
+      const nextItems = prev.map((it) =>
+        it.id === itemId ? { ...it, quantity: newQty, total: Number(it.price) * newQty } : it
+      );
+      
+      const confirmedSubtotal = nextItems
+        .filter((i) => i.isConfirmed !== false)
+        .reduce((acc, i) => acc + Number(i.price) * i.quantity, 0);
+      const deliveryCharge = Number(order.deliveryCharge || 0);
+      
+      setTotalAmount(confirmedSubtotal + deliveryCharge);
+      return nextItems;
+    });
+
+    if (quantityTimeoutRef.current) {
+      clearTimeout(quantityTimeoutRef.current);
+    }
+
+    quantityTimeoutRef.current = setTimeout(async () => {
+      const result = await updateOrderItemQuantityAction(itemId, newQty);
+
+      if (result?.error) {
+        setItemsState(previousItemsState);
+        setTotalAmount(previousTotalAmount);
+        setItemError(result.error);
+        return;
+      }
+
+      if (result?.success) {
+        if (typeof result.newTotalAmount === "number") {
+          setTotalAmount(result.newTotalAmount);
+        }
+      }
+    }, 400);
+  };
 
   const isPickup = order.orderType === "PICKUP";
   const isDelivery = order.orderType === "DELIVERY" || !order.orderType;
+
+  const normalizedPaymentStatus = (paymentStatus || order.paymentStatus || "").toUpperCase().trim();
+  const normalizedOrderStatus = (orderStatus || order.orderStatus || "").toUpperCase().trim();
+
+  const isPaid =
+    normalizedPaymentStatus === "PAID" ||
+    normalizedPaymentStatus === "TEST_PAID" ||
+    normalizedPaymentStatus === "SUCCESS" ||
+    normalizedPaymentStatus === "COMPLETED" ||
+    normalizedOrderStatus === "DELIVERED" ||
+    normalizedOrderStatus === "COMPLETED";
+
+  const isFailed = normalizedPaymentStatus === "FAILED" || normalizedOrderStatus === "FAILED" || allItemsRemoved;
+  const isFrozen = isPaid || isFailed;
+
+  const handleToggleItemConfirmation = async (itemId: number, currentConfirmed: boolean) => {
+    if (isFrozen) return;
+    setItemError("");
+    const targetState = !currentConfirmed;
+
+    const previousItemsState = [...itemsState];
+    const previousTotalAmount = totalAmount;
+
+    // Optimistically toggle checkbox immediately (0ms UI latency!)
+    setItemsState((prev) =>
+      prev.map((it) => (it.id === itemId ? { ...it, isConfirmed: targetState } : it))
+    );
+
+    const updatedItems = itemsState.map((it) =>
+      it.id === itemId ? { ...it, isConfirmed: targetState } : it
+    );
+    const remainingConfirmed = updatedItems.filter((i) => i.isConfirmed !== false);
+    const newConfirmedSubtotal = remainingConfirmed.reduce(
+      (acc, i) => acc + Number(i.price) * i.quantity,
+      0
+    );
+    const deliveryCharge = Number(order.deliveryCharge || 0);
+    setTotalAmount(newConfirmedSubtotal + (remainingConfirmed.length > 0 ? deliveryCharge : 0));
+
+    const result = await toggleOrderItemConfirmationAction(itemId, targetState);
+
+    if (result?.error) {
+      setItemsState(previousItemsState);
+      setTotalAmount(previousTotalAmount);
+      setItemError(result.error);
+      return;
+    }
+
+    if (result?.success) {
+      if (typeof result.newTotalAmount === "number") {
+        setTotalAmount(result.newTotalAmount);
+      }
+      if (result.newOrderStatus) {
+        setOrderStatus(result.newOrderStatus);
+      }
+    }
+  };
 
   const handleUpdateOrderStatus = async (newStatus: string) => {
     if (isDelivery && !deliveryConfirmed) {
@@ -70,13 +190,17 @@ export default function AdminOrderUpdater({ order }: OrderUpdaterProps) {
     if (newStatus === "READY_FOR_PICKUP") {
       let phone = order.phone.replace(/[^0-9]/g, "");
       if (phone.length === 10) phone = "91" + phone;
-      const message = `Hello ${order.customerName},\n\nYour order *#${order.id}* is now *READY FOR PICKUP!* 🏪🎉\n\nYou can collect it from our store.\n\nThank you for shopping with us!`;
+      const origin = typeof window !== "undefined" ? window.location.origin : "";
+      const invoiceUrl = `${origin}/orders/${order.id}/invoice`;
+      const message = `Hello ${order.customerName},\n\nYour order *#${order.id}* is now *READY FOR PICKUP!* 🏪🎉\n\nYou can collect it from our store.\n\n🧾 *View Order & Invoice:*\n${invoiceUrl}\n\nThank you for shopping with us!`;
       const whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
       window.open(whatsappUrl, "_blank");
     } else if (newStatus === "OUT_FOR_DELIVERY") {
       let phone = order.phone.replace(/[^0-9]/g, "");
       if (phone.length === 10) phone = "91" + phone;
-      const message = `Hello ${order.customerName},\n\nYour order *#${order.id}* is *OUT FOR DELIVERY!* 🚚📦\n\nOur delivery partner will reach you soon.\n\nThank you for shopping with us!`;
+      const origin = typeof window !== "undefined" ? window.location.origin : "";
+      const invoiceUrl = `${origin}/orders/${order.id}/invoice`;
+      const message = `Hello ${order.customerName},\n\nYour order *#${order.id}* is *OUT FOR DELIVERY!* 🚚📦\n\nOur delivery partner will reach you soon.\n\n🧾 *View Order & Invoice:*\n${invoiceUrl}\n\nThank you for shopping with us!`;
       const whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
       window.open(whatsappUrl, "_blank");
     }
@@ -84,15 +208,42 @@ export default function AdminOrderUpdater({ order }: OrderUpdaterProps) {
     router.refresh();
   };
 
+  const sendInvoiceViaWhatsApp = () => {
+    let phone = order.phone.replace(/[^0-9]/g, "");
+    if (phone.length === 10) phone = "91" + phone;
+    const origin = typeof window !== "undefined" ? window.location.origin : "";
+    const invoiceUrl = `${origin}/orders/${order.id}/invoice`;
+    const message = `Hello ${order.customerName},\n\nHere is your official invoice for order *#${order.id}* 🧾\n\n🔗 *Download / View Official Invoice:*\n${invoiceUrl}\n\n*Order Summary:*\n• Payment Status: PAID ✅\n• Items Subtotal: ₹${order.subtotal.toLocaleString("en-IN")}\n• Delivery Charge: ${order.deliveryCharge > 0 ? `₹${order.deliveryCharge.toLocaleString("en-IN")}` : "FREE"}\n• Grand Total: ₹${totalAmount.toLocaleString("en-IN")}\n\nThank you for shopping with Sri Sivakasi Crackers! 🎆`;
+    const whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, "_blank");
+  };
+
   const handleUpdatePaymentStatus = async (newStatus: string) => {
+    if (newStatus === "PAID" && isBelowMinOrder) {
+      setItemError(
+        `Cannot mark order as PAID because confirmed order value (₹${confirmedSubtotal.toLocaleString("en-IN")}) is below the store minimum requirement of ₹${minOrder.toLocaleString("en-IN")}.`
+      );
+      return;
+    }
     if (isDelivery && !deliveryConfirmed) {
       setDeliveryChargeError("You must click '✓ Confirm Charge' to confirm delivery charge before updating payment status.");
       return;
     }
     setPaymentStatus(newStatus);
     setLoading(true);
-    await updatePaymentStatusAction(order.id, newStatus);
+    const result = await updatePaymentStatusAction(order.id, newStatus);
     setLoading(false);
+
+    if (result?.error) {
+      setItemError(result.error);
+      setPaymentStatus(order.paymentStatus);
+      return;
+    }
+
+    if (newStatus === "PAID") {
+      sendInvoiceViaWhatsApp();
+    }
+
     router.refresh();
   };
 
@@ -128,6 +279,7 @@ export default function AdminOrderUpdater({ order }: OrderUpdaterProps) {
     "OUT_FOR_DELIVERY",
     "DELIVERED",
     "CANCELLED",
+    "FAILED",
   ];
   const pickupStatusList = [
     "PROCESSING",
@@ -135,6 +287,7 @@ export default function AdminOrderUpdater({ order }: OrderUpdaterProps) {
     "READY_FOR_PICKUP",
     "COLLECTED",
     "CANCELLED",
+    "FAILED",
   ];
 
   const statusList = isPickup ? pickupStatusList : deliveryStatusList;
@@ -329,8 +482,16 @@ export default function AdminOrderUpdater({ order }: OrderUpdaterProps) {
           <button
             type="button"
             onClick={() => handleUpdatePaymentStatus("PAID")}
-            disabled={loading || paymentStatus === "PAID" || (isDelivery && !deliveryConfirmed)}
-            title={isDelivery && !deliveryConfirmed ? "Confirm delivery charge first" : ""}
+            disabled={loading || paymentStatus === "PAID" || (isDelivery && !deliveryConfirmed) || allItemsRemoved || isBelowMinOrder}
+            title={
+              allItemsRemoved
+                ? "Disabled: Order has 0 confirmed items"
+                : isBelowMinOrder
+                ? `Disabled: Confirmed order subtotal (₹${confirmedSubtotal.toLocaleString("en-IN")}) is below minimum requirement of ₹${minOrder.toLocaleString("en-IN")}`
+                : isDelivery && !deliveryConfirmed
+                ? "Confirm delivery charge first"
+                : ""
+            }
             className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed text-white font-extrabold rounded-xl shadow-xs transition-all flex items-center gap-1.5 cursor-pointer"
           >
             <span>✓</span>
@@ -341,8 +502,8 @@ export default function AdminOrderUpdater({ order }: OrderUpdaterProps) {
             <button
               type="button"
               onClick={() => handleUpdateOrderStatus("DELIVERED")}
-              disabled={loading || orderStatus === "DELIVERED" || !deliveryConfirmed}
-              title={!deliveryConfirmed ? "Confirm delivery charge first" : ""}
+              disabled={loading || orderStatus === "DELIVERED" || !deliveryConfirmed || allItemsRemoved}
+              title={allItemsRemoved ? "Disabled: Order has 0 confirmed items" : !deliveryConfirmed ? "Confirm delivery charge first" : ""}
               className="px-4 py-2.5 bg-purple-600 hover:bg-purple-700 disabled:opacity-40 disabled:cursor-not-allowed text-white font-extrabold rounded-xl shadow-xs transition-all flex items-center gap-1.5 cursor-pointer"
             >
               <span>🎉</span>
@@ -355,7 +516,8 @@ export default function AdminOrderUpdater({ order }: OrderUpdaterProps) {
               <button
                 type="button"
                 onClick={() => handleUpdateOrderStatus("READY_FOR_PICKUP")}
-                disabled={loading || orderStatus === "READY_FOR_PICKUP" || orderStatus === "COLLECTED"}
+                disabled={loading || orderStatus === "READY_FOR_PICKUP" || orderStatus === "COLLECTED" || allItemsRemoved}
+                title={allItemsRemoved ? "Disabled: Order has 0 confirmed items" : ""}
                 className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed text-white font-extrabold rounded-xl shadow-xs transition-all flex items-center gap-1.5 cursor-pointer"
               >
                 <span>🏪</span>
@@ -364,7 +526,8 @@ export default function AdminOrderUpdater({ order }: OrderUpdaterProps) {
               <button
                 type="button"
                 onClick={() => handleUpdateOrderStatus("COLLECTED")}
-                disabled={loading || orderStatus === "COLLECTED"}
+                disabled={loading || orderStatus === "COLLECTED" || allItemsRemoved}
+                title={allItemsRemoved ? "Disabled: Order has 0 confirmed items" : ""}
                 className="px-4 py-2.5 bg-emerald-700 hover:bg-emerald-800 disabled:opacity-40 disabled:cursor-not-allowed text-white font-extrabold rounded-xl shadow-xs transition-all flex items-center gap-1.5 cursor-pointer"
               >
                 <span>🎉</span>
@@ -382,6 +545,13 @@ export default function AdminOrderUpdater({ order }: OrderUpdaterProps) {
           </div>
         )}
 
+        {allItemsRemoved && (
+          <div className="text-xs text-red-800 bg-red-50 border border-red-300 font-extrabold p-3 rounded-xl flex items-center gap-2">
+            <span>⚠️</span>
+            <span>All action buttons and status updates are disabled because this order has 0 confirmed items.</span>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-2">
           <div>
             <label className="block font-bold text-slate-700 uppercase tracking-wider mb-2">
@@ -390,8 +560,8 @@ export default function AdminOrderUpdater({ order }: OrderUpdaterProps) {
             <select
               value={orderStatus}
               onChange={(e) => handleUpdateOrderStatus(e.target.value)}
-              disabled={loading || (isDelivery && !deliveryConfirmed)}
-              title={isDelivery && !deliveryConfirmed ? "Confirm delivery charge first" : ""}
+              disabled={loading || (isDelivery && !deliveryConfirmed) || allItemsRemoved}
+              title={allItemsRemoved ? "Disabled: Order has 0 confirmed items" : isDelivery && !deliveryConfirmed ? "Confirm delivery charge first" : ""}
               className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-black text-slate-900 focus:ring-2 focus:ring-[#6D3FD6] focus:outline-none cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {statusList.map((st) => (
@@ -407,12 +577,14 @@ export default function AdminOrderUpdater({ order }: OrderUpdaterProps) {
             <select
               value={paymentStatus}
               onChange={(e) => handleUpdatePaymentStatus(e.target.value)}
-              disabled={loading || (isDelivery && !deliveryConfirmed)}
-              title={isDelivery && !deliveryConfirmed ? "Confirm delivery charge first" : ""}
+              disabled={loading || (isDelivery && !deliveryConfirmed) || allItemsRemoved}
+              title={allItemsRemoved ? "Disabled: Order has 0 confirmed items" : isDelivery && !deliveryConfirmed ? "Confirm delivery charge first" : ""}
               className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-black text-slate-900 focus:ring-2 focus:ring-[#6D3FD6] focus:outline-none cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {paymentList.map((st) => (
-                <option key={st} value={st}>{st}</option>
+                <option key={st} value={st} disabled={st === "PAID" && isBelowMinOrder}>
+                  {st}{st === "PAID" && isBelowMinOrder ? ` (Disabled: Below ₹${minOrder} Min)` : ""}
+                </option>
               ))}
             </select>
           </div>
@@ -427,70 +599,300 @@ export default function AdminOrderUpdater({ order }: OrderUpdaterProps) {
             Manage fulfillment status and generate invoice
           </p>
         </div>
-        <button
-          onClick={() => window.open(`/admin/orders/${order.id}/invoice`, "_blank")}
-          disabled={(isDelivery && !deliveryConfirmed) || (paymentStatus !== "PAID" && paymentStatus !== "TEST_PAID" && paymentStatus !== "SUCCESS")}
-          title={
-            isDelivery && !deliveryConfirmed
-              ? "Confirm delivery charge before generating invoice"
-              : paymentStatus !== "PAID" && paymentStatus !== "TEST_PAID" && paymentStatus !== "SUCCESS"
-              ? "Mark order as PAID before generating invoice"
-              : "Generate Official Invoice"
-          }
-          className="bg-[#6D3FD6] hover:bg-[#5B21B6] disabled:opacity-40 disabled:cursor-not-allowed text-white px-6 py-2.5 rounded-xl font-black text-xs tracking-wide transition-all shadow-md shadow-purple-200 flex items-center gap-2 w-full sm:w-auto justify-center cursor-pointer"
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-          </svg>
-          Print Official Invoice
-          {isDelivery && !deliveryConfirmed ? (
-            <span className="text-[10px] text-purple-300 ml-1">(confirm delivery first)</span>
-          ) : paymentStatus !== "PAID" && paymentStatus !== "TEST_PAID" && paymentStatus !== "SUCCESS" ? (
-            <span className="text-[10px] text-purple-300 ml-1">(mark as paid first)</span>
-          ) : null}
-        </button>
+        <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+          <button
+            type="button"
+            onClick={sendInvoiceViaWhatsApp}
+            disabled={allItemsRemoved}
+            title={allItemsRemoved ? "Disabled: Order has 0 confirmed items" : "Send Invoice via WhatsApp"}
+            className="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-xl font-black text-xs tracking-wide transition-all shadow-md shadow-emerald-100 flex items-center gap-2 w-full sm:w-auto justify-center disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+          >
+            <span>📱</span>
+            <span>Send Invoice via WhatsApp</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => window.open(`/admin/orders/${order.id}/invoice`, "_blank")}
+            disabled={(isDelivery && !deliveryConfirmed) || (paymentStatus !== "PAID" && paymentStatus !== "TEST_PAID" && paymentStatus !== "SUCCESS") || allItemsRemoved}
+            title={
+              allItemsRemoved
+                ? "Disabled: Order has 0 confirmed items"
+                : isDelivery && !deliveryConfirmed
+                ? "Confirm delivery charge before generating invoice"
+                : paymentStatus !== "PAID" && paymentStatus !== "TEST_PAID" && paymentStatus !== "SUCCESS"
+                ? "Mark order as PAID before generating invoice"
+                : "Generate Official Invoice"
+            }
+            className="bg-[#6D3FD6] hover:bg-[#5B21B6] disabled:opacity-40 disabled:cursor-not-allowed text-white px-6 py-2.5 rounded-xl font-black text-xs tracking-wide transition-all shadow-md shadow-purple-200 flex items-center gap-2 w-full sm:w-auto justify-center cursor-pointer"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+            </svg>
+            Print Official Invoice
+            {allItemsRemoved ? (
+              <span className="text-[10px] text-purple-300 ml-1">(0 items confirmed)</span>
+            ) : isDelivery && !deliveryConfirmed ? (
+              <span className="text-[10px] text-purple-300 ml-1">(confirm delivery first)</span>
+            ) : paymentStatus !== "PAID" && paymentStatus !== "TEST_PAID" && paymentStatus !== "SUCCESS" ? (
+              <span className="text-[10px] text-purple-300 ml-1">(mark as paid first)</span>
+            ) : null}
+          </button>
+        </div>
       </div>
 
 
 
       {/* Purchased Items Table */}
-      <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-4 text-xs">
-        <h3 className="font-black text-sm text-slate-900 uppercase tracking-wider border-b border-slate-100 pb-2">
-          Items Ordered ({order.items.length})
-        </h3>
-
-        <div className="border border-slate-200 rounded-2xl overflow-hidden divide-y divide-slate-100">
-          <div className="bg-slate-50 px-4 py-2.5 font-black text-slate-700 text-xs grid grid-cols-12 gap-2 items-center uppercase tracking-wider">
-            <div className="col-span-5 sm:col-span-6">Product Description</div>
-            <div className="col-span-3 sm:col-span-2 text-center">Packing Qty</div>
-            <div className="col-span-2 text-right">Unit Price</div>
-            <div className="col-span-2 text-right">Total</div>
-          </div>
-          {order.items.map((item) => (
-            <div key={item.id} className="p-4 grid grid-cols-12 gap-2 items-center text-xs hover:bg-slate-50/50 transition-colors">
-              <div className="col-span-5 sm:col-span-6">
-                <span className="font-extrabold text-slate-900 text-sm block leading-snug">{item.productName}</span>
-              </div>
-              <div className="col-span-3 sm:col-span-2 text-center">
-                <span className="inline-flex items-center justify-center bg-purple-100 text-[#6D3FD6] border border-purple-200 font-black text-sm px-3 py-1 rounded-xl shadow-xs">
-                  {item.quantity} Pcs
+      <div className={`p-6 rounded-3xl border shadow-sm space-y-4 text-xs transition-all ${
+        isPaid
+          ? "bg-slate-50/90 border-blue-200/80 shadow-inner relative"
+          : isFailed
+          ? "bg-red-50/40 border-red-200 shadow-inner relative"
+          : "bg-white border-slate-200"
+      }`}>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+          <div>
+            <div className="flex items-center gap-2">
+              <h3 className="font-black text-sm text-slate-900 uppercase tracking-wider">
+                Item Confirmation & Removal ({confirmedItems.length}/{itemsState.length} Confirmed)
+              </h3>
+              {isPaid && (
+                <span className="bg-blue-100 text-blue-900 border border-blue-300 font-extrabold text-[10px] px-2.5 py-0.5 rounded-full flex items-center gap-1 shadow-2xs">
+                  <span>❄️</span> FROZEN ORDER SUMMARY (PAID)
                 </span>
-              </div>
-              <div className="col-span-2 text-right font-bold text-slate-700">
-                ₹{item.price.toLocaleString("en-IN")}
-              </div>
-              <div className="col-span-2 text-right font-black text-[#6D3FD6]">
-                ₹{item.total.toLocaleString("en-IN")}
-              </div>
+              )}
+              {isFailed && !isPaid && (
+                <span className="bg-red-100 text-red-900 border border-red-300 font-extrabold text-[10px] px-2.5 py-0.5 rounded-full flex items-center gap-1 shadow-2xs">
+                  <span>🔒</span> LOCKED (FAILED)
+                </span>
+              )}
             </div>
-          ))}
+            <p className="text-[11px] text-slate-500 mt-0.5">
+              {isPaid
+                ? "This order is marked as PAID. Order items and quantities are frozen and locked from edits."
+                : isFailed
+                ? "This order is marked as FAILED. Order items and action controls are locked."
+                : "Uncheck items rejected by the customer during phone confirmation to remove them from final total & invoice."}
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2 text-[11px] font-bold">
+            <span className="bg-emerald-100 text-emerald-800 border border-emerald-300 px-2.5 py-1 rounded-lg">
+              ✓ {confirmedItems.length} Confirmed
+            </span>
+            {removedItems.length > 0 && (
+              <span className="bg-amber-100 text-amber-900 border border-amber-300 px-2.5 py-1 rounded-lg">
+                ✕ {removedItems.length} Removed
+              </span>
+            )}
+          </div>
         </div>
 
-        <div className="space-y-2">
-          <div className="flex justify-between items-center text-xs text-slate-600 font-medium">
-            <span>Subtotal:</span>
-            <span className="font-bold text-slate-900">₹{order.subtotal.toLocaleString("en-IN")}</span>
+        {itemError && (
+          <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 font-extrabold text-xs max-w-full overflow-hidden break-words [overflow-wrap:anywhere]">
+            ⚠️ {itemError}
           </div>
+        )}
+
+        {isBelowMinOrder && (
+          <div className="p-3.5 bg-amber-50 border-2 border-amber-400 rounded-2xl text-amber-950 font-bold text-xs flex items-center justify-between gap-3 shadow-xs">
+            <div className="flex items-center gap-2.5">
+              <span className="text-xl">⚠️</span>
+              <div>
+                <span className="font-extrabold uppercase tracking-wide block text-amber-800 text-[11px]">
+                  Minimum Order Amount Warning (₹{minOrder.toLocaleString("en-IN")} Minimum)
+                </span>
+                <p className="text-slate-700 font-medium text-xs mt-0.5">
+                  Confirmed products subtotal (<strong>₹{confirmedSubtotal.toLocaleString("en-IN")}</strong>) is below the store minimum order requirement of <strong>₹{minOrder.toLocaleString("en-IN")}</strong>.
+                </p>
+              </div>
+            </div>
+            <span className="bg-amber-600 text-white font-extrabold text-[10px] px-2.5 py-1 rounded-lg uppercase whitespace-nowrap shadow-xs">
+              Below ₹{minOrder} Min
+            </span>
+          </div>
+        )}
+
+        {isPaid && (
+          <div className="p-4 bg-blue-50 border-2 border-blue-300 rounded-2xl text-blue-950 font-bold text-xs space-y-1 shadow-xs">
+            <p className="text-sm font-black text-blue-900 flex items-center gap-1.5">
+              <span>❄️</span> Order Summary & Items Are Locked (PAID)
+            </p>
+            <p className="text-blue-800 leading-relaxed">
+              This order is marked as <strong>PAID</strong>. Item quantities, confirmations, and prices are frozen to prevent editing after payment verification.
+            </p>
+          </div>
+        )}
+
+        {allItemsRemoved && (
+          <div className="p-4 bg-red-50 border-2 border-red-300 rounded-2xl text-red-950 font-bold text-xs space-y-1 shadow-xs">
+            <p className="text-sm font-black text-red-900 flex items-center gap-1.5">
+              <span>❌</span> Order Status Automatically Set to FAILED
+            </p>
+            <p className="text-red-800 leading-relaxed">
+              All items in this order have been unchecked. Stock has been safely returned to inventory, the unchecked item remains in the order summary with strikethrough text, and the Order Status is automatically updated to <strong>FAILED</strong>.
+            </p>
+          </div>
+        )}
+
+        {/* Scrollable Items Container with Freeze Effect */}
+        <div className={`border rounded-2xl overflow-x-auto divide-y divide-slate-100 ${
+          isFrozen ? "border-slate-300 bg-slate-100/40 cursor-not-allowed select-none" : "border-slate-200 bg-white"
+        }`}>
+          <div className="bg-slate-50 px-4 py-2.5 font-black text-slate-700 text-xs grid grid-cols-12 gap-2 items-center uppercase tracking-wider min-w-[600px]">
+            <div className="col-span-1 text-center">Confirm</div>
+            <div className="col-span-5 sm:col-span-5">Product Description</div>
+            <div className="col-span-2 text-center">Packing Qty</div>
+            <div className="col-span-2 text-right">Unit Price</div>
+            <div className="col-span-2 text-right">Confirmed Total</div>
+          </div>
+
+          <div className={`${isFrozen ? "pointer-events-none" : ""}`}>
+            {itemsState.map((item) => {
+              const isConfirmed = item.isConfirmed !== false;
+
+              return (
+                <div
+                  key={item.id}
+                  className={`p-4 grid grid-cols-12 gap-2 items-center text-xs transition-colors min-w-[600px] ${
+                    isFrozen
+                      ? "bg-slate-50/60 text-slate-600 opacity-90 cursor-not-allowed"
+                      : isConfirmed
+                      ? "hover:bg-slate-50/50"
+                      : "bg-amber-50/40 opacity-80"
+                  }`}
+                >
+                {/* Confirmation Checkbox */}
+                <div className="col-span-1 flex items-center justify-center">
+                  <button
+                    type="button"
+                    onClick={() => handleToggleItemConfirmation(item.id, isConfirmed)}
+                    disabled={isFrozen}
+                    title={
+                      isFrozen
+                        ? "Order items are frozen and cannot be modified."
+                        : isConfirmed
+                        ? "Click to remove item from order"
+                        : "Click to restore item to order"
+                    }
+                    className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer ${
+                      isConfirmed
+                        ? "bg-emerald-600 border-emerald-600 text-white shadow-2xs hover:bg-emerald-700"
+                        : "bg-white border-slate-300 text-slate-400 hover:border-amber-400"
+                    }`}
+                  >
+                    {isConfirmed ? (
+                      <span className="font-black text-xs">✓</span>
+                    ) : (
+                      <span className="text-xs">✕</span>
+                    )}
+                  </button>
+                </div>
+
+                {/* Product Name & Status */}
+                <div className="col-span-5 sm:col-span-5">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span
+                      className={`font-extrabold text-sm block leading-snug ${
+                        isConfirmed ? "text-slate-900" : "line-through text-slate-400"
+                      }`}
+                    >
+                      {item.productName}
+                    </span>
+
+                    {!isConfirmed && (
+                      <span className="bg-amber-100 text-amber-900 border border-amber-300 text-[10px] font-black px-2 py-0.5 rounded-full">
+                        Removed by Customer
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Packing Quantity with Admin Edit Controls */}
+                <div className="col-span-2 text-center flex flex-col items-center justify-center gap-1">
+                  {isConfirmed ? (
+                    <div className={`inline-flex items-center gap-1 bg-purple-50 border border-purple-200 rounded-xl p-1 shadow-2xs ${
+                      isFrozen ? "opacity-40 pointer-events-none bg-slate-100 border-slate-200" : ""
+                    }`}>
+                      <button
+                        type="button"
+                        onClick={() => handleUpdateItemQuantity(item.id, item.quantity - 1)}
+                        disabled={item.quantity <= 1 || isFrozen}
+                        title={isFrozen ? "Order is locked (PAID/FAILED). Quantities cannot be changed." : "Decrease quantity by 1"}
+                        className="w-5 h-5 rounded-lg bg-white border border-purple-300 text-[#6D3FD6] hover:bg-purple-600 hover:text-white font-black text-xs flex items-center justify-center transition-all disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                      >
+                        -
+                      </button>
+                      <span className="font-black text-xs text-[#6D3FD6] px-1.5 min-w-[20px] text-center">
+                        {item.quantity}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleUpdateItemQuantity(item.id, item.quantity + 1)}
+                        disabled={isFrozen || (item.maxQuantity !== undefined && item.quantity >= item.maxQuantity)}
+                        title={
+                          isFrozen
+                            ? "Order is locked (PAID/FAILED). Quantities cannot be changed."
+                            : item.maxQuantity !== undefined && item.quantity >= item.maxQuantity
+                            ? `Stock limit reached (${item.maxQuantity} max available)`
+                            : "Increase quantity by 1"
+                        }
+                        className="w-5 h-5 rounded-lg bg-white border border-purple-300 text-[#6D3FD6] hover:bg-purple-600 hover:text-white font-black text-xs flex items-center justify-center transition-all disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                      >
+                        +
+                      </button>
+                    </div>
+                  ) : (
+                    <span className="text-slate-400 font-bold text-xs">-</span>
+                  )}
+                </div>
+
+                {/* Unit Price */}
+                <div className={`col-span-2 text-right font-bold ${isConfirmed ? "text-slate-700" : "line-through text-slate-400"}`}>
+                  ₹{Number(item.price).toLocaleString("en-IN")}
+                </div>
+
+                {/* Confirmed Total */}
+                <div className={`col-span-2 text-right font-black ${isConfirmed ? "text-[#6D3FD6]" : "line-through text-slate-400"}`}>
+                  {isConfirmed ? `₹${(Number(item.price) * item.quantity).toLocaleString("en-IN")}` : "₹0"}
+                </div>
+              </div>
+            );
+          })}
+          </div>
+        </div>
+
+        {/* Live Subtotal Breakdown */}
+        <div className="space-y-2 pt-2 border-t border-slate-100">
+          <div className="flex justify-between items-center text-xs text-slate-600 font-medium">
+            <span>Original Items Subtotal:</span>
+            <span className="font-bold text-slate-800">
+              ₹{itemsState.reduce((acc, i) => acc + Number(i.price) * i.quantity, 0).toLocaleString("en-IN")}
+            </span>
+          </div>
+
+          {removedItems.length > 0 && (
+            <div className="flex justify-between items-center text-xs text-amber-700 font-bold bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-xl">
+              <span>Removed Items ({removedItems.length} items):</span>
+              <span>- ₹{removedSubtotal.toLocaleString("en-IN")}</span>
+            </div>
+          )}
+
+          <div className="flex justify-between items-center text-xs text-slate-600 font-medium">
+            <span className="flex items-center gap-2">
+              Confirmed Products Subtotal:
+              {isBelowMinOrder && (
+                <span className="text-[10px] bg-red-100 text-red-700 border border-red-300 font-black px-2 py-0.5 rounded-md uppercase">
+                  ⚠️ Below ₹{minOrder} Min Limit
+                </span>
+              )}
+            </span>
+            <span className={`font-black ${isBelowMinOrder ? "text-red-600 text-sm" : "text-slate-900"}`}>
+              ₹{confirmedSubtotal.toLocaleString("en-IN")}
+            </span>
+          </div>
+
           {isDelivery && (
             <div className="flex justify-between items-center text-xs text-slate-600 font-medium">
               <span>Delivery Charge:</span>
@@ -508,9 +910,23 @@ export default function AdminOrderUpdater({ order }: OrderUpdaterProps) {
         </div>
 
         <div className="bg-slate-900 text-white p-4 rounded-2xl flex justify-between items-center text-sm font-black">
-          <span>Total Order Value:</span>
+          <div>
+            <span>Final Confirmed Order Value:</span>
+            {removedItems.length > 0 && (
+              <span className="text-[10px] text-amber-300 block font-normal">
+                ({removedItems.length} item{removedItems.length > 1 ? "s" : ""} excluded from total & invoice)
+              </span>
+            )}
+            {isBelowMinOrder && (
+              <span className="text-[11px] text-red-400 font-extrabold block mt-0.5">
+                ⚠️ Below Store Minimum Order (₹{minOrder.toLocaleString("en-IN")})
+              </span>
+            )}
+          </div>
           <div className="text-right">
-            <span className="text-xl text-amber-400">₹{totalAmount.toLocaleString("en-IN")}</span>
+            <span className={`text-xl ${isBelowMinOrder ? "text-red-400 font-black" : "text-amber-400"}`}>
+              ₹{liveTotalAmount.toLocaleString("en-IN")}
+            </span>
             {isDelivery && !deliveryConfirmed && (
               <div className="text-[10px] text-amber-300 font-medium">+ delivery charge pending</div>
             )}

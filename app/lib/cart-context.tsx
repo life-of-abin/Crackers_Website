@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
 
 export interface CartItem {
   id: number;
@@ -22,6 +22,7 @@ interface CartContextType {
   removeFromCart: (id: number) => void;
   updateQuantity: (id: number, quantity: number) => void;
   clearCart: () => void;
+  syncFreshStock: (updates: Array<{ id: number; stock: number; price?: number }>) => void;
   uniqueItemCount: number;
   totalQuantity: number;
   subtotal: number;
@@ -62,7 +63,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }
   }, [items, isMounted]);
 
-  const addToCart = (product: Omit<CartItem, "cartQuantity">, quantityToAdd = 1) => {
+  const addToCart = useCallback((product: Omit<CartItem, "cartQuantity">, quantityToAdd = 1) => {
     setItems((prevItems) => {
       const existingIndex = prevItems.findIndex((item) => item.id === product.id);
       if (existingIndex > -1) {
@@ -81,15 +82,15 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         return [...prevItems, { ...product, cartQuantity: initialQty }];
       }
     });
-  };
+  }, []);
 
-  const removeFromCart = (id: number) => {
+  const removeFromCart = useCallback((id: number) => {
     setItems((prev) => prev.filter((item) => item.id !== id));
-  };
+  }, []);
 
-  const updateQuantity = (id: number, newQty: number) => {
+  const updateQuantity = useCallback((id: number, newQty: number) => {
     if (newQty <= 0) {
-      removeFromCart(id);
+      setItems((prev) => prev.filter((item) => item.id !== id));
       return;
     }
     setItems((prev) =>
@@ -101,11 +102,41 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         return item;
       })
     );
-  };
+  }, []);
 
-  const clearCart = () => {
+  const clearCart = useCallback(() => {
     setItems([]);
-  };
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.removeItem(CART_STORAGE_KEY);
+        localStorage.setItem(CART_STORAGE_KEY, "[]");
+      } catch (e) {
+        console.error("Failed to clear cart in localStorage:", e);
+      }
+    }
+  }, []);
+
+  const syncFreshStock = useCallback((updates: Array<{ id: number; stock: number; price?: number }>) => {
+    const updateMap = new Map(updates.map((u) => [u.id, u]));
+    setItems((prev) =>
+      prev
+        .map((item) => {
+          const update = updateMap.get(item.id);
+          if (update) {
+            const freshStock = Math.max(0, update.stock);
+            const freshPrice = typeof update.price === "number" ? update.price : item.price;
+            return {
+              ...item,
+              stock: freshStock,
+              price: freshPrice,
+              cartQuantity: freshStock <= 0 ? 0 : Math.min(item.cartQuantity, freshStock),
+            };
+          }
+          return item;
+        })
+        .filter((item) => item.cartQuantity > 0)
+    );
+  }, []);
 
   const uniqueItemCount = items.length;
 
@@ -131,6 +162,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         removeFromCart,
         updateQuantity,
         clearCart,
+        syncFreshStock,
         uniqueItemCount,
         totalQuantity,
         subtotal,

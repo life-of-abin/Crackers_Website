@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useCart } from "@/lib/cart-context";
 import Header from "@/components/ui/Header";
@@ -41,10 +41,20 @@ export default function OrderConfirmationClient({
   const [pdfDownloaded, setPdfDownloaded] = useState(false);
 
   const { clearCart } = useCart();
+  const hasClearedCart = useRef(false);
 
   useEffect(() => {
-    // Clear the cart when the confirmation page loads successfully
-    clearCart();
+    // Clear the cart exactly once when the confirmation page loads successfully
+    if (!hasClearedCart.current) {
+      hasClearedCart.current = true;
+      clearCart();
+      if (typeof window !== "undefined") {
+        try {
+          localStorage.removeItem("sivakasi_crackers_cart_v1");
+          localStorage.setItem("sivakasi_crackers_cart_v1", "[]");
+        } catch (e) {}
+      }
+    }
   }, [clearCart]);
 
   const isPickup = order.orderType === "PICKUP";
@@ -70,156 +80,162 @@ export default function OrderConfirmationClient({
       const textNavy = [15, 23, 42];        // #0F172A
       const textMuted = [100, 116, 139];    // #64748B
       const borderGray = [226, 232, 240];   // #E2E8F0
+      const bgLight = [248, 250, 252];      // #F8FAFC
 
-      // Header Purple Bar
+      // 1. Header Bar (Purple with Gold Accent Line below - No Phone/Email in header)
       doc.setFillColor(primaryPurple[0], primaryPurple[1], primaryPurple[2]);
-      doc.rect(0, 0, 210, 26, "F");
+      doc.rect(0, 0, 210, 24, "F");
 
-      // Header Gold Accent Bar
       doc.setFillColor(accentGold[0], accentGold[1], accentGold[2]);
-      doc.rect(0, 26, 210, 2, "F");
+      doc.rect(0, 24, 210, 2, "F");
 
-      // Header Branding Text
+      // Store Title & Tagline in Header
       doc.setTextColor(255, 255, 255);
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(18);
-      doc.text(settings.storeName || "SRI SIVAKASI CRACKERS", 14, 15);
+      doc.setFontSize(16);
+      doc.text((settings.storeName || "SRI SIVAKASI CRACKERS").toUpperCase(), 14, 13);
 
       doc.setFontSize(8.5);
       doc.setFont("helvetica", "normal");
-      doc.text("Direct Sivakasi Factory Quality • Festive Fireworks", 14, 21);
-      doc.text(
-        `📞 ${settings.phone || "9629525907"}  |  ✉ ${settings.email || "abinesh.ece2003@gmail.com"}`,
-        196,
-        21,
-        { align: "right" }
-      );
+      doc.setTextColor(233, 213, 255);
+      doc.text("Direct Sivakasi Factory Quality • Genuine Festive Fireworks", 14, 19);
 
-      // Order Summary Heading
+      // 2. Document Title & Meta Box
       doc.setTextColor(textNavy[0], textNavy[1], textNavy[2]);
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(14);
-      doc.text("ORDER SUMMARY", 14, 38);
-
-      doc.setFontSize(9);
-      doc.setFont("helvetica", "bold");
-      doc.text(`Order ID: ${formattedId}`, 196, 38, { align: "right" });
-      doc.setFont("helvetica", "normal");
-      doc.text(`Date: ${orderDate}`, 196, 43, { align: "right" });
-      doc.text(
-        `Fulfillment: ${isPickup ? "Store Pickup" : "Home Delivery"}`,
-        196,
-        48,
-        { align: "right" }
-      );
-
-      // Divider Line
-      doc.setDrawColor(borderGray[0], borderGray[1], borderGray[2]);
-      doc.line(14, 52, 196, 52);
-
-      // Customer Details Section
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(10);
-      doc.setTextColor(primaryPurple[0], primaryPurple[1], primaryPurple[2]);
-      doc.text("CUSTOMER DETAILS", 14, 59);
-
-      doc.setTextColor(textNavy[0], textNavy[1], textNavy[2]);
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(9.5);
-      doc.text(order.customerName || "Valued Customer", 14, 65);
+      doc.setFontSize(15);
+      doc.text("ORDER SUMMARY", 14, 35);
 
       doc.setFont("helvetica", "normal");
       doc.setFontSize(8.5);
       doc.setTextColor(textMuted[0], textMuted[1], textMuted[2]);
-      doc.text(`Mobile: ${maskedPhoneNumber}`, 14, 70);
-      doc.text(`Email: ${order.email || "N/A"}`, 14, 74);
+      doc.text("Official Pre-Dispatch Order Confirmation", 14, 40);
 
-      // Dynamic Delivery Address OR Pickup Information (No Mixing)
-      let currentY = 82;
+      // Right-side Meta Box
+      doc.setFillColor(bgLight[0], bgLight[1], bgLight[2]);
+      doc.setDrawColor(borderGray[0], borderGray[1], borderGray[2]);
+      doc.roundedRect(125, 30, 71, 22, 2, 2, "FD");
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8.5);
+      doc.setTextColor(primaryPurple[0], primaryPurple[1], primaryPurple[2]);
+      doc.text(`Order ID: ${formattedId}`, 130, 36);
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8);
+      doc.setTextColor(textNavy[0], textNavy[1], textNavy[2]);
+      doc.text(`Date: ${orderDate}`, 130, 42);
+      doc.text(`Fulfillment: ${isPickup ? "Store Pickup" : "Home Delivery"}`, 130, 47);
+
+      // Divider Line
+      doc.setDrawColor(borderGray[0], borderGray[1], borderGray[2]);
+      doc.line(14, 57, 196, 57);
+
+      // 3. Two-Column Customer & Fulfillment Cards
+      // Left Card: Customer Information
+      doc.setFillColor(bgLight[0], bgLight[1], bgLight[2]);
+      doc.setDrawColor(borderGray[0], borderGray[1], borderGray[2]);
+      doc.roundedRect(14, 62, 88, 30, 2, 2, "FD");
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8.5);
+      doc.setTextColor(primaryPurple[0], primaryPurple[1], primaryPurple[2]);
+      doc.text("CUSTOMER DETAILS", 18, 68);
+
+      doc.setTextColor(textNavy[0], textNavy[1], textNavy[2]);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9);
+      doc.text(order.customerName || "Valued Customer", 18, 74);
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8);
+      doc.setTextColor(textMuted[0], textMuted[1], textMuted[2]);
+      doc.text(`Mobile: ${maskedPhoneNumber}`, 18, 80);
+      doc.text(`Email: ${order.email || "N/A"}`, 18, 85);
+
+      // Right Card: Delivery / Pickup Details
+      doc.setFillColor(bgLight[0], bgLight[1], bgLight[2]);
+      doc.setDrawColor(borderGray[0], borderGray[1], borderGray[2]);
+      doc.roundedRect(108, 62, 88, 30, 2, 2, "FD");
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8.5);
+      doc.setTextColor(primaryPurple[0], primaryPurple[1], primaryPurple[2]);
+      doc.text(isPickup ? "STORE PICKUP LOCATION" : "DELIVERY ADDRESS", 112, 68);
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8);
+      doc.setTextColor(textNavy[0], textNavy[1], textNavy[2]);
+
       if (isPickup) {
         doc.setFont("helvetica", "bold");
-        doc.setFontSize(9.5);
-        doc.setTextColor(primaryPurple[0], primaryPurple[1], primaryPurple[2]);
-        doc.text("PICKUP INFORMATION", 14, currentY);
-
+        doc.text(settings.storeName || "Sri Sivakasi Crackers Main Shop", 112, 74);
         doc.setFont("helvetica", "normal");
-        doc.setFontSize(8.5);
-        doc.setTextColor(textNavy[0], textNavy[1], textNavy[2]);
-        doc.text(
-          `Location: ${settings.storeName || "Sri Sivakasi Crackers"} Store`,
-          14,
-          currentY + 5
-        );
-        const storeAddr =
-          settings.address || "123 Main Bazaar, Sivakasi, Tamil Nadu 626123";
-        const splitStoreAddr = doc.splitTextToSize(storeAddr, 180);
-        doc.text(splitStoreAddr, 14, currentY + 9);
+        const storeAddr = settings.address || "123 Main Bazaar, Sivakasi, Tamil Nadu 626123";
+        const splitStore = doc.splitTextToSize(storeAddr, 80);
+        doc.text(splitStore, 112, 79);
         doc.setTextColor(5, 150, 105);
-        doc.text(
-          "Pickup is FREE. Our team will contact you when your order is ready.",
-          14,
-          currentY + 14 + splitStoreAddr.length * 4
-        );
-        currentY += 22 + splitStoreAddr.length * 4;
-      } else {
         doc.setFont("helvetica", "bold");
-        doc.setFontSize(9.5);
-        doc.setTextColor(primaryPurple[0], primaryPurple[1], primaryPurple[2]);
-        doc.text("DELIVERY ADDRESS", 14, currentY);
-
-        doc.setFont("helvetica", "normal");
-        doc.setFontSize(8.5);
-        doc.setTextColor(textNavy[0], textNavy[1], textNavy[2]);
-        const fullAddressStr = `${order.address}${
-          order.landmark ? `, Near ${order.landmark}` : ""
-        }, ${order.city}, ${order.district ? `${order.district}, ` : ""}${
-          order.state
-        } - ${order.pincode}`;
-        const splitAddr = doc.splitTextToSize(fullAddressStr, 180);
-        doc.text(splitAddr, 14, currentY + 5);
-        currentY += 10 + splitAddr.length * 4;
+        doc.text("Pickup Charge: FREE (0 Extra Fees)", 112, 87);
+      } else {
+        const fullAddr = `${order.address}${order.landmark ? `, Near ${order.landmark}` : ""}, ${order.city}, ${order.district ? `${order.district}, ` : ""}${order.state} - ${order.pincode}`;
+        const splitAddr = doc.splitTextToSize(fullAddr, 80);
+        doc.text(splitAddr, 112, 74);
       }
 
-      // Items Table Header
-      const tableTop = currentY + 2;
-      doc.setFillColor(248, 250, 252);
+      // 4. Items Table Header
+      const tableTop = 98;
+      doc.setFillColor(primaryPurple[0], primaryPurple[1], primaryPurple[2]);
       doc.rect(14, tableTop, 182, 8, "F");
 
       doc.setFont("helvetica", "bold");
       doc.setFontSize(8);
-      doc.setTextColor(textNavy[0], textNavy[1], textNavy[2]);
+      doc.setTextColor(255, 255, 255);
       doc.text("#", 17, tableTop + 5.5);
       doc.text("PRODUCT NAME", 26, tableTop + 5.5);
-      doc.text("QTY", 125, tableTop + 5.5, { align: "right" });
-      doc.text("UNIT PRICE", 155, tableTop + 5.5, { align: "right" });
-      doc.text("TOTAL (₹)", 192, tableTop + 5.5, { align: "right" });
+      doc.text("PACK SIZE", 102, tableTop + 5.5);
+      doc.text("QTY", 135, tableTop + 5.5, { align: "right" });
+      doc.text("UNIT PRICE", 165, tableTop + 5.5, { align: "right" });
+      doc.text("TOTAL (Rs.)", 192, tableTop + 5.5, { align: "right" });
 
-      // Itemized Table Rows
+      // 5. Itemized Table Rows
       let yPos = tableTop + 13;
       doc.setFont("helvetica", "normal");
       doc.setFontSize(8.5);
 
-      order.items.forEach((item: any, idx: number) => {
-        if (yPos > 265) {
+      const confirmedPDFItems = order.items.filter((item: any) => item.isConfirmed !== false);
+
+      confirmedPDFItems.forEach((item: any, idx: number) => {
+        if (yPos > 260) {
           doc.addPage();
           yPos = 20;
         }
 
+        if (idx % 2 === 1) {
+          doc.setFillColor(bgLight[0], bgLight[1], bgLight[2]);
+          doc.rect(14, yPos - 4.5, 182, 7.5, "F");
+        }
+
+        doc.setTextColor(textNavy[0], textNavy[1], textNavy[2]);
         doc.text(String(idx + 1), 17, yPos);
-        const prodName = `${item.productName} (${item.packSize || "10 Pcs"})`;
-        const splitName = doc.splitTextToSize(prodName, 90);
+
+        const prodName = item.productName || "Product Item";
+        const splitName = doc.splitTextToSize(prodName, 72);
         doc.text(splitName, 26, yPos);
+
+        const packSize = item.packSize || item.quantityPackage || "Standard";
+        doc.text(String(packSize), 102, yPos);
 
         doc.text(
           `${item.quantity} ${item.unitType || "BOX"}${item.quantity > 1 ? "ES" : ""}`,
-          125,
+          135,
           yPos,
           { align: "right" }
         );
-        doc.text(`₹${Number(item.price).toLocaleString("en-IN")}`, 155, yPos, {
+        doc.text(`Rs. ${Number(item.price).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 165, yPos, {
           align: "right",
         });
-        doc.text(`₹${Number(item.total).toLocaleString("en-IN")}`, 192, yPos, {
+        doc.text(`Rs. ${Number(item.total).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 192, yPos, {
           align: "right",
         });
 
@@ -229,9 +245,9 @@ export default function OrderConfirmationClient({
         doc.line(14, yPos - 3, 196, yPos - 3);
       });
 
-      // Totals Summary Box
-      yPos += 4;
-      if (yPos > 255) {
+      // 6. Totals Summary Box
+      yPos += 5;
+      if (yPos > 250) {
         doc.addPage();
         yPos = 20;
       }
@@ -239,9 +255,10 @@ export default function OrderConfirmationClient({
       doc.setFont("helvetica", "normal");
       doc.setFontSize(9);
       doc.setTextColor(textNavy[0], textNavy[1], textNavy[2]);
-      doc.text("Subtotal:", 140, yPos);
+
+      doc.text("Subtotal:", 135, yPos);
       doc.text(
-        `₹${Number(order.subtotal).toLocaleString("en-IN")}`,
+        `Rs. ${Number(order.subtotal).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
         192,
         yPos,
         { align: "right" }
@@ -249,9 +266,9 @@ export default function OrderConfirmationClient({
 
       yPos += 5;
       if (Number(order.discount) > 0) {
-        doc.text("Discount:", 140, yPos);
+        doc.text("Discount:", 135, yPos);
         doc.text(
-          `- ₹${Number(order.discount).toLocaleString("en-IN")}`,
+          `- Rs. ${Number(order.discount).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
           192,
           yPos,
           { align: "right" }
@@ -259,72 +276,84 @@ export default function OrderConfirmationClient({
         yPos += 5;
       }
 
-      doc.text(isPickup ? "Pickup Charge:" : "Delivery Charge:", 140, yPos);
+      doc.text(isPickup ? "Pickup Charge:" : "Delivery Charge:", 135, yPos);
       if (isPickup) {
+        doc.setTextColor(5, 150, 105);
+        doc.setFont("helvetica", "bold");
         doc.text("FREE", 192, yPos, { align: "right" });
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(textNavy[0], textNavy[1], textNavy[2]);
         yPos += 6;
       } else if (deliveryConfirmed) {
-        doc.text(`₹${deliveryCharge.toLocaleString("en-IN")}`, 192, yPos, {
+        doc.text(`Rs. ${deliveryCharge.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 192, yPos, {
           align: "right",
         });
         yPos += 6;
       } else {
         doc.setFont("helvetica", "italic");
         doc.setTextColor(textMuted[0], textMuted[1], textMuted[2]);
-        doc.text("Pending Confirmation", 192, yPos, { align: "right" });
+        doc.text("To be confirmed", 192, yPos, { align: "right" });
         doc.setFont("helvetica", "normal");
         doc.setTextColor(textNavy[0], textNavy[1], textNavy[2]);
         yPos += 6;
       }
 
-      // Grand Total Line
-      doc.setDrawColor(borderGray[0], borderGray[1], borderGray[2]);
-      doc.line(135, yPos - 3, 196, yPos - 3);
+      // Grand Total Highlighted Box
+      doc.setFillColor(primaryPurple[0], primaryPurple[1], primaryPurple[2]);
+      doc.roundedRect(125, yPos - 1, 71, 9, 1.5, 1.5, "F");
 
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(10.5);
-      doc.setTextColor(primaryPurple[0], primaryPurple[1], primaryPurple[2]);
+      doc.setFontSize(10);
+      doc.setTextColor(255, 255, 255);
       doc.text(
         isPickup || deliveryConfirmed ? "GRAND TOTAL:" : "ORDER VALUE:",
-        140,
-        yPos
+        129,
+        yPos + 5
       );
       doc.text(
-        `₹${Number(order.totalAmount).toLocaleString("en-IN")}`,
+        `Rs. ${Number(order.totalAmount).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
         192,
-        yPos,
+        yPos + 5,
         { align: "right" }
       );
 
-      // Disclaimer / Footer
-      yPos += 14;
-      if (yPos > 270) {
+      // 7. Important Notes & Footer Section
+      yPos += 18;
+      if (yPos > 265) {
         doc.addPage();
         yPos = 20;
       }
 
+      doc.setFillColor(bgLight[0], bgLight[1], bgLight[2]);
+      doc.setDrawColor(borderGray[0], borderGray[1], borderGray[2]);
+      doc.roundedRect(14, yPos, 182, 16, 2, 2, "FD");
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8);
+      doc.setTextColor(primaryPurple[0], primaryPurple[1], primaryPurple[2]);
+      doc.text("IMPORTANT INFORMATION:", 18, yPos + 5);
+
       doc.setFont("helvetica", "normal");
       doc.setFontSize(7.5);
       doc.setTextColor(textMuted[0], textMuted[1], textMuted[2]);
-      doc.text("Note:", 14, yPos);
       doc.text(
-        "1. This document is an Order Summary only.",
-        14,
-        yPos + 4
+        "1. This document is an official Order Summary receipt generated upon placing your order.",
+        18,
+        yPos + 9.5
       );
       doc.text(
-        "2. Our store team will contact you to confirm details before dispatch.",
-        14,
-        yPos + 8
+        "2. Our store team from Sivakasi will contact you directly to confirm dispatch, transport, or shop pickup details.",
+        18,
+        yPos + 13.5
       );
 
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(8.5);
+      doc.setFontSize(9);
       doc.setTextColor(primaryPurple[0], primaryPurple[1], primaryPurple[2]);
       doc.text(
         `Thank you for choosing ${settings.storeName || "Sri Sivakasi Crackers"}!`,
         105,
-        yPos + 18,
+        yPos + 24,
         { align: "center" }
       );
 
@@ -585,37 +614,45 @@ export default function OrderConfirmationClient({
             </div>
 
             {/* Itemized Products Table */}
-            <div className="border border-slate-200 rounded-2xl overflow-hidden text-xs text-left shadow-xs">
-              <div className="px-4 py-3 bg-[#6D3FD6] text-white font-extrabold uppercase tracking-wider flex justify-between">
-                <span>Ordered Products ({order.items.length})</span>
-                <span>Total</span>
-              </div>
-              <div className="divide-y divide-slate-100 bg-white">
-                {order.items.map((item: any) => (
-                  <div
-                    key={item.id}
-                    className="p-3 sm:p-4 flex items-center justify-between gap-4"
-                  >
-                    <div className="space-y-0.5">
-                      <span className="font-bold text-slate-900 block text-xs sm:text-sm">
-                        {item.productName}
-                      </span>
-                      <span className="text-[11px] text-slate-500 block">
-                        Qty:{" "}
-                        <strong className="text-[#6D3FD6] font-bold">
-                          {item.quantity}
-                        </strong>{" "}
-                        {item.unitType || "BOX"}
-                        {item.quantity > 1 ? "ES" : ""} × ₹
-                        {Number(item.price).toLocaleString("en-IN")}
-                      </span>
-                    </div>
-                    <span className="font-black text-slate-900 text-xs sm:text-sm font-mono flex-shrink-0">
-                      ₹{Number(item.total).toLocaleString("en-IN")}
-                    </span>
+            {(() => {
+              const confirmedItems = order.items.filter((item: any) => item.isConfirmed !== false);
+              return (
+                <div className="border border-slate-200 rounded-2xl overflow-hidden text-xs text-left shadow-xs">
+                  <div className="px-4 py-3 bg-[#6D3FD6] text-white font-extrabold uppercase tracking-wider flex justify-between">
+                    <span>Ordered Products ({confirmedItems.length})</span>
+                    <span>Total</span>
                   </div>
-                ))}
-              </div>
+                  <div className="divide-y divide-slate-100 bg-white">
+                    {confirmedItems.map((item: any) => (
+                      <div
+                        key={item.id}
+                        className="p-3 sm:p-4 flex items-center justify-between gap-4 transition-colors"
+                      >
+                        <div className="space-y-0.5">
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold block text-xs sm:text-sm text-slate-900">
+                              {item.productName}
+                            </span>
+                          </div>
+                          <span className="text-[11px] block text-slate-500">
+                            Qty:{" "}
+                            <strong className="text-[#6D3FD6] font-bold">
+                              {item.quantity}
+                            </strong>{" "}
+                            {item.unitType || "BOX"}
+                            {item.quantity > 1 ? "ES" : ""} × ₹
+                            {Number(item.price).toLocaleString("en-IN")}
+                          </span>
+                        </div>
+                        <span className="font-black text-xs sm:text-sm font-mono flex-shrink-0 text-slate-900">
+                          ₹{Number(item.total).toLocaleString("en-IN")}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
 
               {/* Summary Totals Footer */}
               <div className="p-4 bg-slate-50 border-t border-slate-200 space-y-2 text-xs">
@@ -699,8 +736,6 @@ export default function OrderConfirmationClient({
               Order Reference: <strong className="font-mono text-slate-700">{formattedId}</strong>
             </p>
           </div>
-
-        </div>
       </main>
 
       <Footer settings={settings} />

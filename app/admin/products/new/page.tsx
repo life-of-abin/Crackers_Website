@@ -60,7 +60,7 @@ export default function NewProductPage() {
       <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-sm">
         
         {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 text-xs font-bold rounded-2xl">
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 text-xs font-bold rounded-2xl max-w-full overflow-hidden break-words [overflow-wrap:anywhere]">
             ⚠️ {error}
           </div>
         )}

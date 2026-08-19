@@ -43,8 +43,20 @@ function isValidGmailFormat(val: string): boolean {
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { items, subtotal, clearCart, isMounted } = useCart();
+  const { items, subtotal, clearCart, syncFreshStock, updateQuantity, removeFromCart, isMounted } = useCart();
   const [settings, setSettings] = useState<StoreSettings>(DEFAULT_SETTINGS);
+
+  // ─── Stock Validation State ────────────────────────────────────────────────
+  const [cartStockIssues, setCartStockIssues] = useState<Array<{
+    id: number;
+    name: string;
+    cartQuantity: number;
+    availableStock: number;
+    unitType: string;
+    issueType: "OUT_OF_STOCK" | "EXCEEDS_STOCK" | "UNAVAILABLE";
+    message: string;
+  }>>([]);
+  const [isValidatingStock, setIsValidatingStock] = useState(false);
 
   // ─── Order Type ───────────────────────────────────────────────────────────
   const [orderType, setOrderType] = useState<"DELIVERY" | "PICKUP">("DELIVERY");
@@ -55,6 +67,7 @@ export default function CheckoutPage() {
   const [email, setEmail] = useState("");
   const [address, setAddress] = useState("");
   const [landmark, setLandmark] = useState("");
+  const [postalArea, setPostalArea] = useState("");
   const [pincode, setPincode] = useState("");
   const [city, setCity] = useState("");
   const [district, setDistrict] = useState("");
@@ -96,6 +109,48 @@ export default function CheckoutPage() {
       .catch(console.error);
   }, []);
 
+  // ─── Validate Cart Stock Real-Time ───────────────────────────────────────
+  const validateCartStock = React.useCallback(async () => {
+    if (!isMounted || items.length === 0 || isOrderComplete) return;
+    try {
+      setIsValidatingStock(true);
+      const res = await fetch("/api/cart/validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          items: items.map((it) => ({ id: it.id, cartQuantity: it.cartQuantity })),
+        }),
+      });
+      const data = await res.json();
+      if (data && data.updatedProducts) {
+        syncFreshStock(data.updatedProducts);
+      }
+      if (data && data.hasIssues && Array.isArray(data.issues)) {
+        setCartStockIssues(data.issues);
+      } else {
+        setCartStockIssues([]);
+      }
+    } catch (e) {
+      console.error("Cart stock validation failed:", e);
+    } finally {
+      setIsValidatingStock(false);
+    }
+  }, [isMounted, items, isOrderComplete, syncFreshStock]);
+
+  // Validate stock when page loads or items change
+  useEffect(() => {
+    validateCartStock();
+  }, [isMounted, validateCartStock]);
+
+  const handleAdjustStock = (id: number, availableStock: number) => {
+    if (availableStock <= 0) {
+      removeFromCart(id);
+    } else {
+      updateQuantity(id, availableStock);
+    }
+    setCartStockIssues((prev) => prev.filter((i) => i.id !== id));
+  };
+
   // ─── Cart Guard ───────────────────────────────────────────────────────────
   useEffect(() => {
     if (!isMounted || isOrderComplete) return;
@@ -116,7 +171,7 @@ export default function CheckoutPage() {
         setPinVerifiedInfo(null);
         setCity("");
         setDistrict("");
-        setLandmark("");
+        setPostalArea("");
         setShowAllAreas(false);
       }
       return;
@@ -141,7 +196,7 @@ export default function CheckoutPage() {
           setErrors((prev) => { const c = { ...prev }; delete c.pincode; delete c.city; delete c.district; return c; });
         } else {
           setPinError(data?.error || "⚠️ Invalid Tamil Nadu PIN code. Only valid Tamil Nadu PIN codes are accepted.");
-          setAutoFilledPin(null); setPinVerifiedInfo(null); setCity(""); setDistrict(""); setLandmark(""); setShowAllAreas(false);
+          setAutoFilledPin(null); setPinVerifiedInfo(null); setCity(""); setDistrict(""); setPostalArea(""); setShowAllAreas(false);
         }
       })
       .catch((err) => {
@@ -149,7 +204,7 @@ export default function CheckoutPage() {
         if (err.name !== "AbortError") {
           setPinLoading(false);
           setPinError("⚠️ Unable to detect PIN code. Please enter a valid 6-digit Tamil Nadu PIN code.");
-          setAutoFilledPin(null); setPinVerifiedInfo(null); setCity(""); setDistrict(""); setLandmark(""); setShowAllAreas(false);
+          setAutoFilledPin(null); setPinVerifiedInfo(null); setCity(""); setDistrict(""); setPostalArea(""); setShowAllAreas(false);
         }
       });
     return () => { isCurrent = false; controller.abort(); };
@@ -166,7 +221,7 @@ export default function CheckoutPage() {
     }
     setPinError("");
     if (cleaned.length !== 6 || cleaned !== autoFilledPin) {
-      setCity(""); setDistrict(""); setLandmark(""); setShowAllAreas(false);
+      setCity(""); setDistrict(""); setPostalArea(""); setShowAllAreas(false);
       setState("Tamil Nadu"); setAutoFilledPin(null); setPinVerifiedInfo(null);
     }
   };
@@ -273,11 +328,15 @@ export default function CheckoutPage() {
     setLoading(true);
 
     try {
+      const formattedAddress = selectedOrderType === "PICKUP"
+        ? "Store Pickup"
+        : (postalArea.trim() ? `${address.trim()}, ${postalArea.trim()}` : address.trim());
+
       const result = await createOrderAction({
         customerName: customerName.trim(),
         phone: `+91${phone}`,
         email: email.trim(),
-        address: selectedOrderType === "PICKUP" ? "Store Pickup" : address.trim(),
+        address: formattedAddress,
         landmark: selectedOrderType === "PICKUP" ? undefined : (landmark.trim() || undefined),
         city: selectedOrderType === "PICKUP" ? "Sivakasi" : city.trim(),
         district: selectedOrderType === "PICKUP" ? "Virudhunagar" : district.trim(),
@@ -293,10 +352,21 @@ export default function CheckoutPage() {
 
       setLoading(false);
 
-      if (result.error) { setGlobalError(result.error); return; }
+      if (result.error) {
+        setGlobalError(result.error);
+        validateCartStock();
+        return;
+      }
 
       if (result.success && result.orderId) {
         setIsOrderComplete(true);
+        clearCart();
+        if (typeof window !== "undefined") {
+          try {
+            localStorage.removeItem("sivakasi_crackers_cart_v1");
+            localStorage.setItem("sivakasi_crackers_cart_v1", "[]");
+          } catch (e) {}
+        }
         // Force a hard redirect to bypass any Next.js soft-navigation quirks or React state batching issues
         window.location.href = `/order-confirmation/${result.orderId}`;
         return;
@@ -317,6 +387,8 @@ export default function CheckoutPage() {
       </div>
     );
   }
+
+  const hasStockIssues = cartStockIssues.length > 0;
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900 selection:bg-[#6D3FD6] selection:text-white">
@@ -341,6 +413,70 @@ export default function CheckoutPage() {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 flex-1 w-full">
         <div className="max-w-3xl mx-auto space-y-6 sm:space-y-8">
+
+          {/* ── Cart Stock Issue Alert Banner ── */}
+          {hasStockIssues && (
+            <div className="bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-amber-300 rounded-3xl p-6 shadow-xl space-y-4 animate-fadeIn">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-amber-100 border border-amber-300 flex items-center justify-center text-xl flex-shrink-0 text-amber-800 shadow-xs">
+                  ⚠️
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-amber-950 font-display">
+                    Cart Stock Adjustment Required
+                  </h3>
+                  <p className="text-xs text-amber-800 font-medium mt-0.5 leading-relaxed">
+                    Some items in your cart exceed our current available stock. Please adjust your cart quantities below before placing your order.
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-3 pt-2 border-t border-amber-200">
+                {cartStockIssues.map((issue) => (
+                  <div
+                    key={issue.id}
+                    className="bg-white rounded-2xl border border-amber-200 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs"
+                  >
+                    <div className="space-y-0.5 min-w-0 flex-1">
+                      <span className="font-extrabold text-xs sm:text-sm text-slate-900 block truncate">
+                        {issue.name}
+                      </span>
+                      <span className="text-xs font-semibold text-amber-800 block">
+                        {issue.message}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      {issue.availableStock > 0 ? (
+                        <button
+                          type="button"
+                          onClick={() => handleAdjustStock(issue.id, issue.availableStock)}
+                          className="bg-amber-600 hover:bg-amber-700 active:scale-95 text-white font-extrabold text-xs px-3.5 py-2 rounded-xl transition-all shadow-xs cursor-pointer"
+                        >
+                          Adjust to {issue.availableStock} {issue.unitType || "BOX"}
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => handleAdjustStock(issue.id, 0)}
+                          className="bg-red-600 hover:bg-red-700 active:scale-95 text-white font-extrabold text-xs px-3.5 py-2 rounded-xl transition-all shadow-xs cursor-pointer"
+                        >
+                          Remove Out of Stock
+                        </button>
+                      )}
+
+                      <Link
+                        href="/cart"
+                        className="bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs px-3.5 py-2 rounded-xl transition-colors"
+                      >
+                        Go to Cart
+                      </Link>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* ── Section 0: Order Type Selector ── */}
           <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-xl space-y-4">
@@ -572,16 +708,16 @@ export default function CheckoutPage() {
                           <div className="pt-2 border-t border-emerald-200/60 mt-1">
                             <div className="flex items-center justify-between text-[10px] font-bold text-slate-600 mb-1.5">
                               <span>Covered Postal Areas / Localities ({pinVerifiedInfo.postOffices.length}):</span>
-                              <span className="text-[9px] text-slate-400 font-medium">Click area to fill Landmark</span>
+                              <span className="text-[9px] text-slate-400 font-medium">Click area to fill Locality</span>
                             </div>
                             <div className="flex flex-wrap gap-1.5 max-h-52 overflow-y-auto pr-1">
                               {(showAllAreas ? pinVerifiedInfo.postOffices : pinVerifiedInfo.postOffices.slice(0, 6)).map((area, idx) => {
-                                const isSelected = landmark.trim().toLowerCase() === area.trim().toLowerCase();
+                                const isSelected = postalArea.trim().toLowerCase() === area.trim().toLowerCase();
                                 return (
                                   <button
                                     key={idx}
                                     type="button"
-                                    onClick={() => setLandmark(area)}
+                                    onClick={() => setPostalArea(isSelected ? "" : area)}
                                     className={`text-[10px] font-extrabold px-2.5 py-1 rounded-lg border transition-all ${
                                       isSelected
                                         ? "bg-[#6D3FD6] text-white border-[#6D3FD6] shadow-xs"
@@ -607,6 +743,17 @@ export default function CheckoutPage() {
                       </div>
                     )}
                   </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Postal Area / Locality (Optional)</label>
+                  <input
+                    type="text"
+                    placeholder="Select above or type area (e.g. Asiriyar Nagar)"
+                    value={postalArea}
+                    onChange={(e) => setPostalArea(e.target.value)}
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#6D3FD6] focus:border-[#6D3FD6]"
+                  />
                 </div>
 
                 <div>
@@ -721,8 +868,45 @@ export default function CheckoutPage() {
               )}
             </div>
 
-            {/* Global Error Banner */}
-            {globalError && (
+            {/* Global Error & Stock Issue Banner in Order Summary */}
+            {hasStockIssues && (
+              <div className="p-4 bg-red-50 border-2 border-red-200 rounded-2xl space-y-3 animate-fadeIn">
+                {cartStockIssues.map((issue) => (
+                  <div key={issue.id} className="space-y-2">
+                    <p className="text-xs font-extrabold text-red-700">
+                      ⚠️ {issue.message}
+                    </p>
+                    <div className="flex items-center gap-2 pt-1">
+                      {issue.availableStock > 0 ? (
+                        <button
+                          type="button"
+                          onClick={() => handleAdjustStock(issue.id, issue.availableStock)}
+                          className="bg-amber-600 hover:bg-amber-700 active:scale-95 text-white font-extrabold text-[11px] px-3 py-1.5 rounded-lg transition-all shadow-xs cursor-pointer"
+                        >
+                          Adjust to {issue.availableStock} {issue.unitType || "BOX"}
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => handleAdjustStock(issue.id, 0)}
+                          className="bg-red-600 hover:bg-red-700 active:scale-95 text-white font-extrabold text-[11px] px-3 py-1.5 rounded-lg transition-all shadow-xs cursor-pointer"
+                        >
+                          Remove Item
+                        </button>
+                      )}
+                      <Link
+                        href="/cart"
+                        className="bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 font-bold text-[11px] px-3 py-1.5 rounded-lg transition-colors"
+                      >
+                        Return to Cart
+                      </Link>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {globalError && !hasStockIssues && (
               <div className="p-4 bg-red-50 border border-red-200 rounded-2xl text-center">
                 <p className="text-xs font-extrabold text-red-700">⚠️ {globalError}</p>
               </div>
@@ -735,7 +919,7 @@ export default function CheckoutPage() {
                   type="button"
                   id="btn-place-delivery-order"
                   onClick={() => handleSubmitOrder("DELIVERY")}
-                  disabled={loading || items.length === 0}
+                  disabled={loading || items.length === 0 || hasStockIssues}
                   className="w-full py-4 bg-[#6D3FD6] hover:bg-[#5B21B6] text-white font-black text-sm uppercase tracking-wider rounded-2xl shadow-lg transition-all flex items-center justify-center gap-3 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer shadow-purple-200 px-4"
                 >
                   {loading ? (
@@ -743,6 +927,8 @@ export default function CheckoutPage() {
                       <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                       Placing Order...
                     </span>
+                  ) : hasStockIssues ? (
+                    <span>⚠️ PLEASE ADJUST CART QUANTITY TO PLACE ORDER</span>
                   ) : (
                     <span className="flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-2 text-center w-full">
                       <span>🚚 Order for Home Delivery</span>
@@ -757,7 +943,7 @@ export default function CheckoutPage() {
                   type="button"
                   id="btn-place-pickup-order"
                   onClick={() => handleSubmitOrder("PICKUP")}
-                  disabled={loading || items.length === 0}
+                  disabled={loading || items.length === 0 || hasStockIssues}
                   className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-sm uppercase tracking-wider rounded-2xl shadow-lg transition-all flex items-center justify-center gap-3 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer shadow-emerald-200 px-4"
                 >
                   {loading ? (
@@ -765,6 +951,8 @@ export default function CheckoutPage() {
                       <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                       Placing Order...
                     </span>
+                  ) : hasStockIssues ? (
+                    <span>⚠️ PLEASE ADJUST CART QUANTITY TO PLACE ORDER</span>
                   ) : (
                     <span className="flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-2 text-center w-full">
                       <span>🏪 I&apos;ll Pick Up from Store</span>

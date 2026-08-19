@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/lib/cart-context";
+import StockLimitNotice from "@/components/ui/StockLimitNotice";
 
 interface ProductDetailActionsProps {
   product: {
@@ -23,7 +24,6 @@ export default function ProductDetailActions({ product }: ProductDetailActionsPr
   const [localQty, setLocalQty] = useState(1);
 
   const isOutOfStock = product.stock <= 0;
-
   // Check if item is in cart
   const cartItem = isMounted ? items.find((i) => i.id === product.id) : null;
   const isInCart = Boolean(cartItem);
@@ -31,6 +31,7 @@ export default function ProductDetailActions({ product }: ProductDetailActionsPr
 
   // Displayed quantity is cartQty when in cart, else localQty
   const displayQty = isInCart ? cartQty : localQty;
+  const isMaxStockReached = product.stock > 0 && displayQty >= product.stock;
 
   const handleIncrement = () => {
     if (isOutOfStock) return;
@@ -145,6 +146,15 @@ export default function ProductDetailActions({ product }: ProductDetailActionsPr
           ⚡ Buy Now
         </button>
       </div>
+
+      {/* Stock Limit Notice when maximum available stock is reached */}
+      {!isOutOfStock && product.stock > 0 && displayQty >= product.stock && (
+        <StockLimitNotice
+          productName={product.name}
+          stock={product.stock}
+          className="mt-4"
+        />
+      )}
     </div>
   );
 }

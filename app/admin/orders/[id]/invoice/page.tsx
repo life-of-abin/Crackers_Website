@@ -52,6 +52,21 @@ export default async function InvoicePage({ params }: InvoicePageProps) {
 
   if (!order) notFound();
 
+  // Direct raw query to guarantee exact isConfirmed column state from PostgreSQL
+  try {
+    const rawItems = await prisma.$queryRaw<Array<{ id: number; isConfirmed: boolean | number | string | null }>>`
+      SELECT id, "isConfirmed" FROM "OrderItem" WHERE "orderId" = ${orderId}
+    `;
+    const rawItemMap = new Map(rawItems.map((ri) => [ri.id, ri.isConfirmed]));
+    order.items = order.items.map((item) => {
+      const rawVal = rawItemMap.get(item.id);
+      const isConfirmed = rawVal === false || rawVal === 0 || rawVal === "f" ? false : true;
+      return { ...item, isConfirmed };
+    });
+  } catch (e) {
+    console.error("Failed to fetch raw isConfirmed for admin invoice:", e);
+  }
+
   // Get or create unique invoice number and persist to DB
   const invoiceNumber = await getOrCreateInvoiceNumber(order.id, order.createdAt);
   order.invoiceNumber = invoiceNumber;

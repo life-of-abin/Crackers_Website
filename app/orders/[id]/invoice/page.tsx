@@ -47,6 +47,21 @@ export default async function CustomerInvoicePage({ params }: InvoicePageProps) 
 
   if (!order) notFound();
 
+  // Direct raw query to guarantee exact isConfirmed column state from PostgreSQL
+  try {
+    const rawItems = await prisma.$queryRaw<Array<{ id: number; isConfirmed: boolean | number | string | null }>>`
+      SELECT id, "isConfirmed" FROM "OrderItem" WHERE "orderId" = ${orderId}
+    `;
+    const rawItemMap = new Map(rawItems.map((ri) => [ri.id, ri.isConfirmed]));
+    order.items = order.items.map((item) => {
+      const rawVal = rawItemMap.get(item.id);
+      const isConfirmed = rawVal === false || rawVal === 0 || rawVal === "f" ? false : true;
+      return { ...item, isConfirmed };
+    });
+  } catch (e) {
+    console.error("Failed to fetch raw isConfirmed for customer invoice:", e);
+  }
+
   // Enforce access control:
   // If order belongs to a registered user, require owner or admin session.
   // If order is a guest order (order.userId is null), permit invoice view by order ID.

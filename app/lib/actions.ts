@@ -11,6 +11,7 @@ import {
 } from "@/lib/auth";
 import { verifyIndianPincode, normalizeIndianPhone, isValidEmailFormat, isValidGmailFormat } from "@/lib/pincode";
 import { validateTransactionRef, generateInvoiceNumber, isValidCustomerName } from "@/lib/payment-utils";
+import { getStoreSettings } from "@/lib/settings";
 import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 
@@ -35,27 +36,43 @@ function slugify(text: string): string {
 
 export async function adminLoginAction(formData: FormData) {
   try {
-    const email = (formData.get("email") as string || "").trim().toLowerCase();
+    const rawInput = (formData.get("email") as string || "").trim();
+    const input = rawInput.toLowerCase();
     const password = (formData.get("password") as string || "").trim();
 
-    if (!email || !password) {
-      return { error: "Please enter your admin email address and password." };
+    if (!rawInput || !password) {
+      return { error: "Please enter your admin email or phone number and password." };
     }
 
-    if (!isValidEmailFormat(email)) {
-      return { error: "Please enter a valid email address." };
-    }
+    const phoneResult = normalizeIndianPhone(rawInput);
+    const normalizedPhone = phoneResult.valid ? phoneResult.phone : null;
 
-    // Search user by email and enforce ADMIN role
-    const user = await prisma.user.findFirst({
+    // Search user by email OR phone where role is ADMIN
+    let user = await prisma.user.findFirst({
       where: {
-        email,
         role: "ADMIN",
+        OR: [
+          { email: input },
+          { phone: rawInput },
+          ...(normalizedPhone ? [{ phone: normalizedPhone }] : []),
+        ],
       },
     });
 
+    // Fallback: If input is the owner email or owner mobile, look up any ADMIN account
+    if (
+      !user &&
+      (input === OWNER_EMAIL ||
+        rawInput === OWNER_MOBILE ||
+        (normalizedPhone && (normalizedPhone === OWNER_MOBILE || normalizedPhone === `+91${OWNER_MOBILE}`)))
+    ) {
+      user = await prisma.user.findFirst({
+        where: { role: "ADMIN" },
+      });
+    }
+
     if (!user) {
-      return { error: "No admin account found for this email. Please click 'Owner Initial Setup' below to create/update your password." };
+      return { error: "No admin account found for this email/phone. Please click 'Owner Initial Setup' below if setting up for the first time." };
     }
 
     if (user.status !== "ACTIVE") {
@@ -64,7 +81,7 @@ export async function adminLoginAction(formData: FormData) {
 
     const isValid = comparePassword(password, user.passwordHash);
     if (!isValid) {
-      return { error: "Invalid admin email or password." };
+      return { error: "Invalid admin email/phone or password." };
     }
 
     const token = signToken({
@@ -85,8 +102,12 @@ export async function adminLoginAction(formData: FormData) {
 
     return { success: true, role: "ADMIN" };
   } catch (error: any) {
-    console.error("Admin login error:", error);
-    return { error: "An unexpected error occurred during admin authentication." };
+    console.error("Admin login error details:", error);
+    const msg = error?.message || "";
+    if (msg.includes("Can't reach database") || msg.includes("Prisma") || msg.includes("timeout")) {
+      return { error: "Database connection busy. Please try clicking Login again." };
+    }
+    return { error: `Authentication issue: ${msg || "Unable to complete login. Please try again."}` };
   }
 }
 
@@ -857,6 +878,27 @@ export async function updatePaymentStatusAction(orderId: number, paymentStatus: 
     const existingOrder = await prisma.order.findUnique({ where: { id: orderId } });
     if (!existingOrder) return { error: "Order not found." };
 
+    if (paymentStatus === "PAID") {
+      const settings = await getStoreSettings();
+      const minOrder = settings.minOrderAmount || 500;
+
+      const orderItems = await prisma.orderItem.findMany({ where: { orderId } });
+      const rawConfirmedItems = await prisma.$queryRaw<any[]>`
+        SELECT id, "isConfirmed" FROM "OrderItem" WHERE "orderId" = ${orderId}
+      `;
+      const rawMap = new Map(rawConfirmedItems.map((r) => [Number(r.id), r.isConfirmed !== false]));
+
+      const confirmedSubtotal = orderItems
+        .filter((item) => rawMap.get(item.id) !== false)
+        .reduce((sum, item) => sum + Number(item.price) * item.quantity, 0);
+
+      if (confirmedSubtotal < minOrder) {
+        return {
+          error: `Cannot mark order as PAID because confirmed order value (₹${confirmedSubtotal.toLocaleString("en-IN")}) is below the minimum required order amount of ₹${minOrder.toLocaleString("en-IN")}.`,
+        };
+      }
+    }
+
     // When marking as PAID, generate and lock invoice number if not set
     let invoiceNumber = existingOrder.invoiceNumber;
     let invoiceGeneratedAt = existingOrder.invoiceGeneratedAt;
@@ -865,10 +907,14 @@ export async function updatePaymentStatusAction(orderId: number, paymentStatus: 
       invoiceGeneratedAt = new Date();
     }
 
+    // When marking paymentStatus as FAILED, also update orderStatus to FAILED automatically!
+    const updatedOrderStatus = paymentStatus === "FAILED" ? "FAILED" : existingOrder.orderStatus;
+
     await prisma.order.update({
       where: { id: orderId },
       data: {
         paymentStatus,
+        orderStatus: updatedOrderStatus,
         ...(invoiceNumber ? { invoiceNumber } : {}),
         ...(invoiceGeneratedAt ? { invoiceGeneratedAt } : {}),
         ...(paymentStatus === "PAID" ? { paidAt: existingOrder.paidAt ?? new Date() } : {}),
@@ -892,11 +938,18 @@ export async function updateSettingsAction(formData: FormData) {
     await requireAdmin();
 
     const storeName = formData.get("storeName") as string;
-    const phone = formData.get("phone") as string;
+    
+    const rawPhone = (formData.get("phone") as string || "").trim();
+    const phoneRes = normalizeIndianPhone(rawPhone);
+    const phone = phoneRes.valid ? phoneRes.phone : rawPhone.startsWith("+91") ? rawPhone : `+91${rawPhone.replace(/[^0-9]/g, "")}`;
+
+    const rawWhatsapp = (formData.get("whatsappNumber") as string || "").trim();
+    const whatsappRes = normalizeIndianPhone(rawWhatsapp);
+    const whatsappNumber = whatsappRes.valid ? whatsappRes.phone : rawWhatsapp.startsWith("+91") ? rawWhatsapp : `+91${rawWhatsapp.replace(/[^0-9]/g, "")}`;
+
     const email = formData.get("email") as string;
     const address = formData.get("address") as string;
     const googleMapsUrl = formData.get("googleMapsUrl") as string;
-    const whatsappNumber = formData.get("whatsappNumber") as string;
     const minOrderAmount = parseFloat((formData.get("minOrderAmount") as string) || "300");
     const flatShippingFeeStr = (formData.get("flatShippingFee") as string) || "0";
     const flatShippingFee = parseFloat(flatShippingFeeStr) || 0;
@@ -1207,7 +1260,6 @@ export async function createOfflineBillAction(input: {
           details: `Created Offline Store Bill ${offlineBillNumber} for ₹${totalAmount}`,
         },
       });
-
       return order;
     });
 
@@ -1220,7 +1272,7 @@ export async function createOfflineBillAction(input: {
     return {
       success: true,
       orderId: result.id,
-      offlineBillNumber: result.invoiceNumber || offlineBillNumber,
+      offlineBillNumber: result.invoiceNumber,
       totalAmount: Number(result.totalAmount),
     };
   } catch (error: any) {
@@ -1228,3 +1280,276 @@ export async function createOfflineBillAction(input: {
   }
 }
 
+export async function toggleOrderItemConfirmationAction(
+  orderItemId: number,
+  isConfirmed: boolean
+) {
+  try {
+    const admin = await requireAdmin();
+
+    const result = await prisma.$transaction(
+      async (tx) => {
+        const item = await tx.orderItem.findUnique({
+          where: { id: orderItemId },
+          include: { product: true, order: true },
+        });
+
+        if (!item) {
+          throw new Error("Order item not found.");
+        }
+
+        const isPaid =
+          item.order.paymentStatus === "PAID" ||
+          item.order.paymentStatus === "TEST_PAID" ||
+          item.order.paymentStatus === "SUCCESS";
+
+        if (isPaid) {
+          throw new Error("Cannot modify items or quantities because this order is already marked as PAID.");
+        }
+
+        if (item.isConfirmed === isConfirmed) {
+          return { orderId: item.orderId, noop: true };
+        }
+
+        const product = item.product;
+
+        if (!isConfirmed) {
+          // UNCHECKING: Removing item from order -> release stock
+          await tx.product.update({
+            where: { id: item.productId },
+            data: {
+              stock: { increment: item.quantity },
+              purchases: { decrement: Math.min(product.purchases, item.quantity) },
+            },
+          });
+
+          try {
+            await tx.orderItem.update({
+              where: { id: orderItemId },
+              data: {
+                isConfirmed: false,
+                removedAt: new Date(),
+              },
+            });
+          } catch (e) {
+            await tx.$executeRaw`UPDATE "OrderItem" SET "isConfirmed" = false, "removedAt" = NOW() WHERE id = ${orderItemId}`;
+          }
+        } else {
+          // RE-CHECKING: Restoring item to order -> check stock and re-reserve
+          if (product.stock < item.quantity) {
+            const unit = product.unitType || "box";
+            throw new Error(
+              `Unable to restore "${product.name}" because only ${product.stock} ${unit.toLowerCase()}${product.stock === 1 ? "" : "es"} ${product.stock === 1 ? "is" : "are"} currently available, but ${item.quantity} required.`
+            );
+          }
+
+          await tx.product.update({
+            where: { id: item.productId },
+            data: {
+              stock: { decrement: item.quantity },
+              purchases: { increment: item.quantity },
+            },
+          });
+
+          try {
+            await tx.orderItem.update({
+              where: { id: orderItemId },
+              data: {
+                isConfirmed: true,
+                removedAt: null,
+              },
+            });
+          } catch (e) {
+            await tx.$executeRaw`UPDATE "OrderItem" SET "isConfirmed" = true, "removedAt" = NULL WHERE id = ${orderItemId}`;
+          }
+        }
+
+        // Recalculate Order Subtotal & Total Amount from confirmed items
+        const allItems = await tx.orderItem.findMany({
+          where: { orderId: item.orderId },
+        });
+
+        const remainingConfirmed = allItems.filter((i) =>
+          i.id === orderItemId ? isConfirmed : i.isConfirmed !== false
+        );
+
+        const confirmedSubtotal = remainingConfirmed.reduce(
+          (acc, i) => acc + Number(i.price) * i.quantity,
+          0
+        );
+
+        const deliveryCharge = Number(item.order.deliveryCharge || 0);
+        const newTotalAmount = confirmedSubtotal + (remainingConfirmed.length > 0 ? deliveryCharge : 0);
+
+        // Auto update orderStatus to FAILED if all items removed
+        let newOrderStatus = item.order.orderStatus;
+        if (remainingConfirmed.length === 0) {
+          newOrderStatus = "FAILED";
+        } else if ((item.order.orderStatus === "FAILED" || item.order.orderStatus === "CANCELLED") && remainingConfirmed.length > 0) {
+          newOrderStatus = "PENDING";
+        }
+
+        await tx.order.update({
+          where: { id: item.orderId },
+          data: {
+            subtotal: confirmedSubtotal,
+            totalAmount: newTotalAmount,
+            orderStatus: newOrderStatus,
+          },
+        });
+
+        await tx.adminAuditLog.create({
+          data: {
+            adminEmail: admin.email,
+            action: isConfirmed ? "RESTORE_ORDER_ITEM" : "REMOVE_ORDER_ITEM",
+            details: `${isConfirmed ? "Restored" : "Removed"} item "${item.productName}" (Qty: ${item.quantity}) in Order #${item.orderId}.${remainingConfirmed.length === 0 ? " Order auto-cancelled (0 confirmed items)." : ""}`,
+          },
+        });
+
+        return { orderId: item.orderId, confirmedSubtotal, newTotalAmount, newOrderStatus };
+      },
+      { timeout: 25000, maxWait: 10000 }
+    );
+
+    revalidatePath("/admin/orders");
+    revalidatePath(`/admin/orders/${result.orderId}`);
+    revalidatePath(`/order-confirmation/${result.orderId}`);
+    revalidatePath(`/orders/${result.orderId}`);
+    revalidatePath(`/orders/${result.orderId}/invoice`);
+
+    return { success: true, ...result };
+  } catch (error: any) {
+    return { error: error.message || "Failed to update item confirmation status." };
+  }
+}
+
+export async function updateOrderItemQuantityAction(
+  orderItemId: number,
+  newQuantity: number
+) {
+  try {
+    const admin = await requireAdmin();
+
+    if (isNaN(newQuantity) || newQuantity < 1) {
+      throw new Error("Quantity must be at least 1.");
+    }
+
+    const result = await prisma.$transaction(
+      async (tx) => {
+        const item = await tx.orderItem.findUnique({
+          where: { id: orderItemId },
+          include: { product: true, order: true },
+        });
+
+        if (!item) {
+          throw new Error("Order item not found.");
+        }
+
+        const isPaid =
+          item.order.paymentStatus === "PAID" ||
+          item.order.paymentStatus === "TEST_PAID" ||
+          item.order.paymentStatus === "SUCCESS";
+
+        if (isPaid) {
+          throw new Error("Cannot modify items or quantities because this order is already marked as PAID.");
+        }
+
+        const oldQuantity = item.quantity;
+        if (oldQuantity === newQuantity) {
+          return { orderId: item.orderId, noop: true };
+        }
+
+        const product = item.product;
+        const diff = newQuantity - oldQuantity; // positive = increase, negative = decrease
+
+        if (diff > 0) {
+          // Increasing quantity -> check stock availability
+          if (product.stock < diff) {
+            const unit = product.unitType || "box";
+            throw new Error(
+              `Cannot increase quantity of "${product.name}" to ${newQuantity}. Only ${product.stock} additional ${unit.toLowerCase()}${product.stock === 1 ? "" : "es"} available in inventory stock.`
+            );
+          }
+
+          await tx.product.update({
+            where: { id: item.productId },
+            data: {
+              stock: { decrement: diff },
+              purchases: { increment: diff },
+            },
+          });
+        } else if (diff < 0) {
+          // Decreasing quantity -> release stock back
+          const releaseQty = Math.abs(diff);
+          await tx.product.update({
+            where: { id: item.productId },
+            data: {
+              stock: { increment: releaseQty },
+              purchases: { decrement: Math.min(product.purchases, releaseQty) },
+            },
+          });
+        }
+
+        const newTotal = Number(item.price) * newQuantity;
+
+        await tx.orderItem.update({
+          where: { id: orderItemId },
+          data: {
+            quantity: newQuantity,
+            total: newTotal,
+          },
+        });
+
+        // Recalculate Order Subtotal & Total Amount from all confirmed items
+        const allItems = await tx.orderItem.findMany({
+          where: { orderId: item.orderId },
+        });
+
+        const confirmedSubtotal = allItems
+          .filter((i) => i.isConfirmed !== false)
+          .reduce((acc, i) => {
+            const qty = i.id === orderItemId ? newQuantity : i.quantity;
+            return acc + Number(i.price) * qty;
+          }, 0);
+
+        const deliveryCharge = Number(item.order.deliveryCharge || 0);
+        const newTotalAmount = confirmedSubtotal + deliveryCharge;
+
+        await tx.order.update({
+          where: { id: item.orderId },
+          data: {
+            subtotal: confirmedSubtotal,
+            totalAmount: newTotalAmount,
+          },
+        });
+
+        await tx.adminAuditLog.create({
+          data: {
+            adminEmail: admin.email,
+            action: "UPDATE_ORDER_ITEM_QUANTITY",
+            details: `Updated item "${item.productName}" quantity from ${oldQuantity} to ${newQuantity} in Order #${item.orderId}`,
+          },
+        });
+
+        return {
+          orderId: item.orderId,
+          newQuantity,
+          newItemTotal: newTotal,
+          confirmedSubtotal,
+          newTotalAmount,
+        };
+      },
+      { timeout: 25000, maxWait: 10000 }
+    );
+
+    revalidatePath("/admin/orders");
+    revalidatePath(`/admin/orders/${result.orderId}`);
+    revalidatePath(`/order-confirmation/${result.orderId}`);
+    revalidatePath(`/orders/${result.orderId}`);
+    revalidatePath(`/orders/${result.orderId}/invoice`);
+
+    return { success: true, ...result };
+  } catch (error: any) {
+    return { error: error.message || "Failed to update item quantity." };
+  }
+}

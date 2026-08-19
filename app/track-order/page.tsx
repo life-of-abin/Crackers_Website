@@ -246,9 +246,9 @@ export default function TrackOrderPage() {
             </div>
 
             {error && (
-              <div className="p-4 bg-red-50 border border-red-200 text-red-700 text-xs font-bold rounded-2xl flex items-center justify-between">
-                <span>⚠️ {error}</span>
-                <button type="button" onClick={() => setError("")} className="text-red-700 hover:text-black font-extrabold cursor-pointer">✕</button>
+              <div className="p-4 bg-red-50 border border-red-200 text-red-700 text-xs font-bold rounded-2xl flex items-start justify-between max-w-full overflow-hidden break-words [overflow-wrap:anywhere] gap-2">
+                <span className="flex-1 break-words [overflow-wrap:anywhere] min-w-0">⚠️ {error}</span>
+                <button type="button" onClick={() => setError("")} className="text-red-700 hover:text-black font-extrabold cursor-pointer shrink-0 ml-2">✕</button>
               </div>
             )}
 

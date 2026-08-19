@@ -26,6 +26,24 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
 
   if (!order) notFound();
 
+  // Direct raw query to guarantee exact isConfirmed column state from PostgreSQL
+  try {
+    const rawItems = await prisma.$queryRaw<Array<{ id: number; isConfirmed: boolean | number | string | null }>>`
+      SELECT id, "isConfirmed" FROM "OrderItem" WHERE "orderId" = ${orderId}
+    `;
+    const rawItemMap = new Map(rawItems.map((ri) => [ri.id, ri.isConfirmed]));
+    order.items = order.items.map((item) => {
+      const rawVal = rawItemMap.get(item.id);
+      const isConfirmed = rawVal === false || rawVal === 0 || rawVal === "f" ? false : true;
+      return { ...item, isConfirmed };
+    });
+  } catch (e) {
+    console.error("Failed to fetch raw isConfirmed for customer order tracking:", e);
+  }
+
+  // Filter ONLY confirmed items to exclude items removed by customer / admin
+  const confirmedItems = order.items.filter((item: any) => item.isConfirmed !== false);
+
   // If this is a guest order, redirect to public order-confirmation page
   if (!order.userId) {
     redirect(`/order-confirmation/${order.id}`);
@@ -155,7 +173,7 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
               <span>Item Description</span>
               <span>Qty x Price</span>
             </div>
-            {order.items.map((item) => (
+            {confirmedItems.map((item) => (
               <div key={item.id} className="p-4 flex items-center justify-between bg-white">
                 <div>
                   <span className="font-bold text-slate-900 block">{item.productName}</span>

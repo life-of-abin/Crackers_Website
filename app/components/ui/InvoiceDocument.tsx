@@ -71,8 +71,11 @@ export default function InvoiceDocument({ order, settings, products }: InvoiceDo
 
   const productMap = new Map(products.map((p) => [p.id, p]));
 
+  // Filter ONLY confirmed items (exclude items marked as removed)
+  const confirmedItems = order.items.filter((item: any) => item.isConfirmed !== false);
+
   // Calculate items with GST values
-  const enrichedItems = order.items.map((item, idx) => {
+  const enrichedItems = confirmedItems.map((item, idx) => {
     const prod = productMap.get(item.productId);
     const hsn = prod?.hsnCode || "-";
     const taxRate = prod?.taxRate ? Number(prod.taxRate) : 18;
@@ -129,7 +132,7 @@ export default function InvoiceDocument({ order, settings, products }: InvoiceDo
   const totalTax = totalCgst + totalSgst + totalIgst;
 
   const orderDate = new Date(order.createdAt);
-  const paymentMethod = order.payments?.[0]?.paymentMethod || "Online Payment";
+  const paymentMethod = order.payments?.[0]?.paymentMethod || "Payment Handled by Admin";
   const paymentId = order.payments?.[0]?.paymentRef || order.paymentId || "N/A";
 
   const displayPaymentStatus = (status: string) => {

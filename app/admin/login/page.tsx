@@ -45,12 +45,13 @@ export default function AdminLoginPage() {
 
     // Validate Required Email / Identifier Field
     if (!trimmedEmail) {
-      setEmailError("Admin email address is required.");
+      setEmailError("Admin email or mobile number is required.");
       hasValidationError = true;
     } else {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(trimmedEmail)) {
-        setEmailError("Please enter a valid email address.");
+      const phoneRegex = /^[0-9+\-\s]{8,15}$/;
+      if (!emailRegex.test(trimmedEmail) && !phoneRegex.test(trimmedEmail)) {
+        setEmailError("Please enter a valid email address or 10-digit mobile number.");
         hasValidationError = true;
       }
     }
@@ -109,14 +110,14 @@ export default function AdminLoginPage() {
 
           {/* Safe Authentication Error Banner */}
           {globalError && (
-            <div className="p-3.5 bg-red-50 border border-red-200 text-red-700 text-xs font-bold rounded-xl flex items-center justify-between transition-all">
-              <span className="flex items-center gap-1.5">
+            <div className="p-3.5 bg-red-50 border border-red-200 text-red-700 text-xs font-bold rounded-xl flex items-start justify-between transition-all max-w-full overflow-hidden break-words [overflow-wrap:anywhere] gap-2">
+              <span className="flex-1 break-words [overflow-wrap:anywhere] min-w-0">
                 ⚠️ {globalError}
               </span>
               <button
                 type="button"
                 onClick={() => setGlobalError("")}
-                className="text-red-500 hover:text-red-800 font-black cursor-pointer"
+                className="text-red-500 hover:text-red-800 font-black cursor-pointer shrink-0 ml-2"
                 aria-label="Dismiss error"
               >
                 ✕

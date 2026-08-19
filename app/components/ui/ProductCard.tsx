@@ -3,6 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { useCart } from "@/lib/cart-context";
+import StockLimitNotice from "@/components/ui/StockLimitNotice";
 
 export interface ProductCardData {
   id: number;
@@ -32,6 +33,7 @@ export default function ProductCard({ product }: { product: ProductCardData }) {
   const cartItem = isMounted ? items.find((i) => i.id === product.id) : null;
   const isInCart = Boolean(cartItem);
   const cartQty = cartItem ? cartItem.cartQuantity : 0;
+  const isMaxStockReached = isInCart && product.stock > 0 && cartQty >= product.stock;
 
   const handleAdd = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -152,7 +154,7 @@ export default function ProductCard({ product }: { product: ProductCardData }) {
       </div>
 
       {/* Card Action Button & Interactive Quantity Controller */}
-      <div className="p-3.5 sm:p-4 pt-0">
+      <div className="p-3.5 sm:p-4 pt-0 space-y-2">
         {isOutOfStock ? (
           <button
             disabled
@@ -174,8 +176,9 @@ export default function ProductCard({ product }: { product: ProductCardData }) {
             </span>
             <button
               onClick={handleIncrement}
-              className="w-8 h-8 rounded-lg bg-emerald-700 hover:bg-emerald-800 flex items-center justify-center font-black text-base transition-colors cursor-pointer active:scale-90"
-              title="Increase quantity"
+              disabled={isMaxStockReached}
+              className="w-8 h-8 rounded-lg bg-emerald-700 hover:bg-emerald-800 disabled:opacity-40 flex items-center justify-center font-black text-base transition-colors cursor-pointer active:scale-90"
+              title={isMaxStockReached ? "Stock limit reached" : "Increase quantity"}
             >
               +
             </button>
@@ -190,6 +193,15 @@ export default function ProductCard({ product }: { product: ProductCardData }) {
             </svg>
             <span>Add to Cart</span>
           </button>
+        )}
+
+        {/* Stock Limit Notice if max stock is in cart */}
+        {isMaxStockReached && (
+          <StockLimitNotice
+            productName={product.name}
+            stock={product.stock}
+            compact
+          />
         )}
       </div>
 
