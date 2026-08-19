@@ -274,54 +274,110 @@ export default function TrackOrderPage() {
         {order && (
           <div className="bg-white border border-slate-200 p-6 sm:p-8 rounded-3xl shadow-xl space-y-8 animate-fadeIn">
             
-            {/* Status Header Bar */}
-            <div className="flex flex-wrap items-center justify-between gap-4 pb-6 border-b border-slate-200">
-              <div>
-                <span className="text-[10px] text-[#6D3FD6] font-extrabold uppercase tracking-widest block">
-                  ORDER DETAILS
-                </span>
-                <h2 className="text-2xl font-black text-slate-900 font-mono">{order.formattedId}</h2>
-                <span className="text-xs text-slate-500">
-                  Placed on {new Date(order.createdAt).toLocaleDateString("en-IN", { dateStyle: "medium" })}
-                </span>
+            {/* 1. TOP SECTION: Delivery Destination & Payment Summary Cards + View/Print Invoice */}
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="bg-slate-50 p-4 sm:p-5 rounded-2xl border border-slate-200 space-y-1.5 shadow-2xs">
+                  <span className="text-[10px] text-[#6D3FD6] font-extrabold uppercase tracking-wider block">
+                    Delivery Destination
+                  </span>
+                  <p className="font-extrabold text-slate-900 text-sm">{order.customerName}</p>
+                  <p className="text-slate-600 text-xs leading-relaxed">
+                    {order.city}, {order.district}, {order.state} - <strong className="text-slate-900 font-bold">{order.pincode}</strong>
+                  </p>
+                </div>
+
+                <div className="bg-slate-50 p-4 sm:p-5 rounded-2xl border border-slate-200 space-y-1.5 shadow-2xs">
+                  <span className="text-[10px] text-[#6D3FD6] font-extrabold uppercase tracking-wider block">
+                    Payment Summary
+                  </span>
+                  <p className="text-xs text-slate-600">
+                    Status: <strong className="text-emerald-700 font-extrabold uppercase">{order.paymentStatus}</strong>
+                  </p>
+                  <p className="text-base font-black text-[#6D3FD6]">
+                    Total Paid: ₹{Number(order.totalAmount).toLocaleString("en-IN")}
+                  </p>
+                </div>
               </div>
 
-              <div className="flex items-center gap-3">
-                {/* Order Type Badge */}
-                <span className={`px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider border ${
-                  isPickup
-                    ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                    : "bg-purple-50 text-[#6D3FD6] border-purple-200"
-                }`}>
-                  {isPickup ? "🏪 Store Pickup" : "🚚 Home Delivery"}
-                </span>
-
-                <span className={`px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-wider border ${
-                  isCancelled
-                    ? "bg-red-50 text-red-700 border-red-200"
-                    : order.orderStatus === "DELIVERED" || order.orderStatus === "COLLECTED"
-                    ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                    : "bg-purple-50 text-[#6D3FD6] border-purple-200"
-                }`}>
-                  Status: {order.orderStatus.replace(/_/g, " ")}
-                </span>
-              </div>
+              {/* View / Print Invoice Button (at Top) */}
+              {(() => {
+                const isPaid = order.paymentStatus === "PAID" || order.paymentStatus === "TEST_PAID" || order.paymentStatus === "SUCCESS";
+                return (
+                  <div className="flex justify-center pt-2">
+                    {isPaid ? (
+                      <a
+                        href={`/orders/${order.id}/invoice`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-6 py-3 bg-[#6D3FD6] hover:bg-[#5B21B6] text-white font-extrabold text-xs uppercase tracking-wider rounded-xl shadow-md transition-all flex items-center gap-2 cursor-pointer"
+                      >
+                        <span>📄 View / Print Invoice</span>
+                      </a>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setShowPaymentPendingModal(true)}
+                        className="px-6 py-3 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 font-extrabold text-xs uppercase tracking-wider rounded-xl shadow-xs transition-all flex items-center gap-2 cursor-pointer"
+                      >
+                        <span>⏳ View / Print Invoice</span>
+                      </button>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
 
-            {/* Delivery Charge Banner (Delivery only) */}
-            {!isPickup && (
-              <div className={`p-3 rounded-2xl border text-xs font-medium ${
-                order.deliveryConfirmed
-                  ? "bg-emerald-50 border-emerald-200 text-emerald-700"
-                  : "bg-amber-50 border-amber-200 text-amber-700"
-              }`}>
-                {order.deliveryConfirmed
-                  ? `✅ Delivery Charge Confirmed: ₹${Number(order.deliveryCharge).toLocaleString("en-IN")} | Final Total: ₹${Number(order.totalAmount).toLocaleString("en-IN")}`
-                  : `⏳ Delivery Charge: Awaiting confirmation from our team. We'll contact you at ${order.phone || "your registered number"}.`}
-              </div>
-            )}
+            {/* 2. ORDER DETAILS SECTION */}
+            <div className="pt-6 border-t border-slate-200 space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-100">
+                <div>
+                  <span className="text-[10px] text-[#6D3FD6] font-extrabold uppercase tracking-widest block">
+                    ORDER DETAILS
+                  </span>
+                  <h2 className="text-2xl font-black text-slate-900 font-mono">{order.formattedId}</h2>
+                  <span className="text-xs text-slate-500">
+                    Placed on {new Date(order.createdAt).toLocaleDateString("en-IN", { dateStyle: "medium" })}
+                  </span>
+                </div>
 
-            {/* Stepper Timeline */}
+                <div className="flex items-center gap-3">
+                  {/* Order Type Badge */}
+                  <span className={`px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider border ${
+                    isPickup
+                      ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                      : "bg-purple-50 text-[#6D3FD6] border-purple-200"
+                  }`}>
+                    {isPickup ? "🏪 Store Pickup" : "🚚 Home Delivery"}
+                  </span>
+
+                  <span className={`px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-wider border ${
+                    isCancelled
+                      ? "bg-red-50 text-red-700 border-red-200"
+                      : order.orderStatus === "DELIVERED" || order.orderStatus === "COLLECTED"
+                      ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                      : "bg-purple-50 text-[#6D3FD6] border-purple-200"
+                  }`}>
+                    Status: {order.orderStatus.replace(/_/g, " ")}
+                  </span>
+                </div>
+              </div>
+
+              {/* Delivery Charge Banner (Delivery only) */}
+              {!isPickup && (
+                <div className={`p-3 rounded-2xl border text-xs font-medium ${
+                  order.deliveryConfirmed
+                    ? "bg-emerald-50 border-emerald-200 text-emerald-700"
+                    : "bg-amber-50 border-amber-200 text-amber-700"
+                }`}>
+                  {order.deliveryConfirmed
+                    ? `✅ Delivery Charge Confirmed: ₹${Number(order.deliveryCharge).toLocaleString("en-IN")} | Final Total: ₹${Number(order.totalAmount).toLocaleString("en-IN")}`
+                    : `⏳ Delivery Charge: Awaiting confirmation from our team. We'll contact you at ${order.phone || "your registered number"}.`}
+                </div>
+              )}
+            </div>
+
+            {/* 3. DELIVERY TRACKING SECTION */}
             {isCancelled ? (
               <div className="p-6 bg-red-50 border border-red-200 rounded-2xl text-center space-y-2">
                 <span className="text-3xl block">🚫</span>
@@ -329,7 +385,7 @@ export default function TrackOrderPage() {
                 <p className="text-xs text-slate-600">If you have any questions regarding refunds or cancellation details, please contact customer support.</p>
               </div>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-4 pt-2 border-t border-slate-200">
                 <div className="flex items-center justify-between">
                   <h3 className="text-xs font-black text-[#6D3FD6] uppercase tracking-widest font-display">
                     {isPickup ? "Store Pickup Status" : "Delivery Tracking"}
@@ -371,8 +427,8 @@ export default function TrackOrderPage() {
               </div>
             )}
 
-            {/* Items Summary Table */}
-            <div className="space-y-3 pt-4 border-t border-slate-200">
+            {/* 4. PURCHASED CRACKERS LIST (BOTTOM) */}
+            <div className="space-y-3 pt-6 border-t border-slate-200">
               <h3 className="text-xs font-black text-slate-500 uppercase tracking-widest font-display">
                 Purchased Cracker Items ({order.items.length})
               </h3>
@@ -396,58 +452,6 @@ export default function TrackOrderPage() {
                 ))}
               </div>
             </div>
-
-            {/* Delivery Info Card */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-1">
-                <span className="text-[10px] text-[#6D3FD6] font-extrabold uppercase tracking-wider block">
-                  Delivery Destination
-                </span>
-                <p className="font-extrabold text-slate-900 text-xs">{order.customerName}</p>
-                <p className="text-slate-600 text-xs">
-                  {order.city}, {order.district}, {order.state} - <strong className="text-slate-900">{order.pincode}</strong>
-                </p>
-              </div>
-
-              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-1">
-                <span className="text-[10px] text-[#6D3FD6] font-extrabold uppercase tracking-wider block">
-                  Payment Summary
-                </span>
-                <p className="text-xs text-slate-600">
-                  Status: <strong className="text-emerald-700">{order.paymentStatus}</strong>
-                </p>
-                <p className="text-sm font-black text-[#6D3FD6]">
-                  Total Paid: ₹{Number(order.totalAmount).toLocaleString("en-IN")}
-                </p>
-              </div>
-            </div>
-
-            {/* Invoice Link / Payment Pending Gate */}
-            {(() => {
-              const isPaid = order.paymentStatus === "PAID" || order.paymentStatus === "TEST_PAID" || order.paymentStatus === "SUCCESS";
-              return (
-                <div className="pt-4 border-t border-slate-200 flex justify-center">
-                  {isPaid ? (
-                    <a
-                      href={`/orders/${order.id}/invoice`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="px-6 py-3 bg-[#6D3FD6] hover:bg-[#5B21B6] text-white font-extrabold text-xs uppercase tracking-wider rounded-xl shadow-md transition-all flex items-center gap-2 cursor-pointer"
-                    >
-                      <span>📄 View / Print Invoice</span>
-                    </a>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => setShowPaymentPendingModal(true)}
-                      className="px-6 py-3 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 font-extrabold text-xs uppercase tracking-wider rounded-xl shadow-xs transition-all flex items-center gap-2 cursor-pointer"
-                    >
-                      <span>⏳ View / Print Invoice</span>
-                    </button>
-                  )}
-                </div>
-              );
-            })()}
 
           </div>
         )}
