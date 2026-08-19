@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { isValidGmailFormat } from "@/lib/pincode";
+import { isValidGmailFormat, formatWhatsAppNumber } from "@/lib/pincode";
 import Header from "@/components/ui/Header";
 import Footer from "@/components/ui/Footer";
 
@@ -67,6 +67,7 @@ export default function TrackOrderPage() {
   const [emailError, setEmailError] = useState("");
   const [loading, setLoading] = useState(false);
   const [order, setOrder] = useState<any | null>(null);
+  const [showPaymentPendingModal, setShowPaymentPendingModal] = useState(false);
 
   useEffect(() => {
     fetch("/api/settings")
@@ -421,22 +422,81 @@ export default function TrackOrderPage() {
               </div>
             </div>
 
-            {/* Invoice PDF Download Link */}
-            <div className="pt-4 border-t border-slate-200 flex justify-center">
-              <a
-                href={`/orders/${order.id}/invoice`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="px-6 py-3 bg-[#6D3FD6] hover:bg-[#5B21B6] text-white font-extrabold text-xs uppercase tracking-wider rounded-xl shadow-md transition-all flex items-center gap-2 cursor-pointer"
-              >
-                <span>📄 View / Print Official Tax Invoice</span>
-              </a>
-            </div>
+            {/* Invoice Link / Payment Pending Gate */}
+            {(() => {
+              const isPaid = order.paymentStatus === "PAID" || order.paymentStatus === "TEST_PAID" || order.paymentStatus === "SUCCESS";
+              return (
+                <div className="pt-4 border-t border-slate-200 flex justify-center">
+                  {isPaid ? (
+                    <a
+                      href={`/orders/${order.id}/invoice`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-6 py-3 bg-[#6D3FD6] hover:bg-[#5B21B6] text-white font-extrabold text-xs uppercase tracking-wider rounded-xl shadow-md transition-all flex items-center gap-2 cursor-pointer"
+                    >
+                      <span>📄 View / Print Invoice</span>
+                    </a>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setShowPaymentPendingModal(true)}
+                      className="px-6 py-3 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 font-extrabold text-xs uppercase tracking-wider rounded-xl shadow-xs transition-all flex items-center gap-2 cursor-pointer"
+                    >
+                      <span>⏳ View / Print Invoice</span>
+                    </button>
+                  )}
+                </div>
+              );
+            })()}
 
           </div>
         )}
 
       </main>
+
+      {showPaymentPendingModal && order && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fadeIn">
+          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl border border-amber-200 text-center space-y-5 animate-scaleUp">
+            <div className="w-16 h-16 bg-amber-100 border-2 border-amber-300 text-amber-700 rounded-2xl flex items-center justify-center text-3xl mx-auto shadow-sm">
+              ⏳
+            </div>
+            <div>
+              <span className="text-[10px] font-black uppercase tracking-widest text-amber-800 bg-amber-100 border border-amber-300 px-2.5 py-1 rounded-full">
+                Payment Status: {order.paymentStatus}
+              </span>
+              <h3 className="text-xl font-black text-slate-900 mt-2.5 font-display">
+                Invoice Not Available Yet
+              </h3>
+              <p className="text-xs text-slate-600 font-medium leading-relaxed mt-2">
+                Your payment status is currently <strong className="text-amber-800 uppercase">{order.paymentStatus}</strong>. Official invoices can only be viewed or printed after the store admin verifies your payment and marks it as <strong className="text-emerald-700">PAID</strong>.
+              </p>
+            </div>
+
+            <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl text-[11px] text-slate-500 font-medium space-y-1">
+              <p>• Admin verification takes a few minutes after payment is completed.</p>
+              <p>• If you already completed payment, click below to contact support.</p>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-2.5 pt-1">
+              <a
+                href={`https://wa.me/${formatWhatsAppNumber((settings as any).whatsappNumber || settings.phone || "9629525907")}?text=${encodeURIComponent(`Hi, I am inquiring about the invoice for order #${order.id}. Current payment status is ${order.paymentStatus}.`)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs rounded-xl shadow-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <span>💬</span> Contact Support
+              </a>
+              <button
+                type="button"
+                onClick={() => setShowPaymentPendingModal(false)}
+                className="py-3 px-5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-extrabold text-xs rounded-xl transition-all cursor-pointer"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <Footer settings={settings} />
     </div>

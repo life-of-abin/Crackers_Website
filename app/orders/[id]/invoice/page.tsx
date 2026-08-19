@@ -62,15 +62,20 @@ export default async function CustomerInvoicePage({ params }: InvoicePageProps) 
     console.error("Failed to fetch raw isConfirmed for customer invoice:", e);
   }
 
-  // Enforce access control:
-  // If order belongs to a registered user, require owner or admin session.
-  // If order is a guest order (order.userId is null), permit invoice view by order ID.
+  const isPaid = order.paymentStatus === "PAID" || order.paymentStatus === "TEST_PAID" || order.paymentStatus === "SUCCESS";
+  const isAdmin = session?.role === "ADMIN";
+
+  // Enforce payment gate: Only allow invoice viewing if marked as PAID, or if admin is viewing
+  if (!isPaid && !isAdmin) {
+    redirect(`/track-order`);
+  }
+
+  // Enforce user access control for registered orders
   if (order.userId) {
     if (!session) {
       redirect("/login");
     }
     const isOwner = order.userId === session.userId;
-    const isAdmin = session.role === "ADMIN";
     if (!isOwner && !isAdmin) {
       notFound();
     }

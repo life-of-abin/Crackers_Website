@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import type { StoreSettings } from "@/lib/settings";
+import { formatWhatsAppNumber } from "@/lib/pincode";
 import Header from "@/components/ui/Header";
 import Footer from "@/components/ui/Footer";
 import HeroFireworks from "@/components/ui/HeroFireworks";
@@ -149,7 +150,7 @@ export default function ContactClient({ settings, user }: ContactClientProps) {
 
             <div className="pt-6 space-y-2">
               <a
-                href={`https://wa.me/91${whatsappPhone}`}
+                href={`https://wa.me/${formatWhatsAppNumber(whatsappPhone)}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-full inline-flex items-center justify-center gap-2 py-3 px-4 rounded-2xl bg-[#00B761] hover:bg-[#009E53] text-white font-extrabold text-xs uppercase tracking-wider transition-all shadow-md"

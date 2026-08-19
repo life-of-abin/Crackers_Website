@@ -43,6 +43,24 @@
     font-size: clamp(1.15rem, 2vw + 0.75rem, 1.5rem);
     line-height: 1.25;
   }
+
+  /* Global Responsive Button System Safeguards */
+  button,
+  a[role="button"],
+  input[type="button"],
+  input[type="submit"] {
+    max-width: 100%;
+    box-sizing: border-box;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+  }
+
+  button svg,
+  button img,
+  a svg,
+  a img {
+    flex-shrink: 0;
+  }
 }
 
 /* Touch Safety & Mobile Target Sizing */

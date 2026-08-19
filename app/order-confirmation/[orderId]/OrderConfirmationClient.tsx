@@ -6,7 +6,7 @@ import { useCart } from "@/lib/cart-context";
 import Header from "@/components/ui/Header";
 import Footer from "@/components/ui/Footer";
 import HeroFireworks from "@/components/ui/HeroFireworks";
-import type { StoreSettings } from "@/lib/settings";
+import { formatWhatsAppNumber } from "@/lib/pincode";
 
 interface OrderConfirmationClientProps {
   order: any;
@@ -371,11 +371,8 @@ export default function OrderConfirmationClient({
 
   // ── Manual WhatsApp Share Handler ─────────────────────────────────────────
   const handleOpenWhatsApp = () => {
-    const adminPhone = (
-      settings.phone ||
-      (settings as any).whatsappNumber ||
-      "9629525907"
-    ).replace(/[^0-9]/g, "");
+    const rawPhone = (settings as any).whatsappNumber || settings.phone || "9629525907";
+    const adminPhone = formatWhatsAppNumber(rawPhone);
 
     const orderTypeLine = isPickup
       ? `*Order Type:* 🏪 Store Pickup (FREE — No Delivery Charge)`
@@ -424,7 +421,7 @@ export default function OrderConfirmationClient({
       `Thank you! — ${settings.storeName}`;
 
     window.open(
-      `https://wa.me/91${adminPhone}?text=${encodeURIComponent(message)}`,
+      `https://wa.me/${adminPhone}?text=${encodeURIComponent(message)}`,
       "_blank"
     );
   };

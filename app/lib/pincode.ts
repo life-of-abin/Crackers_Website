@@ -112,6 +112,32 @@ export function normalizeIndianPhone(phone: string): { valid: boolean; phone: st
 }
 
 /**
+ * Formats any phone input into a valid 12-digit Indian WhatsApp number string (e.g. "919629525907").
+ * Strictly prevents country code duplication like 91919629525907 or leading + sign.
+ */
+export function formatWhatsAppNumber(phone: string): string {
+  if (!phone) return "919629525907";
+  const digits = phone.replace(/[^0-9]/g, "");
+  // If 10 digits -> add 91
+  if (digits.length === 10) {
+    return `91${digits}`;
+  }
+  // If 12 digits starting with 91 -> return as is
+  if (digits.length === 12 && digits.startsWith("91")) {
+    return digits;
+  }
+  // If 11 digits starting with 0 -> remove 0 and add 91
+  if (digits.length === 11 && digits.startsWith("0")) {
+    return `91${digits.slice(1)}`;
+  }
+  // Fallback if country code was duplicated (e.g. 91919629525907) or longer: take last 10 digits and prepend 91
+  if (digits.length > 10) {
+    return `91${digits.slice(-10)}`;
+  }
+  return digits || "919629525907";
+}
+
+/**
  * Validates Gmail addresses strictly ending with @gmail.com
  * Rejects @yahoo.com, @outlook.com, @gmail.in, @gmail, etc.
  */

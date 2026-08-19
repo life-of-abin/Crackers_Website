@@ -9,6 +9,7 @@ import {
   toggleOrderItemConfirmationAction,
   updateOrderItemQuantityAction,
 } from "@/lib/actions";
+import { formatWhatsAppNumber } from "@/lib/pincode";
 
 interface OrderUpdaterProps {
   minOrderAmount?: number;
@@ -81,19 +82,11 @@ export default function AdminOrderUpdater({ order, minOrderAmount }: OrderUpdate
     const previousTotalAmount = totalAmount;
 
     // Optimistically update quantity and total immediately (0ms UI latency!)
-    setItemsState((prev) => {
-      const nextItems = prev.map((it) =>
+    setItemsState((prev) =>
+      prev.map((it) =>
         it.id === itemId ? { ...it, quantity: newQty, total: Number(it.price) * newQty } : it
-      );
-      
-      const confirmedSubtotal = nextItems
-        .filter((i) => i.isConfirmed !== false)
-        .reduce((acc, i) => acc + Number(i.price) * i.quantity, 0);
-      const deliveryCharge = Number(order.deliveryCharge || 0);
-      
-      setTotalAmount(confirmedSubtotal + deliveryCharge);
-      return nextItems;
-    });
+      )
+    );
 
     if (quantityTimeoutRef.current) {
       clearTimeout(quantityTimeoutRef.current);
@@ -103,18 +96,14 @@ export default function AdminOrderUpdater({ order, minOrderAmount }: OrderUpdate
       const result = await updateOrderItemQuantityAction(itemId, newQty);
 
       if (result?.error) {
-        setItemsState(previousItemsState);
-        setTotalAmount(previousTotalAmount);
         setItemError(result.error);
         return;
       }
 
-      if (result?.success) {
-        if (typeof result.newTotalAmount === "number") {
-          setTotalAmount(result.newTotalAmount);
-        }
+      if (result?.success && typeof result.newTotalAmount === "number") {
+        setTotalAmount(result.newTotalAmount);
       }
-    }, 400);
+    }, 250);
   };
 
   const isPickup = order.orderType === "PICKUP";
@@ -188,16 +177,14 @@ export default function AdminOrderUpdater({ order, minOrderAmount }: OrderUpdate
     setLoading(false);
 
     if (newStatus === "READY_FOR_PICKUP") {
-      let phone = order.phone.replace(/[^0-9]/g, "");
-      if (phone.length === 10) phone = "91" + phone;
+      const phone = formatWhatsAppNumber(order.phone);
       const origin = typeof window !== "undefined" ? window.location.origin : "";
       const invoiceUrl = `${origin}/orders/${order.id}/invoice`;
       const message = `Hello ${order.customerName},\n\nYour order *#${order.id}* is now *READY FOR PICKUP!* 🏪🎉\n\nYou can collect it from our store.\n\n🧾 *View Order & Invoice:*\n${invoiceUrl}\n\nThank you for shopping with us!`;
       const whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
       window.open(whatsappUrl, "_blank");
     } else if (newStatus === "OUT_FOR_DELIVERY") {
-      let phone = order.phone.replace(/[^0-9]/g, "");
-      if (phone.length === 10) phone = "91" + phone;
+      const phone = formatWhatsAppNumber(order.phone);
       const origin = typeof window !== "undefined" ? window.location.origin : "";
       const invoiceUrl = `${origin}/orders/${order.id}/invoice`;
       const message = `Hello ${order.customerName},\n\nYour order *#${order.id}* is *OUT FOR DELIVERY!* 🚚📦\n\nOur delivery partner will reach you soon.\n\n🧾 *View Order & Invoice:*\n${invoiceUrl}\n\nThank you for shopping with us!`;
@@ -209,8 +196,7 @@ export default function AdminOrderUpdater({ order, minOrderAmount }: OrderUpdate
   };
 
   const sendInvoiceViaWhatsApp = () => {
-    let phone = order.phone.replace(/[^0-9]/g, "");
-    if (phone.length === 10) phone = "91" + phone;
+    const phone = formatWhatsAppNumber(order.phone);
     const origin = typeof window !== "undefined" ? window.location.origin : "";
     const invoiceUrl = `${origin}/orders/${order.id}/invoice`;
     const message = `Hello ${order.customerName},\n\nHere is your official invoice for order *#${order.id}* 🧾\n\n🔗 *Download / View Official Invoice:*\n${invoiceUrl}\n\n*Order Summary:*\n• Payment Status: PAID ✅\n• Items Subtotal: ₹${order.subtotal.toLocaleString("en-IN")}\n• Delivery Charge: ${order.deliveryCharge > 0 ? `₹${order.deliveryCharge.toLocaleString("en-IN")}` : "FREE"}\n• Grand Total: ₹${totalAmount.toLocaleString("en-IN")}\n\nThank you for shopping with Sri Sivakasi Crackers! 🎆`;

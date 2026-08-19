@@ -3,6 +3,8 @@
 import React from "react";
 import { usePathname } from "next/navigation";
 
+import { formatWhatsAppNumber } from "@/lib/pincode";
+
 export const WHATSAPP_NUMBER = "919629525907";
 export const DEFAULT_WHATSAPP_MESSAGE = "Hi, I would like to know more about your crackers.";
 
@@ -22,10 +24,7 @@ export default function WhatsAppButton({
     return null;
   }
 
-  // Clean phone number (strip spaces, +, -, etc.)
-  const cleanNumber = number.replace(/\D/g, "");
-  const formattedNumber = cleanNumber.length === 10 ? `91${cleanNumber}` : cleanNumber;
-
+  const formattedNumber = formatWhatsAppNumber(number);
   const encodedMessage = encodeURIComponent(message);
   const whatsappUrl = `https://wa.me/${formattedNumber}?text=${encodedMessage}`;
 

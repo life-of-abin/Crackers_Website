@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { formatWhatsAppNumber } from "@/lib/pincode";
 
 interface StockLimitNoticeProps {
   productName: string;
@@ -20,11 +21,9 @@ export default function StockLimitNotice({
   compact = false,
 }: StockLimitNoticeProps) {
   // Clean phone number formats
-  const rawWaNumber = whatsappNumber.replace(/[^0-9]/g, "");
-  const formattedWaNumber = rawWaNumber.length === 10 ? `91${rawWaNumber}` : rawWaNumber;
+  const formattedWaNumber = formatWhatsAppNumber(whatsappNumber);
   
   const rawPhone = phoneNumber.replace(/[^0-9]/g, "");
-  const displayPhone = rawPhone.length === 10 ? rawPhone : phoneNumber;
 
   const whatsappMsg = encodeURIComponent(
     `Hi! I want to order more quantity of "${productName}". Currently only ${stock} items are available in stock. Could you please assist me with a bulk order?`
