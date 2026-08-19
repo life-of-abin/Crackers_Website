@@ -66,7 +66,10 @@ export default async function AdminProductsPage({ searchParams }: AdminProductsP
             href="/admin/products/new"
             className="bg-[#6D3FD6] hover:bg-[#5B21B6] text-white font-extrabold text-xs px-5 py-3 rounded-xl shadow-md shadow-purple-200 transition-all inline-flex items-center gap-2"
           >
-            <span>➕ Add New Product</span>
+            <svg className="w-4 h-4 text-white shrink-0 stroke-[3]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+            </svg>
+            <span>Add New Product</span>
           </Link>
         </div>
 

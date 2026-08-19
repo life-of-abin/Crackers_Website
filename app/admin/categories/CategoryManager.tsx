@@ -88,9 +88,18 @@ export default function CategoryManager({ categories }: { categories: CategoryRo
       <div className="flex justify-end">
         <button
           onClick={() => setShowAddForm(!showAddForm)}
-          className="bg-[#6D3FD6] hover:bg-[#5B21B6] text-white font-black text-xs px-4 py-2.5 rounded-xl shadow-md shadow-purple-200 transition-all cursor-pointer"
+          className="bg-[#6D3FD6] hover:bg-[#5B21B6] text-white font-black text-xs px-4 py-2.5 rounded-xl shadow-md shadow-purple-200 transition-all cursor-pointer inline-flex items-center gap-1.5"
         >
-          {showAddForm ? "✕ Cancel" : "➕ Add Category"}
+          {showAddForm ? (
+            <span>✕ Cancel</span>
+          ) : (
+            <>
+              <svg className="w-4 h-4 text-white shrink-0 stroke-[3]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+              </svg>
+              <span>Add Category</span>
+            </>
+          )}
         </button>
       </div>
 
