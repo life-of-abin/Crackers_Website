@@ -15,17 +15,20 @@ const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
 const categories = [
-  { name: "Atom Bombs", sortOrder: 1, image: "/categories/Atom Bomb Icon.png" },
-  { name: "Rockets", sortOrder: 2, image: "/categories/Rocket Icon.png" },
-  { name: "Chorsa Garland", sortOrder: 3, image: "/categories/Chorsa Garland Icon.png" },
-  { name: "Gift Boxes", sortOrder: 4, image: "/categories/Gift Boxes Icon.png" },
-  { name: "Sound Crackers", sortOrder: 5, image: "/categories/Sound Crackers Icon.png" },
-  { name: "Aerial Shots", sortOrder: 6, image: "/categories/Aerial Shots Icon.png" },
-  { name: "Ground Chakkras", sortOrder: 7, image: "/categories/Ground Chakkars Icon.png" },
-  { name: "Flower Pots", sortOrder: 8, image: "/categories/Flower Pots Icon.png" },
-  { name: "Sparkles", sortOrder: 9, image: "/categories/Sparkles Icon.png" },
-  { name: "Kids Fun Crackers", sortOrder: 10, image: "/categories/Kids Fun Crackers Icon.png" },
-  { name: "Newly Launched", sortOrder: 11, image: "/categories/Default Product Image.png" },
+  { name: "Sparklers", sortOrder: 1, image: "/categories/Sparkles Icon.png" },
+  { name: "Atom Bomb", sortOrder: 2, image: "/categories/Atom Bomb Icon.png" },
+  { name: "Rockets", sortOrder: 3, image: "/categories/Rocket Icon.png" },
+  { name: "Chorsa Garland", sortOrder: 4, image: "/categories/Chorsa Garland Icon.png" },
+  { name: "Gift Items", sortOrder: 5, image: "/categories/Gift Boxes Icon.png" },
+  { name: "Chakkars", sortOrder: 6, image: "/categories/Ground Chakkars Icon.png" },
+  { name: "Flower Pots", sortOrder: 7, image: "/categories/Flower Pots Icon.png" },
+  { name: "Twinkling Star", sortOrder: 8, image: "/categories/Sparkles Icon.png" },
+  { name: "Pencil", sortOrder: 9, image: "/categories/Kids Fun Crackers Icon.png" },
+  { name: "Single / Two Sound Crackers", sortOrder: 10, image: "/categories/Sound Crackers Icon.png" },
+  { name: "Electric Crackers", sortOrder: 11, image: "/categories/Sound Crackers Icon.png" },
+  { name: "Aerial Shots", sortOrder: 12, image: "/categories/Aerial Shots Icon.png" },
+  { name: "Kids Fun Crackers", sortOrder: 13, image: "/categories/Kids Fun Crackers Icon.png" },
+  { name: "Newly Launched", sortOrder: 14, image: "/categories/Default Product Image.png" },
 ];
 const products = [
   // ============================================================
@@ -1007,10 +1010,23 @@ async function main() {
 
   for (let index = 0; index < products.length; index++) {
     const product = products[index];
-    const categoryId = categoryMap.get(product.category);
+    let categoryId = categoryMap.get(product.category);
 
     if (!categoryId) {
-      throw new Error(`Category not found: ${product.category}`);
+      const catSlug = slugify(product.category) || `cat-${index + 1}`;
+      const newCat = await prisma.category.upsert({
+        where: { name: product.category },
+        update: { active: true },
+        create: {
+          name: product.category,
+          slug: catSlug,
+          sortOrder: categoryMap.size + 1,
+          image: "/categories/Default Product Image.png",
+          active: true,
+        },
+      });
+      categoryId = newCat.id;
+      categoryMap.set(product.category, categoryId);
     }
 
     let slug = slugify(product.name);
