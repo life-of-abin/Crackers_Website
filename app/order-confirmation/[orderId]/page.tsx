@@ -8,22 +8,40 @@ import OrderConfirmationClient from "./OrderConfirmationClient";
 
 interface OrderConfirmationPageProps {
   params: Promise<{ orderId: string }>;
+  searchParams?: Promise<{ token?: string }>;
 }
 
-export default async function OrderConfirmationPage({ params }: OrderConfirmationPageProps) {
+export default async function OrderConfirmationPage({ params, searchParams }: OrderConfirmationPageProps) {
   const { orderId } = await params;
-  const numericId = parseInt(orderId, 10);
-  if (isNaN(numericId)) notFound();
+  const sParams = searchParams ? await searchParams : {};
+  const queryToken = sParams.token;
 
-  const [order, settings] = await Promise.all([
-    prisma.order.findUnique({
-      where: { id: numericId },
+  let order = null;
+
+  // 1. Try lookup by unique unguessable orderToken (e.g., /order-confirmation/ord_tok_...)
+  if (orderId.startsWith("ord_tok_") || isNaN(parseInt(orderId, 10))) {
+    order = await prisma.order.findFirst({
+      where: { orderToken: orderId },
       include: { items: true, payments: true },
-    }),
-    getStoreSettings(),
-  ]);
+    });
+  } else {
+    // 2. If accessed by numeric ID, strictly require matching secret token parameter
+    const numericId = parseInt(orderId, 10);
+    if (!isNaN(numericId) && queryToken) {
+      const candidate = await prisma.order.findUnique({
+        where: { id: numericId },
+        include: { items: true, payments: true },
+      });
+      if (candidate && candidate.orderToken === queryToken) {
+        order = candidate;
+      }
+    }
+  }
 
+  // Block unauthorized access to sequential IDs — return 404 if token doesn't match
   if (!order) notFound();
+
+  const settings = await getStoreSettings();
 
   const formattedId = order.invoiceNumber
     ? order.invoiceNumber

@@ -358,7 +358,7 @@ export default function CheckoutPage() {
         return;
       }
 
-      if (result.success && result.orderId) {
+      if (result.success && (result.orderToken || result.orderId)) {
         setIsOrderComplete(true);
         clearCart();
         if (typeof window !== "undefined") {
@@ -367,8 +367,9 @@ export default function CheckoutPage() {
             localStorage.setItem("sivakasi_crackers_cart_v1", "[]");
           } catch (e) {}
         }
-        // Force a hard redirect to bypass any Next.js soft-navigation quirks or React state batching issues
-        window.location.href = `/order-confirmation/${result.orderId}`;
+        // Redirect to secure unguessable token route
+        const tokenOrId = result.orderToken || result.orderId;
+        window.location.href = `/order-confirmation/${tokenOrId}`;
         return;
       }
 

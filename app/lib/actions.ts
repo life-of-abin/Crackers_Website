@@ -335,6 +335,7 @@ export async function createOrderAction(data: {
 
             // Set initial order status based on type
             const initialOrderStatus = orderType === "PICKUP" ? "PROCESSING" : "AWAITING_DELIVERY_CONFIRMATION";
+            const generatedToken = `ord_tok_${crypto.randomUUID().replace(/-/g, "")}`;
 
             // Create Order & OrderItems
             const createdOrder = await tx.order.create({
@@ -348,6 +349,7 @@ export async function createOrderAction(data: {
                 district: resolvedDistrict,
                 state: resolvedState,
                 pincode: resolvedPincode,
+                orderToken: generatedToken,
                 subtotal: calculatedSubtotal,
                 discount: 0,
                 shipping: 0,
@@ -388,6 +390,7 @@ export async function createOrderAction(data: {
 
             return {
               orderId: createdOrder.id,
+              orderToken: createdOrder.orderToken || generatedToken,
               orderType,
               grandTotal,
               subtotal: calculatedSubtotal,

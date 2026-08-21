@@ -109,6 +109,7 @@ model Order {
   customerGstin  String?
   placeOfSupply  String?
   invoiceNumber       String?     @unique
+  orderToken          String?     @unique
   subtotal            Decimal     @default(0)
   discount            Decimal     @default(0)
   shipping            Decimal     @default(0)
