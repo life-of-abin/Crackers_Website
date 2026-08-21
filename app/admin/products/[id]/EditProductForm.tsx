@@ -98,7 +98,20 @@ export default function EditProductForm({ product, categories }: EditProductForm
 
           <div className="sm:col-span-2">
             <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">Stock Count *</label>
-            <input type="number" name="stock" required defaultValue={product.stock} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#6D3FD6]" />
+            <input
+              type="number"
+              name="stock"
+              min="0"
+              required
+              defaultValue={Math.max(0, product.stock)}
+              onChange={(e) => {
+                const val = parseInt(e.target.value, 10);
+                if (val < 0 || e.target.value.startsWith("-")) {
+                  e.target.value = "0";
+                }
+              }}
+              className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#6D3FD6]"
+            />
           </div>
 
           <div className="sm:col-span-2">

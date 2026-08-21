@@ -266,135 +266,152 @@ export async function createOrderAction(data: {
     const settings = await prisma.settings.findFirst({ where: { id: 1 } });
 
     // 6. ATOMIC POSTGRESQL TRANSACTION: Verify Latest Stock, Deduct Stock, Create Order
-    const resultOrder = await prisma.$transaction(async (tx) => {
-      const productIds = data.cartItems.map((item) => item.productId);
-      
-      // Query freshest product prices and stock quantities inside transaction
-      const dbProducts = await tx.product.findMany({
-        where: { id: { in: productIds } },
-      });
+    let attempts = 0;
+    let resultOrder: any = null;
 
-      const productMap = new Map(dbProducts.map((p) => [p.id, p]));
+    while (attempts < 3) {
+      attempts++;
+      try {
+        resultOrder = await prisma.$transaction(
+          async (tx) => {
+            const productIds = data.cartItems.map((item) => item.productId);
 
-      let calculatedSubtotal = 0;
-      const validatedItems: {
-        productId: number;
-        productName: string;
-        quantity: number;
-        unitType: string;
-        packSize: string;
-        price: number;
-        total: number;
-      }[] = [];
+            // Query freshest product prices and stock quantities inside transaction
+            const dbProducts = await tx.product.findMany({
+              where: { id: { in: productIds } },
+            });
 
-      for (const cartItem of data.cartItems) {
-        if (cartItem.quantity <= 0) {
-          throw new Error("Invalid item quantity.");
-        }
+            const productMap = new Map(dbProducts.map((p) => [p.id, p]));
 
-        const dbProd = productMap.get(cartItem.productId);
-        if (!dbProd) {
-          throw new Error(`Product with ID ${cartItem.productId} was not found.`);
-        }
-        if (!dbProd.active) {
-          throw new Error(`Product "${dbProd.name}" is currently unavailable.`);
-        }
+            let calculatedSubtotal = 0;
+            const validatedItems: {
+              productId: number;
+              productName: string;
+              quantity: number;
+              unitType: string;
+              packSize: string;
+              price: number;
+              total: number;
+            }[] = [];
 
-        // CRITICAL CONCURRENT STOCK CHECK
-        if (dbProd.stock < cartItem.quantity) {
-          const unit = dbProd.unitType || "box";
-          throw new Error(
-            `Sorry, only ${dbProd.stock} ${unit.toLowerCase()}${dbProd.stock === 1 ? "" : "es"} of "${dbProd.name}" ${dbProd.stock === 1 ? "is" : "are"} currently available. Please update your cart quantity.`
-          );
-        }
+            for (const cartItem of data.cartItems) {
+              if (cartItem.quantity <= 0) {
+                throw new Error("Invalid item quantity.");
+              }
 
-        const unitPrice = Number(dbProd.price);
-        const itemTotal = unitPrice * cartItem.quantity;
-        calculatedSubtotal += itemTotal;
+              const dbProd = productMap.get(cartItem.productId);
+              if (!dbProd) {
+                throw new Error(`Product with ID ${cartItem.productId} was not found.`);
+              }
+              if (!dbProd.active) {
+                throw new Error(`Product "${dbProd.name}" is currently unavailable.`);
+              }
 
-        validatedItems.push({
-          productId: dbProd.id,
-          productName: dbProd.name,
-          quantity: cartItem.quantity,
-          unitType: dbProd.unitType || "BOX",
-          packSize: dbProd.packSize || dbProd.quantity || "10 Pieces",
-          price: unitPrice,
-          total: itemTotal,
-        });
-      }
+              // CRITICAL CONCURRENT STOCK CHECK
+              if (dbProd.stock < cartItem.quantity) {
+                const unit = dbProd.unitType || "box";
+                throw new Error(
+                  `Sorry, only ${dbProd.stock} ${unit.toLowerCase()}${dbProd.stock === 1 ? "" : "es"} of "${dbProd.name}" ${dbProd.stock === 1 ? "is" : "are"} currently available. Please update your cart quantity.`
+                );
+              }
 
-      const grandTotal = calculatedSubtotal;
-      const selectedPayMethod = data.paymentMethod || "DIRECT_ORDER";
+              const unitPrice = Number(dbProd.price);
+              const itemTotal = unitPrice * cartItem.quantity;
+              calculatedSubtotal += itemTotal;
 
-      // Set initial order status based on type
-      // DELIVERY: await admin confirmation of delivery charge
-      // PICKUP: go straight to PROCESSING
-      const initialOrderStatus = orderType === "PICKUP" ? "PROCESSING" : "AWAITING_DELIVERY_CONFIRMATION";
+              validatedItems.push({
+                productId: dbProd.id,
+                productName: dbProd.name,
+                quantity: cartItem.quantity,
+                unitType: dbProd.unitType || "BOX",
+                packSize: dbProd.packSize || dbProd.quantity || "10 Pieces",
+                price: unitPrice,
+                total: itemTotal,
+              });
+            }
 
-      // Create Order & OrderItems
-      const createdOrder = await tx.order.create({
-        data: {
-          customerName: data.customerName.trim(),
-          phone: phoneResult.phone,
-          email: data.email ? data.email.toLowerCase().trim() : null,
-          address: resolvedAddress,
-          landmark: data.landmark ? data.landmark.trim() : null,
-          city: resolvedCity,
-          district: resolvedDistrict,
-          state: resolvedState,
-          pincode: resolvedPincode,
-          subtotal: calculatedSubtotal,
-          discount: 0,
-          shipping: 0,
-          totalAmount: grandTotal,
-          orderType: orderType,
-          deliveryCharge: 0,
-          deliveryConfirmed: orderType === "PICKUP", // PICKUP: no delivery charge needed
-          paymentStatus: "PENDING",
-          orderStatus: initialOrderStatus,
-          paymentMethod: selectedPayMethod,
-          paidAt: null,
-          items: {
-            create: validatedItems.map((item) => ({
-              productId: item.productId,
-              productName: item.productName,
-              quantity: item.quantity,
-              unitType: item.unitType,
-              packSize: item.packSize,
-              price: item.price,
-              total: item.total,
-            })),
+            const grandTotal = calculatedSubtotal;
+            const selectedPayMethod = data.paymentMethod || "DIRECT_ORDER";
+
+            // Set initial order status based on type
+            const initialOrderStatus = orderType === "PICKUP" ? "PROCESSING" : "AWAITING_DELIVERY_CONFIRMATION";
+
+            // Create Order & OrderItems
+            const createdOrder = await tx.order.create({
+              data: {
+                customerName: data.customerName.trim(),
+                phone: phoneResult.phone,
+                email: data.email ? data.email.toLowerCase().trim() : null,
+                address: resolvedAddress,
+                landmark: data.landmark ? data.landmark.trim() : null,
+                city: resolvedCity,
+                district: resolvedDistrict,
+                state: resolvedState,
+                pincode: resolvedPincode,
+                subtotal: calculatedSubtotal,
+                discount: 0,
+                shipping: 0,
+                totalAmount: grandTotal,
+                orderType: orderType,
+                deliveryCharge: 0,
+                deliveryConfirmed: orderType === "PICKUP",
+                paymentStatus: "PENDING",
+                orderStatus: initialOrderStatus,
+                paymentMethod: selectedPayMethod,
+                paidAt: null,
+                items: {
+                  create: validatedItems.map((item) => ({
+                    productId: item.productId,
+                    productName: item.productName,
+                    quantity: item.quantity,
+                    unitType: item.unitType,
+                    packSize: item.packSize,
+                    price: item.price,
+                    total: item.total,
+                  })),
+                },
+              },
+            });
+
+            // Deduct stock for each item atomically inside transaction
+            await Promise.all(
+              validatedItems.map((item) =>
+                tx.product.update({
+                  where: { id: item.productId },
+                  data: {
+                    stock: { decrement: item.quantity },
+                    purchases: { increment: item.quantity },
+                  },
+                })
+              )
+            );
+
+            return {
+              orderId: createdOrder.id,
+              orderType,
+              grandTotal,
+              subtotal: calculatedSubtotal,
+            };
           },
-        },
-      });
+          {
+            timeout: 15000,
+          }
+        );
+        break; // Success, break retry loop
+      } catch (transactionErr: any) {
+        const errMsg = transactionErr?.message || "";
+        const isValidationErr =
+          errMsg.startsWith("Sorry, only") ||
+          errMsg.startsWith("Product") ||
+          errMsg.startsWith("Invalid") ||
+          errMsg.includes("required");
 
-      // NOTE: Invoice number is NOT generated at order creation.
-      // It is only generated when payment/delivery is confirmed.
-      // This prevents premature invoice assignment.
-
-      // Deduct stock for each item atomically inside transaction
-      // Use Promise.all to batch all updates in parallel — avoids N serial round-trips
-      await Promise.all(
-        validatedItems.map((item) =>
-          tx.product.update({
-            where: { id: item.productId },
-            data: {
-              stock: { decrement: item.quantity },
-              purchases: { increment: item.quantity },
-            },
-          })
-        )
-      );
-
-      return {
-        orderId: createdOrder.id,
-        orderType,
-        grandTotal,
-        subtotal: calculatedSubtotal,
-      };
-    }, {
-      timeout: 15000, // 15s — gives headroom for large carts (default is 5s)
-    });
+        if (isValidationErr || attempts >= 3) {
+          throw transactionErr;
+        }
+        await new Promise((res) => setTimeout(res, 250 * attempts));
+      }
+    }
 
     // Invalidate Next.js Server Caches
     revalidatePath("/admin/orders");

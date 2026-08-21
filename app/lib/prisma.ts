@@ -17,13 +17,16 @@ const createPrismaClient = () => {
     connectionString: connectionString || "",
     ssl: { rejectUnauthorized: false },
     max: 10,
-    idleTimeoutMillis: 30000,
+    idleTimeoutMillis: 10000, // Evict idle connections after 10s to prevent stale closed sockets
     connectionTimeoutMillis: 10000,
     keepAlive: true,
   });
 
   pool.on("error", (err) => {
-    console.error("Unexpected PostgreSQL connection pool error:", err);
+    // Ignore transient pool disconnection warnings; pool will establish fresh connections on demand
+    if (process.env.NODE_ENV !== "production") {
+      console.warn("PostgreSQL connection pool notice:", err.message);
+    }
   });
 
   const adapter = new PrismaPg(pool);

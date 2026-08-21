@@ -174,8 +174,15 @@ export default function NewProductPage() {
               <input
                 type="number"
                 name="stock"
+                min="0"
                 required
                 defaultValue="100"
+                onChange={(e) => {
+                  const val = parseInt(e.target.value, 10);
+                  if (val < 0 || e.target.value.startsWith("-")) {
+                    e.target.value = "0";
+                  }
+                }}
                 className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#6D3FD6]"
               />
             </div>
