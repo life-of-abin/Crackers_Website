@@ -41,6 +41,11 @@ export default async function OrderConfirmationPage({ params, searchParams }: Or
   // Block unauthorized access to sequential IDs — return 404 if token doesn't match
   if (!order) notFound();
 
+  // Offline store bills are in-store counter receipts — redirect directly to printable invoice document
+  if (order.orderType === "OFFLINE") {
+    redirect(`/orders/${order.id}/invoice`);
+  }
+
   const settings = await getStoreSettings();
 
   const formattedId = order.invoiceNumber

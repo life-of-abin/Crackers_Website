@@ -44,9 +44,15 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
   // Filter ONLY confirmed items to exclude items removed by customer / admin
   const confirmedItems = order.items.filter((item: any) => item.isConfirmed !== false);
 
-  // If this is a guest order, redirect to public order-confirmation page
+  // If this is an offline store bill, redirect directly to invoice (no order confirmation page)
+  if (order.orderType === "OFFLINE") {
+    redirect(`/orders/${order.id}/invoice`);
+  }
+
+  // If this is a guest online order, redirect to secure order-confirmation page
   if (!order.userId) {
-    redirect(`/order-confirmation/${order.id}`);
+    const tokenOrId = order.orderToken || order.id;
+    redirect(`/order-confirmation/${tokenOrId}`);
   }
 
   const session = await getSession();
