@@ -3,10 +3,6 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getStoreSettings } from "@/lib/settings";
-import Header from "@/components/ui/Header";
-import Footer from "@/components/ui/Footer";
-import FireworksCanvas from "@/components/ui/FireworksCanvas";
-import RocketAnimation from "@/components/ui/RocketAnimation";
 
 import OrderConfirmationClient from "./OrderConfirmationClient";
 

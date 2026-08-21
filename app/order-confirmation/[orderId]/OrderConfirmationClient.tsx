@@ -4,8 +4,6 @@ import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useCart } from "@/lib/cart-context";
 import Header from "@/components/ui/Header";
-import Footer from "@/components/ui/Footer";
-import HeroFireworks from "@/components/ui/HeroFireworks";
 import { formatWhatsAppNumber } from "@/lib/pincode";
 import { StoreSettings } from "@/lib/settings";
 
@@ -430,11 +428,6 @@ export default function OrderConfirmationClient({
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col justify-between relative selection:bg-[#6D3FD6] selection:text-white">
       <Header settings={settings} />
-
-      {/* ── Subtle Background Fireworks Animation ─────────────────── */}
-      <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
-        <HeroFireworks className="opacity-45" />
-      </div>
 
       <main className="relative z-10 max-w-4xl mx-auto px-4 py-8 sm:py-12 flex-1 w-full text-center space-y-6">
 
