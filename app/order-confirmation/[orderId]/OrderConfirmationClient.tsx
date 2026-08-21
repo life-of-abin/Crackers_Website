@@ -7,6 +7,7 @@ import Header from "@/components/ui/Header";
 import Footer from "@/components/ui/Footer";
 import HeroFireworks from "@/components/ui/HeroFireworks";
 import { formatWhatsAppNumber } from "@/lib/pincode";
+import { StoreSettings } from "@/lib/settings";
 
 interface OrderConfirmationClientProps {
   order: any;

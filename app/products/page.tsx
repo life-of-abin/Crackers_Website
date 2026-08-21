@@ -9,6 +9,8 @@ import ProductCard from "@/components/ui/ProductCard";
 import SortSelect from "@/components/ui/SortSelect";
 import InStockFilter from "@/components/ui/InStockFilter";
 
+export const dynamic = "force-dynamic";
+
 interface ProductsPageProps {
   searchParams: Promise<{
     category?: string;
@@ -198,7 +200,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
                 <div className="text-5xl">🔍</div>
                 <h3 className="text-lg font-bold text-slate-900 font-display">No products found</h3>
                 <p className="text-xs text-slate-500 max-w-sm mx-auto">
-                  We couldn't find any products matching your current filters. Try resetting the category or search criteria.
+                  We couldn&apos;t find any products matching your current filters. Try resetting the category or search criteria.
                 </p>
                 <Link
                   href="/products"

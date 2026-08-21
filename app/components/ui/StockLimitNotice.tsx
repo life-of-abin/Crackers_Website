@@ -106,7 +106,7 @@ export default function StockLimitNotice({
           className="py-2.5 px-4 rounded-xl font-extrabold text-xs bg-[#6D3FD6] hover:bg-[#5B21B6] active:scale-98 text-white flex items-center justify-center gap-2 transition-all shadow-xs"
         >
           <span className="text-sm">📞</span>
-          <span>Call Us ({displayPhone})</span>
+          <span>Call Us ({rawPhone})</span>
         </a>
       </div>
     </div>

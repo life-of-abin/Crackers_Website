@@ -56,7 +56,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
             <span>Search Results</span>
           </div>
           <h1 className="text-xl sm:text-3xl font-black text-slate-900 font-display">
-            Search Results for <span className="text-[#6D3FD6]">"{queryClean}"</span>
+            Search Results for <span className="text-[#6D3FD6]">&quot;{queryClean}&quot;</span>
           </h1>
           <p className="text-xs text-slate-500 mt-1">
             Found {products.length} products matching your query
@@ -83,7 +83,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
             <div className="text-5xl">🔍</div>
             <h3 className="text-lg font-bold text-slate-900 font-display">No matching products found</h3>
             <p className="text-xs text-slate-500">
-              We couldn't find any crackers matching "{queryClean}". Try searching for terms like "sparklers", "rockets", "gift box", or "flower pots".
+              We couldn&apos;t find any crackers matching &quot;{queryClean}&quot;. Try searching for terms like &quot;sparklers&quot;, &quot;rockets&quot;, &quot;gift box&quot;, or &quot;flower pots&quot;.
             </p>
             <Link
               href="/products"
