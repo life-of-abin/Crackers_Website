@@ -40,40 +40,52 @@ function InlineStockInput({
 }) {
   const [stockVal, setStockVal] = useState<string>(Math.max(0, initialStock).toString());
   const [isSaving, setIsSaving] = useState(false);
+  const inputRef = React.useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setStockVal(Math.max(0, initialStock).toString());
   }, [initialStock]);
 
-  const commitSave = async (rawVal: string) => {
-    let num = parseInt(rawVal, 10);
+  const saveStock = async (val: number) => {
+    const safeNum = Math.max(0, val);
+    setStockVal(safeNum.toString());
+    setIsSaving(true);
+    try {
+      await onSave(productId, safeNum);
+    } catch (err) {
+      console.error("Failed to update stock:", err);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleStep = (e: React.MouseEvent, delta: number) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const current = parseInt(stockVal, 10) || 0;
+    const nextVal = Math.max(0, current + delta);
+    setStockVal(nextVal.toString());
+    saveStock(nextVal);
+  };
+
+  const handleBlur = () => {
+    let num = parseInt(stockVal, 10);
     if (isNaN(num) || num < 0) {
       num = 0;
     }
     setStockVal(num.toString());
     if (num !== initialStock) {
-      setIsSaving(true);
-      await onSave(productId, num);
-      setIsSaving(false);
+      saveStock(num);
     }
   };
 
-  const handleStep = async (delta: number) => {
-    const current = parseInt(stockVal, 10) || 0;
-    const nextVal = Math.max(0, current + delta);
-    setStockVal(nextVal.toString());
-    setIsSaving(true);
-    await onSave(productId, nextVal);
-    setIsSaving(false);
-  };
-
   return (
-    <div className="flex items-center gap-1">
+    <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
       <button
         type="button"
-        onClick={() => handleStep(-1)}
+        onClick={(e) => handleStep(e, -1)}
         disabled={isSaving || (parseInt(stockVal, 10) || 0) <= 0}
-        className="w-6 h-6 bg-slate-100 border border-slate-200 text-slate-700 rounded font-bold hover:bg-slate-200 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center text-xs transition-all"
+        className="w-7 h-7 bg-slate-100 border border-slate-300 text-slate-800 rounded-lg font-black hover:bg-purple-100 hover:text-[#6D3FD6] hover:border-purple-300 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center text-sm transition-all select-none"
         title="Decrease stock by 1"
       >
         -
@@ -81,22 +93,23 @@ function InlineStockInput({
 
       <div className="relative flex items-center">
         <input
+          ref={inputRef}
           type="number"
           min="0"
           value={stockVal}
           onChange={(e) => {
             const v = e.target.value;
-            if (v.startsWith("-")) return; // Block typing minus sign
+            if (v.startsWith("-")) return;
             setStockVal(v);
           }}
-          onBlur={() => commitSave(stockVal)}
+          onBlur={handleBlur}
           onKeyDown={(e) => {
             if (e.key === "Enter") {
-              e.currentTarget.blur();
+              e.preventDefault();
+              inputRef.current?.blur();
             }
           }}
-          disabled={isSaving}
-          className={`w-16 px-1.5 py-1 border rounded text-center font-black text-xs focus:outline-none focus:ring-2 focus:ring-[#6D3FD6] transition-all ${
+          className={`w-16 px-1.5 py-1 border rounded-lg text-center font-black text-xs focus:outline-none focus:ring-2 focus:ring-[#6D3FD6] transition-all ${
             (parseInt(stockVal, 10) || 0) === 0
               ? "bg-red-50 border-red-300 text-red-600"
               : "bg-white border-slate-300 text-slate-900"
@@ -104,7 +117,7 @@ function InlineStockInput({
           title="Directly enter stock count (Press Enter or click outside to save)"
         />
         {isSaving && (
-          <span className="absolute -top-1 -right-1 flex h-2 w-2">
+          <span className="absolute -top-1 -right-1 flex h-2 w-2 pointer-events-none">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#6D3FD6] opacity-75"></span>
             <span className="relative inline-flex rounded-full h-2 w-2 bg-[#6D3FD6]"></span>
           </span>
@@ -113,9 +126,9 @@ function InlineStockInput({
 
       <button
         type="button"
-        onClick={() => handleStep(1)}
+        onClick={(e) => handleStep(e, 1)}
         disabled={isSaving}
-        className="w-6 h-6 bg-slate-100 border border-slate-200 text-slate-700 rounded font-bold hover:bg-slate-200 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center text-xs transition-all"
+        className="w-7 h-7 bg-slate-100 border border-slate-300 text-slate-800 rounded-lg font-black hover:bg-purple-100 hover:text-[#6D3FD6] hover:border-purple-300 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center text-sm transition-all select-none"
         title="Increase stock by 1"
       >
         +

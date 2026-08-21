@@ -189,12 +189,12 @@ export default function NewProductPage() {
 
             <div className="sm:col-span-2">
               <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">
-                Product Image URL (Optional)
+                Product Image URL (Optional — Default image used if blank)
               </label>
               <input
-                type="url"
+                type="text"
                 name="image"
-                placeholder="/placeholder.png or https://..."
+                placeholder="Optional (Leave blank to use default cracker image /placeholder.png)"
                 className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#6D3FD6]"
               />
             </div>

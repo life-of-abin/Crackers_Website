@@ -210,11 +210,7 @@ export default function LiveSearch({ autoFocus }: { autoFocus?: boolean }) {
                     }`}
                   >
                     <div className="w-10 h-10 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center flex-shrink-0 overflow-hidden font-bold text-slate-400 text-xs">
-                      {product.image ? (
-                        <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
-                      ) : (
-                        "🎆"
-                      )}
+                      <img src={product.image || "/placeholder.png"} alt={product.name} className="w-full h-full object-cover" />
                     </div>
 
                     <div className="flex-1 min-w-0">
