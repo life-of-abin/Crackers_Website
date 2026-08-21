@@ -165,6 +165,17 @@ export async function completeAdminSetupAction(formData: FormData) {
         },
       });
     } else {
+      // Enforce strict limit: Maximum 2 admin accounts allowed in database
+      const totalAdmins = await prisma.user.count({
+        where: { role: "ADMIN" },
+      });
+
+      if (totalAdmins >= 2) {
+        return {
+          error: "Maximum limit of 2 admin accounts reached in database. Creating additional admin credentials is restricted.",
+        };
+      }
+
       await prisma.user.create({
         data: {
           name: "Abinesh",
