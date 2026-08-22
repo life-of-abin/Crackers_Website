@@ -38,16 +38,19 @@ function InlineStockInput({
   initialStock: number;
   onSave: (id: number, newStock: number) => Promise<void>;
 }) {
-  const [stockVal, setStockVal] = useState<string>(Math.max(0, initialStock).toString());
+  const safeInitial = Math.min(99999, Math.max(0, initialStock));
+  const [stockVal, setStockVal] = useState<string>(safeInitial.toString());
   const [isSaving, setIsSaving] = useState(false);
+  const [showExcessWarning, setShowExcessWarning] = useState(false);
   const inputRef = React.useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    setStockVal(Math.max(0, initialStock).toString());
+    const safe = Math.min(99999, Math.max(0, initialStock));
+    setStockVal(safe.toString());
   }, [initialStock]);
 
   const saveStock = async (val: number) => {
-    const safeNum = Math.max(0, val);
+    const safeNum = Math.min(99999, Math.max(0, val));
     setStockVal(safeNum.toString());
     setIsSaving(true);
     try {
@@ -59,80 +62,69 @@ function InlineStockInput({
     }
   };
 
-  const handleStep = (e: React.MouseEvent, delta: number) => {
-    e.preventDefault();
-    e.stopPropagation();
-    const current = parseInt(stockVal, 10) || 0;
-    const nextVal = Math.max(0, current + delta);
-    setStockVal(nextVal.toString());
-    saveStock(nextVal);
-  };
-
   const handleBlur = () => {
+    setShowExcessWarning(false);
     let num = parseInt(stockVal, 10);
     if (isNaN(num) || num < 0) {
       num = 0;
     }
+    if (num > 99999) {
+      num = 99999;
+    }
     setStockVal(num.toString());
-    if (num !== initialStock) {
+    if (num !== safeInitial) {
       saveStock(num);
     }
   };
 
   return (
-    <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
-      <button
-        type="button"
-        onClick={(e) => handleStep(e, -1)}
-        disabled={isSaving || (parseInt(stockVal, 10) || 0) <= 0}
-        className="w-7 h-7 bg-slate-100 border border-slate-300 text-slate-800 rounded-lg font-black hover:bg-purple-100 hover:text-[#6D3FD6] hover:border-purple-300 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center text-sm transition-all select-none"
-        title="Decrease stock by 1"
-      >
-        -
-      </button>
-
-      <div className="relative flex items-center">
-        <input
-          ref={inputRef}
-          type="number"
-          min="0"
-          value={stockVal}
-          onChange={(e) => {
-            const v = e.target.value;
-            if (v.startsWith("-")) return;
-            setStockVal(v);
-          }}
-          onBlur={handleBlur}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              e.preventDefault();
-              inputRef.current?.blur();
-            }
-          }}
-          className={`w-16 px-1.5 py-1 border rounded-lg text-center font-black text-xs focus:outline-none focus:ring-2 focus:ring-[#6D3FD6] transition-all ${
-            (parseInt(stockVal, 10) || 0) === 0
-              ? "bg-red-50 border-red-300 text-red-600"
-              : "bg-white border-slate-300 text-slate-900"
-          }`}
-          title="Directly enter stock count (Press Enter or click outside to save)"
-        />
-        {isSaving && (
-          <span className="absolute -top-1 -right-1 flex h-2 w-2 pointer-events-none">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#6D3FD6] opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-[#6D3FD6]"></span>
-          </span>
-        )}
-      </div>
-
-      <button
-        type="button"
-        onClick={(e) => handleStep(e, 1)}
-        disabled={isSaving}
-        className="w-7 h-7 bg-slate-100 border border-slate-300 text-slate-800 rounded-lg font-black hover:bg-purple-100 hover:text-[#6D3FD6] hover:border-purple-300 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center text-sm transition-all select-none"
-        title="Increase stock by 1"
-      >
-        +
-      </button>
+    <div className="relative inline-flex flex-col items-center justify-center" onClick={(e) => e.stopPropagation()}>
+      <input
+        ref={inputRef}
+        type="text"
+        inputMode="numeric"
+        pattern="[0-9]*"
+        maxLength={5}
+        value={stockVal}
+        onKeyDown={(e) => {
+          if (["e", "E", "+", "-", "."].includes(e.key)) {
+            e.preventDefault();
+          }
+          if (e.key === "Enter") {
+            e.preventDefault();
+            inputRef.current?.blur();
+          }
+        }}
+        onChange={(e) => {
+          const raw = e.target.value.replace(/[^0-9]/g, "");
+          if (raw.length > 5) {
+            setShowExcessWarning(true);
+            setTimeout(() => setShowExcessWarning(false), 2500);
+          } else {
+            setShowExcessWarning(false);
+          }
+          const cleaned = raw.slice(0, 5);
+          setStockVal(cleaned);
+        }}
+        onBlur={handleBlur}
+        className={`w-20 px-2 py-1.5 border rounded-xl text-center font-black text-xs focus:outline-none focus:ring-2 focus:ring-[#6D3FD6] transition-all ${
+          (parseInt(stockVal, 10) || 0) === 0
+            ? "bg-red-50 border-red-300 text-red-600 font-black"
+            : "bg-white border-slate-300 text-slate-900"
+        }`}
+        title="Enter stock count (max 5 digits: 0 to 99999). Press Enter or click outside to save."
+      />
+      {showExcessWarning && (
+        <span className="absolute -bottom-5 text-[9px] font-black text-red-600 bg-red-50 border border-red-200 px-1 py-0.5 rounded whitespace-nowrap shadow-sm z-20">
+          Max 5 digits!
+        </span>
+      )}
+      {isSaving && (
+        <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5 pointer-events-none">
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#6D3FD6] opacity-75"></span>
+          <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#6D3FD6]"></span>
+        </span>
+      )}
     </div>
   );
 }
@@ -282,7 +274,7 @@ export default function AdminProductTable({
               <th className="pb-3">Category</th>
               <th className="pb-3">Price / MRP</th>
               <th className="pb-3">Discount</th>
-              <th className="pb-3">Stock Count</th>
+              <th className="pb-3 text-center">Stock Count</th>
               <th className="pb-3">Status</th>
               <th className="pb-3 text-right">Actions</th>
             </tr>
@@ -322,7 +314,7 @@ export default function AdminProductTable({
                     ) : "-"}
                   </td>
 
-                  <td className="py-3">
+                  <td className="py-3 text-center">
                     <InlineStockInput
                       productId={p.id}
                       initialStock={p.stock}
@@ -345,16 +337,16 @@ export default function AdminProductTable({
                   <td className="py-3 text-right space-x-2">
                     <Link
                       href={`/admin/products/${p.id}`}
-                      className="font-extrabold text-[#6D3FD6] hover:text-[#5B21B6] bg-purple-50 px-2.5 py-1 rounded text-[11px]"
+                      className="font-extrabold text-[#6D3FD6] hover:text-[#5B21B6] bg-purple-50 px-2.5 py-1 rounded text-[11px] inline-flex items-center gap-1"
                     >
-                      Edit
+                      ✏️ Edit
                     </Link>
                     <button
                       onClick={() => handleDelete(p.id, p.name)}
                       disabled={loadingId === p.id}
-                      className="font-extrabold text-red-600 hover:text-red-800 bg-red-50 px-2.5 py-1 rounded text-[11px] cursor-pointer"
+                      className="font-extrabold text-red-600 hover:text-red-800 bg-red-50 px-2.5 py-1 rounded text-[11px] cursor-pointer inline-flex items-center gap-1"
                     >
-                      Delete
+                      🗑️ Delete
                     </button>
                   </td>
 

@@ -10,6 +10,7 @@ export default function NewProductPage() {
   const [categories, setCategories] = useState<{ id: number; name: string }[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [stockWarning, setStockWarning] = useState("");
 
   const [price, setPrice] = useState("");
   const [mrp, setMrp] = useState("");
@@ -169,22 +170,39 @@ export default function NewProductPage() {
 
             <div className="sm:col-span-2">
               <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">
-                Initial Stock Count *
+                Initial Stock Count (Max 5 digits: 0 to 99999) *
               </label>
               <input
-                type="number"
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
                 name="stock"
-                min="0"
+                maxLength={5}
                 required
                 defaultValue="100"
-                onChange={(e) => {
-                  const val = parseInt(e.target.value, 10);
-                  if (val < 0 || e.target.value.startsWith("-")) {
-                    e.target.value = "0";
+                onKeyDown={(e) => {
+                  if (["e", "E", "+", "-", "."].includes(e.key)) {
+                    e.preventDefault();
                   }
+                }}
+                onChange={(e) => {
+                  const raw = e.target.value.replace(/[^0-9]/g, "");
+                  if (raw.length > 5) {
+                    setStockWarning("⚠️ Maximum 5 digits allowed (0 to 99,999). Excess numbers were not accepted.");
+                    setTimeout(() => setStockWarning(""), 3000);
+                  } else {
+                    setStockWarning("");
+                  }
+                  const cleaned = raw.slice(0, 5);
+                  e.target.value = cleaned;
                 }}
                 className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#6D3FD6]"
               />
+              {stockWarning && (
+                <p className="text-red-600 font-extrabold text-[11px] mt-1.5 animate-pulse">
+                  {stockWarning}
+                </p>
+              )}
             </div>
 
             <div className="sm:col-span-2">

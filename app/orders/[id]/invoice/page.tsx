@@ -106,15 +106,27 @@ export default async function CustomerInvoicePage({ params }: InvoicePageProps) 
     subtotal: Number(order.subtotal),
     discount: Number(order.discount),
     shipping: Number(order.shipping),
+    deliveryCharge: Number((order as any).deliveryCharge ?? 0),
     totalAmount: Number(order.totalAmount),
-    items: order.items.map(item => ({
+    createdAt: order.createdAt.toISOString(),
+    updatedAt: order.updatedAt.toISOString(),
+    paidAt: order.paidAt ? order.paidAt.toISOString() : null,
+    invoiceGeneratedAt: order.invoiceGeneratedAt ? order.invoiceGeneratedAt.toISOString() : null,
+    items: order.items.map((item: any) => ({
       ...item,
       price: Number(item.price),
       total: Number(item.total),
+      taxRate: item.taxRate != null ? Number(item.taxRate) : null,
+      taxableValue: item.taxableValue != null ? Number(item.taxableValue) : null,
+      cgstAmount: item.cgstAmount != null ? Number(item.cgstAmount) : null,
+      sgstAmount: item.sgstAmount != null ? Number(item.sgstAmount) : null,
+      igstAmount: item.igstAmount != null ? Number(item.igstAmount) : null,
     })),
-    payments: order.payments.map(pay => ({
-      paymentMethod: pay.paymentMethod,
-      paymentRef: pay.paymentRef,
+    payments: order.payments.map((pay: any) => ({
+      ...pay,
+      amount: Number(pay.amount),
+      createdAt: pay.createdAt.toISOString(),
+      updatedAt: pay.updatedAt.toISOString(),
     })),
   };
 

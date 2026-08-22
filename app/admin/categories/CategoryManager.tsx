@@ -186,11 +186,11 @@ export default function CategoryManager({ categories }: { categories: CategoryRo
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <button onClick={() => setEditingId(c.id)} className="px-3 py-1.5 bg-purple-50 text-[#6D3FD6] font-bold rounded-lg hover:bg-purple-100 cursor-pointer">
-                    Edit
+                  <button onClick={() => setEditingId(c.id)} className="px-3 py-1.5 bg-purple-50 text-[#6D3FD6] font-bold rounded-lg hover:bg-purple-100 cursor-pointer inline-flex items-center gap-1">
+                    ✏️ Edit
                   </button>
-                  <button onClick={() => handleDelete(c.id, c.name, c.productCount)} className="px-3 py-1.5 bg-red-50 text-red-700 font-bold rounded-lg hover:bg-red-100 cursor-pointer">
-                    Delete
+                  <button onClick={() => handleDelete(c.id, c.name, c.productCount)} className="px-3 py-1.5 bg-red-50 text-red-700 font-bold rounded-lg hover:bg-red-100 cursor-pointer inline-flex items-center gap-1">
+                    🗑️ Delete
                   </button>
                 </div>
               </>

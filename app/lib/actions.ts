@@ -632,7 +632,8 @@ export async function createProductAction(formData: FormData) {
     const quantity = (formData.get("quantity") as string) || "10 Pieces";
     const unitType = (formData.get("unitType") as string) || "BOX";
     const packSize = (formData.get("packSize") as string) || quantity || "10 Pieces";
-    const stock = parseInt((formData.get("stock") as string) || "100");
+    const rawStock = parseInt((formData.get("stock") as string) || "100", 10);
+    const stock = isNaN(rawStock) ? 0 : Math.min(99999, Math.max(0, rawStock));
     const description = (formData.get("description") as string) || null;
     const rawImage = (formData.get("image") as string)?.trim();
     const image = rawImage ? rawImage : "/placeholder.png";
@@ -664,7 +665,7 @@ export async function createProductAction(formData: FormData) {
         quantity: packSize,
         unitType,
         packSize,
-        stock: Math.max(0, stock),
+        stock,
         description,
         image,
         badge,
@@ -694,7 +695,8 @@ export async function updateProductAction(productId: number, formData: FormData)
     const quantity = formData.get("quantity") as string;
     const unitType = (formData.get("unitType") as string) || "BOX";
     const packSize = (formData.get("packSize") as string) || quantity || "10 Pieces";
-    const stock = parseInt(formData.get("stock") as string);
+    const rawStock = parseInt(formData.get("stock") as string, 10);
+    const stock = isNaN(rawStock) ? 0 : Math.min(99999, Math.max(0, rawStock));
     const description = (formData.get("description") as string) || null;
     const rawImage = (formData.get("image") as string)?.trim();
     const image = rawImage ? rawImage : "/placeholder.png";
@@ -716,7 +718,7 @@ export async function updateProductAction(productId: number, formData: FormData)
         quantity: packSize,
         unitType,
         packSize,
-        stock: Math.max(0, stock),
+        stock,
         description,
         image,
         badge,
@@ -770,9 +772,10 @@ export async function toggleProductActiveAction(productId: number, active: boole
 export async function updateStockAction(productId: number, stock: number) {
   try {
     await requireAdmin();
+    const safeStock = isNaN(Number(stock)) ? 0 : Math.min(99999, Math.max(0, Math.floor(Number(stock))));
     await prisma.product.update({
       where: { id: productId },
-      data: { stock: Math.max(0, stock) },
+      data: { stock: safeStock },
     });
     revalidatePath("/admin/products");
     revalidatePath("/products");

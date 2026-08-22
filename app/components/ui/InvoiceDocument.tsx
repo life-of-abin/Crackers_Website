@@ -182,15 +182,30 @@ export default function InvoiceDocument({ order, settings, products }: InvoiceDo
 
       {/* Action Buttons Container */}
       <div className="w-full max-w-[210mm] flex justify-between items-center px-4 md:px-0 mb-6 no-print">
-        <button
-          onClick={() => {
-            const isAdmin = window.location.pathname.startsWith("/admin");
-            window.location.href = isAdmin ? `/admin/orders/${order.id}` : `/orders/${order.id}`;
-          }}
-          className="flex items-center gap-2 px-4 py-2 border border-slate-300 bg-white text-slate-700 hover:text-[#6D3FD6] rounded-xl text-sm font-bold transition-all hover:border-purple-300 shadow-xs cursor-pointer"
-        >
-          ← Back to Order
-        </button>
+        <div className="flex items-center gap-2">
+          {order.orderType === "OFFLINE" ? (
+            <button
+              onClick={() => {
+                if (typeof window !== "undefined") {
+                  window.location.href = "/admin/dashboard";
+                }
+              }}
+              className="flex items-center gap-2 px-4 py-2 border border-slate-300 bg-white text-slate-700 hover:text-[#6D3FD6] rounded-xl text-sm font-bold transition-all hover:border-purple-300 shadow-xs cursor-pointer"
+            >
+              ← Back to Dashboard
+            </button>
+          ) : (
+            <button
+              onClick={() => {
+                const isAdmin = typeof window !== "undefined" && window.location.pathname.startsWith("/admin");
+                window.location.href = isAdmin ? `/admin/orders/${order.id}` : `/orders/${order.id}`;
+              }}
+              className="flex items-center gap-2 px-4 py-2 border border-slate-300 bg-white text-slate-700 hover:text-[#6D3FD6] rounded-xl text-sm font-bold transition-all hover:border-purple-300 shadow-xs cursor-pointer"
+            >
+              ← Back to Order
+            </button>
+          )}
+        </div>
         <div className="flex gap-3">
           <button
             onClick={() => window.print()}
