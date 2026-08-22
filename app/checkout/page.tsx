@@ -100,13 +100,15 @@ export default function CheckoutPage() {
   const [loading, setLoading] = useState(false);
   const [globalError, setGlobalError] = useState("");
   const [isOrderComplete, setIsOrderComplete] = useState(false);
+  const [isSettingsLoaded, setIsSettingsLoaded] = useState(false);
 
   // ─── Settings Load ────────────────────────────────────────────────────────
   useEffect(() => {
     fetch("/api/settings", { cache: "no-store" })
       .then((res) => res.json())
       .then((data) => { if (data && !data.error) setSettings(data); })
-      .catch(console.error);
+      .catch(console.error)
+      .finally(() => setIsSettingsLoaded(true));
   }, []);
 
   // ─── Validate Cart Stock Real-Time ───────────────────────────────────────
@@ -153,13 +155,13 @@ export default function CheckoutPage() {
 
   // ─── Cart Guard ───────────────────────────────────────────────────────────
   useEffect(() => {
-    if (!isMounted || isOrderComplete) return;
+    if (!isMounted || !isSettingsLoaded || isOrderComplete) return;
     const rawMin = Number(settings.minOrderAmount);
     const minOrder = !isNaN(rawMin) && rawMin >= 0 ? rawMin : 500;
     if (items.length === 0 || subtotal < minOrder) {
       router.push("/cart");
     }
-  }, [isMounted, items, subtotal, settings.minOrderAmount, router, isOrderComplete]);
+  }, [isMounted, isSettingsLoaded, items, subtotal, settings.minOrderAmount, router, isOrderComplete]);
 
   // ─── PIN Code Lookup (DELIVERY only) ─────────────────────────────────────
   useEffect(() => {

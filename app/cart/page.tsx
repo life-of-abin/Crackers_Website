@@ -66,15 +66,24 @@ export default function CartPage() {
         const firstIssue = data.issues[0];
         setCartStockError(firstIssue.message || "Please update your cart quantity before proceeding.");
         setIsCheckingOut(false);
+        if (typeof window !== "undefined") {
+          window.scrollTo({ top: 300, behavior: "smooth" });
+        }
         return;
       }
 
-      router.push("/checkout");
+      if (typeof window !== "undefined") {
+        window.location.href = "/checkout";
+      } else {
+        router.push("/checkout");
+      }
     } catch (err) {
       console.error("Cart checkout check failed:", err);
-      router.push("/checkout");
-    } finally {
-      setIsCheckingOut(false);
+      if (typeof window !== "undefined") {
+        window.location.href = "/checkout";
+      } else {
+        router.push("/checkout");
+      }
     }
   };
 

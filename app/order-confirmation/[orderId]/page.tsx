@@ -1,8 +1,9 @@
 import React from "react";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getStoreSettings } from "@/lib/settings";
+import { getSession } from "@/lib/auth";
 
 import OrderConfirmationClient from "./OrderConfirmationClient";
 
@@ -25,21 +26,42 @@ export default async function OrderConfirmationPage({ params, searchParams }: Or
       include: { items: true, payments: true },
     });
   } else {
-    // 2. If accessed by numeric ID, strictly require matching secret token parameter
+    // 2. If accessed by numeric ID, check matching token OR user authorization (Owner, Admin, Phone/Email)
     const numericId = parseInt(orderId, 10);
-    if (!isNaN(numericId) && queryToken) {
+    if (!isNaN(numericId)) {
       const candidate = await prisma.order.findUnique({
         where: { id: numericId },
         include: { items: true, payments: true },
       });
-      if (candidate && candidate.orderToken === queryToken) {
-        order = candidate;
+
+      if (candidate) {
+        // Check if queryToken matches candidate's orderToken
+        if (queryToken && candidate.orderToken && candidate.orderToken === queryToken) {
+          order = candidate;
+        } else {
+          // Check session authorization
+          const session = await getSession();
+          if (session) {
+            const isOwner = candidate.userId ? candidate.userId === session.userId : false;
+            const isAdmin = session.role === "ADMIN";
+
+            const sessionPhoneClean = session.phone ? session.phone.replace(/\D/g, "").slice(-10) : "";
+            const candidatePhoneClean = candidate.phone ? candidate.phone.replace(/\D/g, "").slice(-10) : "";
+            const isPhoneMatch = Boolean(sessionPhoneClean && candidatePhoneClean && sessionPhoneClean === candidatePhoneClean);
+
+            const isEmailMatch = Boolean(session.email && candidate.email && session.email.toLowerCase().trim() === candidate.email.toLowerCase().trim());
+
+            if (isOwner || isAdmin || isPhoneMatch || isEmailMatch) {
+              order = candidate;
+            }
+          }
+        }
       }
     }
   }
 
-  // Block unauthorized access to sequential IDs — return 404 if token doesn't match
-  if (!order) notFound();
+  // Block unauthorized or locked access — return 404 if token doesn't match or confirmation is locked
+  if (!order || !order.orderToken || order.orderToken.startsWith("LOCKED_")) notFound();
 
   // Offline store bills are in-store counter receipts — redirect directly to printable invoice document
   if (order.orderType === "OFFLINE") {

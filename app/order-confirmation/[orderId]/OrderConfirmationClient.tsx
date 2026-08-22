@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useCart } from "@/lib/cart-context";
 import Header from "@/components/ui/Header";
+import Footer from "@/components/ui/Footer";
 import { formatWhatsAppNumber } from "@/lib/pincode";
 import { StoreSettings } from "@/lib/settings";
 
@@ -41,6 +42,46 @@ export default function OrderConfirmationClient({
 
   const { clearCart } = useCart();
   const hasClearedCart = useRef(false);
+
+  const handleLockAndNavigate = (e: React.MouseEvent, destinationUrl: string) => {
+    e.preventDefault();
+    try {
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem(`locked_order_${order.id}`, "true");
+        fetch("/api/orders/lock-confirmation", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ orderId: order.id, token: order.orderToken }),
+          keepalive: true,
+        }).catch(() => {});
+      }
+    } catch (err) {}
+
+    if (typeof window !== "undefined") {
+      window.location.href = destinationUrl;
+    }
+  };
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    // Check if confirmation was already exited in this browser session
+    if (sessionStorage.getItem(`locked_order_${order.id}`) === "true") {
+      window.location.href = "/";
+      return;
+    }
+
+    const handlePageShow = (e: PageTransitionEvent) => {
+      if (e.persisted || sessionStorage.getItem(`locked_order_${order.id}`) === "true") {
+        window.location.href = "/";
+      }
+    };
+
+    window.addEventListener("pageshow", handlePageShow);
+    return () => {
+      window.removeEventListener("pageshow", handlePageShow);
+    };
+  }, [order.id]);
 
   useEffect(() => {
     // Clear the cart exactly once when the confirmation page loads successfully
@@ -704,24 +745,26 @@ export default function OrderConfirmationClient({
             </button>
 
             {/* Back to Home Button */}
-            <Link
-              href="/"
-              className="w-full sm:w-auto px-6 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 font-extrabold text-xs uppercase tracking-wider rounded-xl transition-all flex items-center justify-center gap-2"
+            <button
+              type="button"
+              onClick={(e) => handleLockAndNavigate(e, "/")}
+              className="w-full sm:w-auto px-6 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 font-extrabold text-xs uppercase tracking-wider rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer"
             >
               🏠 Back to Home
-            </Link>
+            </button>
           </div>
 
           {/* Track Order Footer Link */}
           <div className="text-center text-xs text-slate-500 pt-2 space-y-1">
             <p>
               Want to check status?{" "}
-              <Link
-                href="/track-order"
-                className="text-[#6D3FD6] hover:underline font-bold"
+              <button
+                type="button"
+                onClick={(e) => handleLockAndNavigate(e, "/track-order")}
+                className="text-[#6D3FD6] hover:underline font-bold bg-transparent border-0 p-0 cursor-pointer inline"
               >
                 Track Your Order →
-              </Link>
+              </button>
             </p>
             <p className="text-[11px] text-slate-400">
               Order Reference: <strong className="font-mono text-slate-700">{formattedId}</strong>
