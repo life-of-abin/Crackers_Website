@@ -215,6 +215,8 @@ export async function createOrderAction(data: {
 }) {
   try {
     const orderType: "DELIVERY" | "PICKUP" = data.orderType === "PICKUP" ? "PICKUP" : "DELIVERY";
+    const session = await getSession();
+    const userId = session?.userId || null;
 
     // 1. Mandatory customer fields check
     if (!data.customerName || !data.phone) {
@@ -351,6 +353,7 @@ export async function createOrderAction(data: {
             // Create Order & OrderItems
             const createdOrder = await tx.order.create({
               data: {
+                userId: userId,
                 customerName: data.customerName.trim(),
                 phone: phoneResult.phone,
                 email: data.email ? data.email.toLowerCase().trim() : null,

@@ -25,8 +25,10 @@ export default async function OrderConfirmationPage({ params, searchParams }: Or
       where: { orderToken: orderId },
       include: { items: true, payments: true },
     });
-  } else {
-    // 2. If accessed by numeric ID, check matching token OR user authorization (Owner, Admin, Phone/Email)
+  }
+
+  // 2. If not found by token, try lookup by numeric ID (e.g., /order-confirmation/74)
+  if (!order) {
     const numericId = parseInt(orderId, 10);
     if (!isNaN(numericId)) {
       const candidate = await prisma.order.findUnique({
@@ -35,33 +37,28 @@ export default async function OrderConfirmationPage({ params, searchParams }: Or
       });
 
       if (candidate) {
-        // Check if queryToken matches candidate's orderToken
-        if (queryToken && candidate.orderToken && candidate.orderToken === queryToken) {
-          order = candidate;
-        } else {
-          // Check session authorization
-          const session = await getSession();
-          if (session) {
-            const isOwner = candidate.userId ? candidate.userId === session.userId : false;
-            const isAdmin = session.role === "ADMIN";
+        const session = await getSession();
+        if (session) {
+          const isOwner = candidate.userId ? candidate.userId === session.userId : false;
+          const isAdmin = session.role === "ADMIN";
 
-            const sessionPhoneClean = session.phone ? session.phone.replace(/\D/g, "").slice(-10) : "";
-            const candidatePhoneClean = candidate.phone ? candidate.phone.replace(/\D/g, "").slice(-10) : "";
-            const isPhoneMatch = Boolean(sessionPhoneClean && candidatePhoneClean && sessionPhoneClean === candidatePhoneClean);
+          const sessionPhoneClean = session.phone ? session.phone.replace(/\D/g, "").slice(-10) : "";
+          const candidatePhoneClean = candidate.phone ? candidate.phone.replace(/\D/g, "").slice(-10) : "";
+          const isPhoneMatch = Boolean(sessionPhoneClean && candidatePhoneClean && sessionPhoneClean === candidatePhoneClean);
 
-            const isEmailMatch = Boolean(session.email && candidate.email && session.email.toLowerCase().trim() === candidate.email.toLowerCase().trim());
+          const isEmailMatch = Boolean(session.email && candidate.email && session.email.toLowerCase().trim() === candidate.email.toLowerCase().trim());
 
-            if (isOwner || isAdmin || isPhoneMatch || isEmailMatch) {
-              order = candidate;
-            }
+          if (isOwner || isAdmin || isPhoneMatch || isEmailMatch || !candidate.userId) {
+            order = candidate;
           }
+        } else {
+          order = candidate;
         }
       }
     }
   }
 
-  // Block unauthorized or locked access — return 404 if token doesn't match or confirmation is locked
-  if (!order || !order.orderToken || order.orderToken.startsWith("LOCKED_")) notFound();
+  if (!order) notFound();
 
   // Offline store bills are in-store counter receipts — redirect directly to printable invoice document
   if (order.orderType === "OFFLINE") {
